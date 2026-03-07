@@ -218,66 +218,24 @@ See also:
 
 - [Developing with linked packages](./linking.md)
 
-### Backend
+### Docker Deployment
 
-A docker compose file `dev-backend-docker-compose.yml` is provided to start the
-whole stack of components which is required for a local development environment
-including federation:
-
-- Minimum Synapse Setup (servernameis: `synapse.m.localhost`, `synapse.othersite.m.localhost`)
-- MatrixRTC Authorization Service (Note requires Federation API and hence a TLS reverse proxy)
-- Minimum LiveKit SFU setup using dev defaults for config
-- Minimum `localhost` Certificate Authority (CA) for Transport Layer Security (TLS)
-  - Hostnames: `m.localhost`, `*.m.localhost`, `*.othersite.m.localhost`
-  - Add [./backend/dev_tls_local-ca.crt](./backend/dev_tls_local-ca.crt) to your web browsers trusted
-    certificates
-- Minimum TLS reverse proxy for
-  - Synapse homeserver: `synapse.m.localhost` and `synapse.othersite.m.localhost`
-  - MatrixRTC backend: `matrix-rtc.m.localhost` and `matrix-rtc.othersite.m.localhost`
-  - Local Element Call development `call.m.localhost` via `yarn dev --host `
-  - Element Web `app.m.localhost` and `app.othersite.m.localhost`
-  - Note certificates will expire on Thr, 20 September 2035 14:27:35 CEST
-
-These use a test 'secret' published in this repository, so this must be used
-only for local development and **_never be exposed to the public Internet._**
-
-Run backend components:
+This fork uses a single deployment container that builds the app and serves it
+through Nginx. Runtime configuration is supplied through `.env.deploy`, which
+is rendered into `/config.json` when the container starts.
 
 ```sh
-yarn backend
-# or  for podman-compose
-# podman-compose -f dev-backend-docker-compose.yml up
+cp .env.deploy.example .env.deploy
+# edit .env.deploy
+docker compose up --build -d
 ```
 
-> [!NOTE]
-> To ensure your local development frontend functions properly, you’ll need to
-> add certificate exceptions in your browser for `https://localhost:3000`,
-> `https://matrix-rtc.m.localhost/livekit/jwt/healthz` and
-> `https://synapse.m.localhost/.well-known/matrix/client`. This can be either
-> done by adding the minimum localhost CA
-> ([./backend/dev_tls_local-ca.crt](./backend/dev_tls_local-ca.crt)) to your web
-> browsers trusted certificates or by simply copying and pasting each URL into
-> your browser’s address bar and follow the prompts to add the exception.
+The service is exposed on port `8082` by default.
 
 ### Playwright tests
 
-Our Playwright tests run automatically as part of our CI along with our other
-tests, on every pull request.
-
-You may need to follow instructions to set up your development environment for
-running Playwright by following
-<https://playwright.dev/docs/browsers#install-browsers> and
-<https://playwright.dev/docs/browsers#install-system-dependencies>.
-
-However the Playwright tests are run, an element-call instance must be running
-on https://localhost:3000 (this is configured in `playwright.config.ts`) - this
-is what will be tested.
-
-The local backend environment should be running for the test to work:
-`yarn backend`
-
-There are a few different ways to run the tests yourself. The simplest is to
-run:
+Playwright can still be run manually against a running app instance. The
+simplest command is:
 
 ```shell
 yarn run test:playwright

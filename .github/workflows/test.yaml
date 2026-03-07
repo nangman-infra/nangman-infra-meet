@@ -2,7 +2,7 @@ name: Test
 on:
   pull_request: {}
   push:
-    branches: [livekit, full-mesh]
+    branches: [main]
 jobs:
   vitest:
     name: Run unit tests
@@ -28,34 +28,3 @@ jobs:
         with:
           flags: unittests
           fail_ci_if_error: true
-  playwright:
-    name: Run end-to-end tests
-    timeout-minutes: 60
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
-      - name: Enable Corepack
-        run: corepack enable
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          cache: "yarn"
-          node-version-file: ".node-version"
-      - name: Install dependencies
-        run: yarn install --immutable
-      - name: Install Playwright Browsers
-        run: yarn playwright install --with-deps
-      - name: Run backend components
-        run: |
-          docker compose -f playwright-backend-docker-compose.yml -f playwright-backend-docker-compose.override.yml pull
-          docker compose -f playwright-backend-docker-compose.yml -f playwright-backend-docker-compose.override.yml up -d
-          docker ps
-      - name: Run Playwright tests
-        env:
-          USE_DOCKER: 1
-        run: yarn playwright test
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: ${{ !cancelled() }}
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 3

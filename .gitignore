@@ -9,12 +9,11 @@
 .env
 .env.*
 !.env.example
+!.env.deploy.example
 *.local
 *.bkp
 config.json
 public/config.json
-docker-compose.yml
-nginx.conf
 scripts/deploy-to-remote.sh
 
 # Build output
@@ -49,6 +48,7 @@ yarn-error.log
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/.playwright-cli/
 
 # Logs
 npm-debug.log*

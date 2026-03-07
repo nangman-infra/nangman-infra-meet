@@ -1,13 +1,30 @@
-FROM alpine AS builder
+FROM node:22-bookworm-slim AS builder
 
-COPY ./dist /dist
+WORKDIR /app
 
-# Compress assets to work with nginx-gzip-static-module
-WORKDIR /dist/assets
-RUN gzip -k ../index.html *.js *.map *.css *.wasm *-app-*.json 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-FROM nginxinc/nginx-unprivileged:alpine-slim
+RUN corepack enable
 
-COPY --from=builder ./dist /app
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn ./.yarn
 
-COPY config/nginx.conf /etc/nginx/conf.d/default.conf
+RUN yarn install --immutable
+
+COPY . .
+
+RUN yarn build
+
+FROM nginx:alpine AS runtime
+
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker/render-config.sh /docker-entrypoint.d/40-render-config.sh
+RUN chmod +x /docker-entrypoint.d/40-render-config.sh
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 --start-period=10s \
+  CMD wget -q -O /dev/null http://127.0.0.1/ || exit 1
