@@ -13,7 +13,6 @@ import {
 } from "vite";
 import svgrPlugin from "vite-plugin-svgr";
 import { createHtmlPlugin } from "vite-plugin-html";
-import { codecovVitePlugin } from "@codecov/vite-plugin";
 import { sentryVitePlugin } from "@sentry/vite-plugin";
 import react from "@vitejs/plugin-react";
 import { realpathSync } from "fs";
@@ -49,12 +48,6 @@ export default ({
           packageType: process.env.VITE_PACKAGE,
         },
       },
-    }),
-
-    codecovVitePlugin({
-      enableBundleAnalysis: process.env.CODECOV_TOKEN !== undefined,
-      bundleName: "element-call",
-      uploadToken: process.env.CODECOV_TOKEN,
     }),
   ];
 
