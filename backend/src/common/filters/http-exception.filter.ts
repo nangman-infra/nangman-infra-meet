@@ -9,6 +9,7 @@ import {
 } from "@nestjs/common";
 import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 import type { Request, Response } from "express";
+import { ApplicationError } from "../errors/application-error";
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -25,6 +26,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status =
       exception instanceof HttpException
         ? exception.getStatus()
+        : exception instanceof ApplicationError
+          ? exception.statusCode
         : HttpStatus.INTERNAL_SERVER_ERROR;
     const exceptionResponse =
       exception instanceof HttpException ? exception.getResponse() : null;

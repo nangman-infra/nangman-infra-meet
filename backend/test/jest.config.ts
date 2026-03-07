@@ -13,6 +13,7 @@ const config: Config = {
       },
     ],
   },
+  setupFiles: ["<rootDir>/test/setup-env.ts"],
   collectCoverageFrom: ["src/**/*.ts"],
   coverageDirectory: "./coverage",
 };

@@ -38,6 +38,7 @@ import { AnalyticsNotice } from "../analytics/AnalyticsNotice";
 import { E2eeType } from "../e2ee/e2eeType";
 import { useOptInAnalytics } from "../settings/settings";
 import { useUiUrlContext } from "../shared/application/readModels/UiUrlContext.ts";
+import { MeetingPlanner } from "./MeetingPlanner";
 
 interface Props {
   client: MatrixClient;
@@ -165,6 +166,7 @@ export const RegisteredView: FC<Props> = ({ client }) => {
               </FieldRow>
             )}
           </Form>
+          <MeetingPlanner client={client} />
           {recentRooms.length > 0 && (
             <CallList rooms={recentRooms} client={client} />
           )}

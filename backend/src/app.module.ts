@@ -9,6 +9,7 @@ import { createWinstonLoggerOptions } from "./common/logging/winston.config";
 import { appConfig } from "./config/app.config";
 import { ENV_VALIDATION_SCHEMA } from "./config/env.validation";
 import { HealthModule } from "./modules/health/health.module";
+import { MeetingsModule } from "./modules/meetings/meetings.module";
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { HealthModule } from "./modules/health/health.module";
         createWinstonLoggerOptions(config.logLevel, config.nodeEnv),
     }),
     HealthModule,
+    MeetingsModule,
   ],
   providers: [
     {
