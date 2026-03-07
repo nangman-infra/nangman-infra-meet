@@ -8,12 +8,13 @@
 # Local environment
 .env
 .env.*
-!.env.deploy.example
+!/frontend/.env.deploy.example
+!/backend/.env.example
 *.local
 *.bkp
 config.json
-public/config.json
-scripts/deploy-to-remote.sh
+frontend/public/config.json
+frontend/scripts/deploy-to-remote.sh
 
 # Build output
 node_modules
@@ -26,28 +27,31 @@ dist-ssr
 *.tsbuildinfo
 
 # Local backend state
-backend/synapse_tmp/*
-backend/synapse_tmp_othersite/*
+infra/synapse_tmp/*
+infra/synapse_tmp_othersite/*
 
 # Yarn
 yarn-error.log
 /.pnp.*
-/.yarn/*
-!/.yarn/patches
-!/.yarn/plugins
-!/.yarn/releases
-!/.yarn/sdks
-!/.yarn/versions
+/frontend/.yarn/*
+!/frontend/.yarn/patches
+!/frontend/.yarn/plugins
+!/frontend/.yarn/releases
+!/frontend/.yarn/sdks
+!/frontend/.yarn/versions
 /.links.yaml
 /.links.disabled.yaml
 /.links.temp-disabled.yaml
+/frontend/.links.yaml
+/frontend/.links.disabled.yaml
+/frontend/.links.temp-disabled.yaml
 
 # Playwright
-/test-results/
-/playwright-report/
-/blob-report/
-/playwright/.cache/
-/.playwright-cli/
+/frontend/test-results/
+/frontend/playwright-report/
+/frontend/blob-report/
+/frontend/playwright/.cache/
+/frontend/.playwright-cli/
 
 # Logs
 npm-debug.log*

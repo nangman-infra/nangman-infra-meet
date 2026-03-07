@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+.git
+.playwright-cli
+public/config.json
+.env.deploy
+.env.deploy.*
