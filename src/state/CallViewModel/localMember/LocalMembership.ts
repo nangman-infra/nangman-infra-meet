@@ -205,7 +205,7 @@ export const createLocalMembership$ = ({
         return connectionData.value.getConnectionForTransport(localTransport);
       }),
       tap((connection) => {
-        logger.info(
+        logger.debug(
           `Local connection updated: ${connection?.transport?.serviceUrl}`,
         );
       }),
@@ -312,7 +312,7 @@ export const createLocalMembership$ = ({
         !connectRequested ||
         state.matrix$.value.state !== MatrixState.Disconnected
       ) {
-        logger.info(
+        logger.debug(
           "Not yet connecting because: ",
           "transport === null:",
           transport === null,
@@ -324,7 +324,7 @@ export const createLocalMembership$ = ({
         return;
       }
       state.matrix$.next({ state: MatrixState.Connecting });
-      logger.info("Matrix State connecting");
+      logger.debug("Matrix State connecting");
 
       joinMatrixRTC(transport).catch((error) => {
         logger.error(error);
@@ -438,9 +438,22 @@ export const createLocalMembership$ = ({
 
       // Update our member event when our mute state changes.
       const intentScope = new ObservableScope();
-      intentScope.reconcile(muteStates.video.enabled$, async (videoEnabled) =>
-        matrixRTCSession.updateCallIntent(videoEnabled ? "video" : "audio"),
-      );
+      intentScope.reconcile(muteStates.video.enabled$, async (videoEnabled) => {
+        try {
+          await matrixRTCSession.updateCallIntent(
+            videoEnabled ? "video" : "audio",
+          );
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            error.message.includes("Not connected yet")
+          ) {
+            logger.debug("Skipping call intent update until session connects");
+            return;
+          }
+          logger.warn("Failed to update call intent", error);
+        }
+      });
 
       return async (): Promise<void> => {
         intentScope.end();

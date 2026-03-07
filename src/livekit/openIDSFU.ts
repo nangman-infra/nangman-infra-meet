@@ -48,14 +48,14 @@ export async function getSFUConfigWithOpenID(
   }
   logger.debug("Got openID token", openIdToken);
 
-  logger.info(`Trying to get JWT for focus ${serviceUrl}...`);
+  logger.debug(`Trying to get JWT for focus ${serviceUrl}...`);
   const sfuConfig = await getLiveKitJWT(
     client,
     serviceUrl,
     matrixRoomId,
     openIdToken,
   );
-  logger.info(`Got JWT from call's active focus URL.`);
+  logger.debug(`Got JWT from call's active focus URL.`);
 
   return sfuConfig;
 }

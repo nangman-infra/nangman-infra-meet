@@ -78,13 +78,6 @@ export const LobbyView: FC<Props> = ({
   onShareClick,
   waitingForInvite,
 }) => {
-  useEffect(() => {
-    logger.info("[Lifecycle] GroupCallView Component mounted");
-    return (): void => {
-      logger.info("[Lifecycle] GroupCallView Component unmounted");
-    };
-  }, []);
-
   const { t } = useTranslation();
   usePageTitle(matrixInfo.roomName);
 

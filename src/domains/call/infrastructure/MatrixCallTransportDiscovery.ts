@@ -70,7 +70,7 @@ export class MatrixCallTransportDiscovery
             serviceUrl: wellKnownTransport.livekit_service_url,
             roomAlias: livekitAlias,
           };
-          this.logger.info(
+          this.logger.debug(
             "Using LiveKit transport from .well-known: ",
             wellKnown,
           );
@@ -85,7 +85,7 @@ export class MatrixCallTransportDiscovery
         serviceUrl: urlFromConfig,
         roomAlias: livekitAlias,
       };
-      this.logger.info(
+      this.logger.debug(
         "Using LiveKit transport from config: ",
         configuredFallback,
       );

@@ -173,6 +173,7 @@ export function useAudioContext<S extends string>(
     if (
       audioContext &&
       "setSinkId" in audioContext &&
+      audioOutputId !== undefined &&
       !controlledAudioDevices
     ) {
       // https://developer.mozilla.org/en-US/docs/Web/API/AudioContext/setSinkId

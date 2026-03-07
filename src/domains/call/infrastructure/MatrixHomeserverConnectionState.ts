@@ -134,7 +134,7 @@ export function createMatrixHomeserverConnected$(
   );
 
   homeserverConnected$.pipe(scope.bind()).subscribe((connected) => {
-    logger.info(`Homeserver connected update: ${connected}`);
+    logger.debug(`Homeserver connected update: ${connected}`);
   });
 
   return homeserverConnected$;

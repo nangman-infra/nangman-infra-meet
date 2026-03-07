@@ -139,13 +139,6 @@ export const GroupCallView: FC<Props> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    logger.info("[Lifecycle] GroupCallView Component mounted");
-    return (): void => {
-      logger.info("[Lifecycle] GroupCallView Component unmounted");
-    };
-  }, []);
-
   // This CSS is the only way we could find to not make element call scroll for
   // viewport sizes smaller than 122px width. (It is actually this exact number: 122px
   // tested on different devices...)
