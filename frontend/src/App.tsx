@@ -25,6 +25,7 @@ import { TooltipProvider } from "@vector-im/compound-web";
 import { logger } from "matrix-js-sdk/lib/logger";
 
 import { HomePage } from "./home/HomePage";
+import { MeetingSchedulePage } from "./home/MeetingSchedulePage";
 import { LoginPage } from "./auth/LoginPage";
 import { RoomPage } from "./room/RoomPage";
 import { ClientProvider } from "./ClientContext";
@@ -95,6 +96,10 @@ export const App: FC<Props> = ({ vm }) => {
           >
             <Routes>
               <SentryRoute path="/" element={<HomePage />} />
+              <SentryRoute
+                path="/meetings/new"
+                element={<MeetingSchedulePage />}
+              />
               <SentryRoute path="/login" element={<LoginPage />} />
               <SentryRoute
                 path="/register"

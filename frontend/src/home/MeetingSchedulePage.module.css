@@ -1,0 +1,71 @@
+.shell {
+  width: min(980px, calc(100% - 48px));
+  margin: 0 auto;
+  display: grid;
+  gap: 24px;
+}
+
+.backRow {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.pageCard {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 28px;
+  padding: 32px;
+  border-radius: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(25, 212, 186, 0.12), transparent 32%),
+    linear-gradient(180deg, rgba(5, 12, 24, 0.88), rgba(4, 10, 20, 0.72));
+  box-shadow:
+    0 24px 80px rgba(2, 8, 23, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(18px);
+}
+
+.pageCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 24%);
+}
+
+.pageIntro {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 12px;
+}
+
+.eyebrow {
+  color: rgba(214, 252, 245, 0.78);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  max-width: 16ch;
+  line-height: 1.02;
+}
+
+.description {
+  max-width: 56rem;
+  color: var(--cpd-color-text-secondary);
+}
+
+@media (max-width: 720px) {
+  .shell {
+    width: calc(100% - 32px);
+    gap: 20px;
+  }
+
+  .pageCard {
+    padding: 24px;
+    border-radius: 24px;
+  }
+}

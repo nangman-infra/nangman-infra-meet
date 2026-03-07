@@ -3,7 +3,9 @@
     "user_menu": "User menu"
   },
   "action": {
+    "cancel": "Cancel",
     "close": "Close",
+    "copied": "Copied",
     "copy_link": "Copy link",
     "edit": "Edit",
     "go": "Go",
@@ -136,6 +138,15 @@
   "hangup_button_label": "End call",
   "header_label": "Element Call Home",
   "header_participants_label": "Participants",
+  "home_dashboard": {
+    "description": "Instant calls should feel like a launcher. Planned meetings should feel like a workspace with timing, status, and clear next actions.",
+    "eyebrow": "Calls and meetings",
+    "instant_call_description": "Create a secure room and jump in immediately. This area keeps the one-step action isolated from the meeting-planning flow.",
+    "instant_call_eyebrow": "Instant call",
+    "recent_rooms_description": "Jump back into rooms you recently used without creating another space.",
+    "recent_rooms_title": "Recent rooms",
+    "title": "Start a call fast, then manage what is next in a separate flow."
+  },
   "invite_modal": {
     "link_copied_toast": "Link copied to clipboard",
     "title": "Invite to this call"
@@ -160,6 +171,59 @@
   "login_auth_links_prompt": "Not registered yet?",
   "login_subheading": "To continue to Element",
   "login_title": "Login",
+  "meeting_planner": {
+    "date_label": "Date",
+    "description": "Schedule in a dedicated flow, then return here to start, join, or copy links without mixing that work into the fast-start action.",
+    "description_label": "Description",
+    "description_placeholder": "Agenda or context",
+    "empty_description": "Use the schedule flow to add a meeting, then it will appear here with the correct next action.",
+    "empty_title": "No upcoming meetings yet",
+    "errors": {
+      "clipboard_unavailable": "Clipboard is not available in this browser.",
+      "copy_failed": "Failed to copy meeting link.",
+      "future_start_required": "Choose a future date and time for a scheduled meeting.",
+      "joinable_room_failed": "Failed to create a joinable room for the meeting.",
+      "load_failed": "Failed to load meetings.",
+      "start_required": "Choose both a date and a time before scheduling the meeting.",
+      "schedule_failed": "Failed to schedule meeting.",
+      "start_failed": "Failed to start meeting.",
+      "title_required": "Enter a title before scheduling the meeting."
+    },
+    "eyebrow": "Planned meetings",
+    "join": "Join meeting",
+    "live_count": "{{count}} live now",
+    "live_hint": "Live meetings should be joinable immediately.",
+    "loading": "Loading meetings...",
+    "modal_description": "Date and time are split intentionally so the browser picker stays predictable instead of hiding time selection behind a single unstable field.",
+    "modal_eyebrow": "Schedule flow",
+    "modal_heading": "Add the meeting details first, then return to the meetings list.",
+    "modal_title": "Schedule a meeting",
+    "no_start_time": "No start time",
+    "open_schedule_flow": "Open schedule flow",
+    "schedule": "Schedule meeting",
+    "scheduled_hint": "Scheduled meetings stay inactive until you launch them.",
+    "scheduling": "Scheduling...",
+    "start": "Start meeting",
+    "status": {
+      "draft": "Draft",
+      "ended": "Ended",
+      "live": "Live",
+      "scheduled": "Scheduled"
+    },
+    "time_label": "Time",
+    "title": "Upcoming meetings live here, not inside the instant call launcher.",
+    "title_label": "Meeting title",
+    "title_placeholder": "Weekly infra sync",
+    "today_time": "Today · {{time}}",
+    "tomorrow_time": "Tomorrow · {{time}}",
+    "upcoming_count": "{{count}} upcoming"
+  },
+  "meeting_scheduler": {
+    "back_to_home": "Back to home",
+    "description": "Set the meeting title and start time in a dedicated planning flow, then return to the meetings workspace to launch or share it when needed.",
+    "eyebrow": "Schedule flow",
+    "title": "Plan the meeting first, then return to the upcoming meetings workspace."
+  },
   "microphone_off": "Microphone off",
   "microphone_on": "Microphone on",
   "mute_microphone_button_label": "Mute microphone",

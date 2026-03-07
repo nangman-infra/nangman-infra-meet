@@ -19,15 +19,23 @@ interface FormProps {
   ref?: Ref<HTMLFormElement>;
   className: string;
   onSubmit: FormEventHandler<HTMLFormElement>;
+  noValidate?: boolean;
   children: ReactNode[];
 }
 
-export const Form: FC<FormProps> = ({ ref, children, className, onSubmit }) => {
+export const Form: FC<FormProps> = ({
+  ref,
+  children,
+  className,
+  onSubmit,
+  noValidate,
+}) => {
   return (
     <form
       onSubmit={onSubmit}
       className={classNames(styles.form, className)}
       ref={ref}
+      noValidate={noValidate}
     >
       {children}
     </form>

@@ -128,48 +128,86 @@ export const RegisteredView: FC<Props> = ({ client }) => {
           </Header>
         )}
         <main className={commonStyles.main}>
-          <HeaderLogo className={commonStyles.logo} />
-          <Heading size="lg" weight="semibold">
-            {t("start_new_call")}
-          </Heading>
-          <Form className={styles.form} onSubmit={onSubmit}>
-            <FieldRow className={styles.fieldRow}>
-              <InputField
-                id="callName"
-                name="callName"
-                label={t("call_name")}
-                placeholder={t("call_name")}
-                type="text"
-                required
-                autoComplete="off"
-                data-testid="home_callName"
-              />
+          <div className={styles.shell}>
+            <HeaderLogo className={styles.mobileLogo} />
 
-              <Button
-                type="submit"
-                size="lg"
-                className={styles.button}
-                disabled={loading}
-                data-testid="home_go"
-              >
-                {loading ? t("common.loading") : t("action.go")}
-              </Button>
-            </FieldRow>
-            {optInAnalytics === null && (
-              <Text size="sm" className={styles.notice}>
-                <AnalyticsNotice />
+            <section className={styles.pageIntro}>
+              <Text size="sm" className={styles.eyebrow}>
+                {t("home_dashboard.eyebrow")}
               </Text>
+              <Heading size="xl" weight="semibold" className={styles.pageTitle}>
+                {t("home_dashboard.title")}
+              </Heading>
+              <Text size="lg" className={styles.pageDescription}>
+                {t("home_dashboard.description")}
+              </Text>
+            </section>
+
+            <section className={styles.instantCard}>
+              <div className={styles.cardHeader}>
+                <Text size="sm" className={styles.cardEyebrow}>
+                  {t("home_dashboard.instant_call_eyebrow")}
+                </Text>
+                <Heading size="xl" weight="semibold">
+                  {t("start_new_call")}
+                </Heading>
+                <Text size="sm" className={styles.cardDescription}>
+                  {t("home_dashboard.instant_call_description")}
+                </Text>
+              </div>
+              <Form className={styles.form} onSubmit={onSubmit}>
+                <FieldRow className={styles.inlineRow}>
+                  <InputField
+                    id="callName"
+                    name="callName"
+                    label={t("call_name")}
+                    placeholder={t("call_name")}
+                    type="text"
+                    required
+                    autoComplete="off"
+                    data-testid="home_callName"
+                  />
+
+                  <Button
+                    type="submit"
+                    size="lg"
+                    kind="primary"
+                    className={styles.button}
+                    disabled={loading}
+                    data-testid="home_go"
+                  >
+                    {loading ? t("common.loading") : t("action.go")}
+                  </Button>
+                </FieldRow>
+                {optInAnalytics === null && (
+                  <Text size="sm" className={styles.notice}>
+                    <AnalyticsNotice />
+                  </Text>
+                )}
+                {error && (
+                  <FieldRow className={styles.fieldRow}>
+                    <ErrorMessage error={error} />
+                  </FieldRow>
+                )}
+              </Form>
+            </section>
+
+            <MeetingPlanner />
+
+            {recentRooms.length > 0 && (
+              <section className={styles.recentSection}>
+                <div className={styles.recentSectionHeader}>
+                  <Heading size="md" weight="semibold">
+                    {t("home_dashboard.recent_rooms_title")}
+                  </Heading>
+                  <Text size="sm" className={styles.cardDescription}>
+                    {t("home_dashboard.recent_rooms_description")}
+                  </Text>
+                </div>
+                <CallList rooms={recentRooms} client={client} />
+              </section>
             )}
-            {error && (
-              <FieldRow className={styles.fieldRow}>
-                <ErrorMessage error={error} />
-              </FieldRow>
-            )}
-          </Form>
-          <MeetingPlanner client={client} />
-          {recentRooms.length > 0 && (
-            <CallList rooms={recentRooms} client={client} />
-          )}
+          </div>
         </main>
       </div>
       <JoinExistingCallModal

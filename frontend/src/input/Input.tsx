@@ -75,7 +75,8 @@ interface InputFieldProps {
   defaultValue?: string;
   placeholder?: string;
   defaultChecked?: boolean;
-  min?: number;
+  min?: number | string;
+  step?: number | string;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
 }
 
@@ -91,6 +92,7 @@ export const InputField: FC<InputFieldProps> = ({
   description,
   disabled,
   min,
+  step,
   ...rest
 }) => {
   const descriptionId = useId();
@@ -126,6 +128,7 @@ export const InputField: FC<InputFieldProps> = ({
           disabled={disabled}
           aria-describedby={descriptionId}
           min={min}
+          step={step}
           {...rest}
         />
       )}

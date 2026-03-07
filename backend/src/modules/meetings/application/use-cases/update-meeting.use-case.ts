@@ -6,6 +6,7 @@ import {
 import { MeetingPrimitives } from "../../domain/meeting.entity";
 import { MeetingNotFoundError } from "../errors/meeting-not-found.error";
 import { UpdateMeetingDto } from "../../presentation/http/dto/update-meeting.dto";
+import { assertValidScheduledMeetingStart } from "../validation/assert-valid-scheduled-meeting-start";
 
 @Injectable()
 export class UpdateMeetingUseCase {
@@ -18,10 +19,20 @@ export class UpdateMeetingUseCase {
     meetingId: string,
     dto: UpdateMeetingDto,
   ): Promise<MeetingPrimitives> {
+    const now = new Date();
     const meeting = await this.repository.findById(meetingId);
     if (!meeting) {
       throw new MeetingNotFoundError(meetingId);
     }
+
+    const startsAt =
+      dto.startsAt === undefined
+        ? undefined
+        : dto.startsAt
+          ? new Date(dto.startsAt)
+          : null;
+
+    assertValidScheduledMeetingStart(startsAt, now);
 
     meeting.update(
       {
@@ -30,14 +41,9 @@ export class UpdateMeetingUseCase {
           dto.description === undefined ? undefined : (dto.description ?? null),
         accessPolicy: dto.accessPolicy,
         allowJoinBeforeHost: dto.allowJoinBeforeHost,
-        startsAt:
-          dto.startsAt === undefined
-            ? undefined
-            : dto.startsAt
-              ? new Date(dto.startsAt)
-              : null,
+        startsAt,
       },
-      new Date(),
+      now,
     );
 
     await this.repository.save(meeting);

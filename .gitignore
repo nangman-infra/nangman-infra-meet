@@ -51,6 +51,7 @@ yarn-error.log
 /frontend/playwright-report/
 /frontend/blob-report/
 /frontend/playwright/.cache/
+/.playwright-cli/
 /frontend/.playwright-cli/
 
 # Logs

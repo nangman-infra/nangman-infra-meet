@@ -1,0 +1,24 @@
+.form {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.scheduleRow {
+  align-items: end;
+}
+
+.scheduleRow > * {
+  flex: 1 1 0;
+}
+
+.actions {
+  margin-top: 8px;
+}
+
+@media (max-width: 720px) {
+  .scheduleRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

@@ -18,6 +18,81 @@ import react from "@vitejs/plugin-react";
 import { realpathSync } from "fs";
 import * as fs from "node:fs";
 
+const CHUNK_SIZE_WARNING_LIMIT_KB = 800;
+
+const MANUAL_CHUNK_GROUPS: Record<string, string[]> = {
+  "matrix-sdk": ["matrix-js-sdk"],
+  "matrix-support": ["matrix-events-sdk", "matrix-widget-api"],
+  observability: [
+    "@sentry",
+    "@sentry-internal",
+    "@opentelemetry",
+  ],
+  ui: [
+    "@vector-im/compound-web",
+    "@vector-im/compound-design-tokens",
+    "@radix-ui",
+    "vaul",
+    "react-remove-scroll",
+  ],
+  state: ["rxjs", "lodash-es"],
+  livekit: [
+    "livekit-client",
+    "@livekit/components-core",
+    "@livekit/components-react",
+  ],
+  vision: [
+    "@livekit/track-processors",
+    "@mediapipe/tasks-vision",
+  ],
+  react: [
+    "react",
+    "react-dom",
+    "react-i18next",
+    "react-router-dom",
+    "scheduler",
+  ],
+  intl: [
+    "@formatjs",
+    "i18next",
+  ],
+  utilities: [
+    "qrcode",
+    "pako",
+    "uuid",
+    "sdp-transform",
+    "loglevel",
+    "p-retry",
+    "@react-spring/web",
+    "@use-gesture/react",
+    "@use-gesture/core",
+  ],
+};
+
+const resolveManualChunk = (id: string): string | undefined => {
+  if (!id.includes("node_modules")) {
+    return undefined;
+  }
+
+  for (const [chunkName, packages] of Object.entries(MANUAL_CHUNK_GROUPS)) {
+    if (
+      packages.some(
+        (packageName) =>
+          id.includes(`/node_modules/${packageName}/`) ||
+          id.includes(`\\node_modules\\${packageName}\\`),
+      )
+    ) {
+      return chunkName;
+    }
+  }
+
+  if (id.includes("/node_modules/")) {
+    return "vendor";
+  }
+
+  return undefined;
+};
+
 // https://vitejs.dev/config/
 // Modified type helper from defineConfig to allow for packageType (see defineConfig from vite)
 export default ({
@@ -104,6 +179,7 @@ export default ({
       format: "es",
     },
     build: {
+      chunkSizeWarningLimit: CHUNK_SIZE_WARNING_LIMIT_KB,
       minify: mode === "production" ? true : false,
       sourcemap: true,
       rollupOptions: {
@@ -123,9 +199,15 @@ export default ({
             // Default naming fallback
             return "assets/[name]-[hash][extname]";
           },
-          manualChunks: {
-            // we should be able to remove this one https://github.com/matrix-org/matrix-rust-sdk-crypto-wasm/pull/167 lands
-            "matrix-sdk-crypto-wasm": ["@matrix-org/matrix-sdk-crypto-wasm"],
+          manualChunks: (id) => {
+            // The crypto WASM package is still imported dynamically and needs a
+            // stable chunk name, while the remaining heavyweight vendors are
+            // split to keep the main application chunk from ballooning.
+            if (id.includes("/node_modules/@matrix-org/matrix-sdk-crypto-wasm/")) {
+              return "matrix-sdk-crypto-wasm";
+            }
+
+            return resolveManualChunk(id);
           },
         },
       },

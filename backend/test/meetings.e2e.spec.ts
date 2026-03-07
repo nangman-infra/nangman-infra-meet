@@ -81,4 +81,56 @@ describe("MeetingsController", () => {
     expect(getResponse.status).toBe(200);
     expect(getResponse.body.data.status).toBe("ended");
   });
+
+  it("rejects scheduled meetings that start in the past", async () => {
+    const createResponse = await request(app.getHttpServer())
+      .post("/api/v1/meetings")
+      .send({
+        title: "Past meeting",
+        hostUserId: "@alice:matrix.nangman.cloud",
+        roomId: "!past:matrix.nangman.cloud",
+        joinUrl: "/room/past",
+        startsAt: "2025-01-01T00:00:00.000Z",
+      });
+
+    expect(createResponse.status).toBe(400);
+    expect(createResponse.body).toEqual(
+      expect.objectContaining({
+        success: false,
+        error: expect.objectContaining({
+          message: "Scheduled meetings must start in the future.",
+        }),
+      }),
+    );
+  });
+
+  it("rejects moving an existing meeting into the past", async () => {
+    const createResponse = await request(app.getHttpServer())
+      .post("/api/v1/meetings")
+      .send({
+        title: "Future meeting",
+        hostUserId: "@alice:matrix.nangman.cloud",
+        roomId: "!future:matrix.nangman.cloud",
+        joinUrl: "/room/future",
+        startsAt: "2027-03-08T12:00:00.000Z",
+      });
+
+    const meetingId = createResponse.body.data.id as string;
+
+    const updateResponse = await request(app.getHttpServer())
+      .patch(`/api/v1/meetings/${meetingId}`)
+      .send({
+        startsAt: "2025-01-01T00:00:00.000Z",
+      });
+
+    expect(updateResponse.status).toBe(400);
+    expect(updateResponse.body).toEqual(
+      expect.objectContaining({
+        success: false,
+        error: expect.objectContaining({
+          message: "Scheduled meetings must start in the future.",
+        }),
+      }),
+    );
+  });
 });

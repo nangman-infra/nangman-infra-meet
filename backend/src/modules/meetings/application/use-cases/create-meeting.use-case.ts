@@ -6,6 +6,7 @@ import {
 } from "../ports/meeting-repository.port";
 import { MeetingPrimitives, Meeting } from "../../domain/meeting.entity";
 import { CreateMeetingDto } from "../../presentation/http/dto/create-meeting.dto";
+import { assertValidScheduledMeetingStart } from "../validation/assert-valid-scheduled-meeting-start";
 
 @Injectable()
 export class CreateMeetingUseCase {
@@ -16,6 +17,9 @@ export class CreateMeetingUseCase {
 
   async execute(dto: CreateMeetingDto): Promise<MeetingPrimitives> {
     const now = new Date();
+    const startsAt = dto.startsAt ? new Date(dto.startsAt) : null;
+    assertValidScheduledMeetingStart(startsAt, now);
+
     const meeting = Meeting.create({
       id: randomUUID(),
       title: dto.title,
@@ -26,7 +30,7 @@ export class CreateMeetingUseCase {
       joinUrl: dto.joinUrl,
       accessPolicy: dto.accessPolicy ?? "open",
       allowJoinBeforeHost: dto.allowJoinBeforeHost ?? false,
-      startsAt: dto.startsAt ? new Date(dto.startsAt) : null,
+      startsAt,
       now,
     });
 
