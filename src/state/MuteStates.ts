@@ -5,14 +5,11 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE in the repository root for full details.
 */
 
-import { type IWidgetApiRequest } from "matrix-widget-api";
 import { logger } from "matrix-js-sdk/lib/logger";
 import {
   BehaviorSubject,
-  combineLatest,
   distinctUntilChanged,
   firstValueFrom,
-  fromEvent,
   map,
   merge,
   Observable,
@@ -23,9 +20,9 @@ import {
 } from "rxjs";
 
 import { type MediaDevices, type MediaDevice } from "../state/MediaDevices";
-import { ElementWidgetActions, widget } from "../widget";
+import { bindWidgetMuteState } from "../domains/widget/application/services/bindWidgetMuteState.ts";
+import { getMediaUrlContext } from "../domains/media/application/readModels/MediaUrlContext.ts";
 import { Config } from "../config/Config";
-import { getUrlParams } from "../UrlParams";
 import { type ObservableScope } from "./ObservableScope";
 import { type Behavior } from "./Behavior";
 
@@ -40,7 +37,7 @@ const defaultHandler: Handler = async (desired) => Promise.resolve(desired);
 
 class MuteState<Label, Selected> {
   private readonly enabledByDefault$ =
-    this.enabledByConfig && !getUrlParams().skipLobby
+    this.enabledByConfig && !getMediaUrlContext().skipLobby
       ? this.joined$.pipe(map((isJoined) => !isJoined))
       : of(false);
 
@@ -157,57 +154,11 @@ export class MuteStates {
     private readonly mediaDevices: MediaDevices,
     private readonly joined$: Observable<boolean>,
   ) {
-    if (widget !== null) {
-      // Sync our mute states with the hosting client
-      const widgetApiState$ = combineLatest(
-        [this.audio.enabled$, this.video.enabled$],
-        (audio, video) => ({ audio_enabled: audio, video_enabled: video }),
-      );
-      widgetApiState$.pipe(this.scope.bind()).subscribe((state) => {
-        widget!.api.transport
-          .send(ElementWidgetActions.DeviceMute, state)
-          .catch((e) =>
-            logger.warn("Could not send DeviceMute action to widget", e),
-          );
-      });
-
-      // Also sync the hosting client's mute states back with ours
-      const muteActions$ = fromEvent(
-        widget.lazyActions,
-        ElementWidgetActions.DeviceMute,
-      ) as Observable<CustomEvent<IWidgetApiRequest>>;
-      muteActions$
-        .pipe(
-          withLatestFrom(
-            widgetApiState$,
-            this.audio.setEnabled$,
-            this.video.setEnabled$,
-          ),
-          this.scope.bind(),
-        )
-        .subscribe(([ev, state, setAudioEnabled, setVideoEnabled]) => {
-          // First copy the current state into our new state
-          const newState = { ...state };
-          // Update new state if there are any requested changes from the widget
-          // action in `ev.detail.data`.
-          if (
-            ev.detail.data.audio_enabled != null &&
-            typeof ev.detail.data.audio_enabled === "boolean" &&
-            setAudioEnabled !== null
-          ) {
-            newState.audio_enabled = ev.detail.data.audio_enabled;
-            setAudioEnabled(newState.audio_enabled);
-          }
-          if (
-            ev.detail.data.video_enabled != null &&
-            typeof ev.detail.data.video_enabled === "boolean" &&
-            setVideoEnabled !== null
-          ) {
-            newState.video_enabled = ev.detail.data.video_enabled;
-            setVideoEnabled(newState.video_enabled);
-          }
-          widget!.api.transport.reply(ev.detail, newState);
-        });
-    }
+    bindWidgetMuteState(this.scope, {
+      audioEnabled$: this.audio.enabled$,
+      videoEnabled$: this.video.enabled$,
+      audioSetEnabled$: this.audio.setEnabled$,
+      videoSetEnabled$: this.video.setEnabled$,
+    });
   }
 }

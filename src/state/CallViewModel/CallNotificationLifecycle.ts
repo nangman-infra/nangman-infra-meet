@@ -6,17 +6,10 @@ Please see LICENSE in the repository root for full details.
 */
 
 import {
-  type CallMembership,
-  type MatrixRTCSession,
-  MatrixRTCSessionEvent,
-  type MatrixRTCSessionEventHandlerMap,
-} from "matrix-js-sdk/lib/matrixrtc";
-import {
   combineLatest,
   concat,
   endWith,
   filter,
-  fromEvent,
   ignoreElements,
   map,
   merge,
@@ -29,15 +22,14 @@ import {
   takeUntil,
   timer,
 } from "rxjs";
-import {
-  type EventTimelineSetHandlerMap,
-  EventType,
-  type Room as MatrixRoom,
-  RoomEvent,
-} from "matrix-js-sdk";
 
 import { type Behavior } from "../Behavior";
 import { type Epoch, mapEpoch, type ObservableScope } from "../ObservableScope";
+import { type CallMember } from "../../domains/call/domain/CallMember.ts";
+import {
+  type ReceivedCallDecline,
+  type SentCallNotification,
+} from "../../domains/call/domain/CallNotification.ts";
 export type AutoLeaveReason = "allOthersLeft" | "timeout" | "decline";
 export type CallPickupState =
   | "unknown"
@@ -46,39 +38,14 @@ export type CallPickupState =
   | "decline"
   | "success"
   | null;
-export type CallNotificationWrapper = Parameters<
-  MatrixRTCSessionEventHandlerMap[MatrixRTCSessionEvent.DidSendCallNotification]
->;
-export function createSentCallNotification$(
-  scope: ObservableScope,
-  matrixRTCSession: MatrixRTCSession,
-): Behavior<CallNotificationWrapper | null> {
-  const sentCallNotification$ = scope.behavior(
-    fromEvent(matrixRTCSession, MatrixRTCSessionEvent.DidSendCallNotification),
-    null,
-  ) as Behavior<CallNotificationWrapper | null>;
-  return sentCallNotification$;
-}
-
-export function createReceivedDecline$(
-  matrixRoom: MatrixRoom,
-): Observable<Parameters<EventTimelineSetHandlerMap[RoomEvent.Timeline]>> {
-  return (
-    fromEvent(matrixRoom, RoomEvent.Timeline) as Observable<
-      Parameters<EventTimelineSetHandlerMap[RoomEvent.Timeline]>
-    >
-  ).pipe(filter(([event]) => event.getType() === EventType.RTCDecline));
-}
 
 export interface Props {
   scope: ObservableScope;
-  memberships$: Behavior<Epoch<CallMembership[]>>;
-  sentCallNotification$: Observable<CallNotificationWrapper | null>;
-  receivedDecline$: Observable<
-    Parameters<EventTimelineSetHandlerMap[RoomEvent.Timeline]>
-  >;
+  memberships$: Behavior<Epoch<CallMember[]>>;
+  sentCallNotification$: Observable<SentCallNotification | null>;
+  receivedDecline$: Observable<ReceivedCallDecline>;
   options: { waitForCallPickup?: boolean; autoLeaveWhenOthersLeft?: boolean };
-  localUser: { deviceId: string; userId: string };
+  localUser: CallMember;
 }
 /**
  * @returns {callPickupState$, autoLeave$}
@@ -140,13 +107,16 @@ export function createCallNotificationLifecycle$({
     scope.behavior(
       sentCallNotification$.pipe(
         filter(
-          (newAndLegacyEvents) =>
+          (
+            notificationEvent,
+          ): notificationEvent is SentCallNotification & {
+            notificationType: "ring";
+          } =>
             // only care about new events (legacy do not have decline pattern)
-            newAndLegacyEvents?.[0].notification_type === "ring",
+            notificationEvent?.notificationType === "ring",
         ),
-        map((e) => e as CallNotificationWrapper),
-        switchMap(([notificationEvent]) => {
-          const lifetimeMs = notificationEvent?.lifetime ?? 0;
+        switchMap((notificationEvent) => {
+          const lifetimeMs = notificationEvent.lifetimeMs ?? 0;
           return concat(
             lifetimeMs === 0
               ? // If no lifetime, skip the ring state
@@ -165,11 +135,9 @@ export function createCallNotificationLifecycle$({
             takeUntil(
               receivedDecline$.pipe(
                 filter(
-                  ([event]) =>
-                    event.getRelation()?.rel_type === "m.reference" &&
-                    event.getRelation()?.event_id ===
-                      notificationEvent.event_id &&
-                    event.getSender() !== localUser.userId &&
+                  (declineEvent) =>
+                    declineEvent.relatedEventId === notificationEvent.eventId &&
+                    declineEvent.sender !== localUser.userId &&
                     callPickupState$.value !== "timeout",
                 ),
               ),

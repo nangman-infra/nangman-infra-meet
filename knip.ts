@@ -11,7 +11,7 @@ export default {
   vite: {
     config: ["vite.config.ts", "vite-embedded.config.ts"],
   },
-  entry: ["src/main.tsx", "i18next-parser.config.ts"],
+  entry: ["src/main.tsx"],
   ignoreBinaries: [
     // This is deprecated, so Knip doesn't actually recognize it as a globally
     // installed binary. TODO We should switch to Compose v2:
@@ -30,15 +30,6 @@ export default {
     "@types/content-type",
     "@types/sdp-transform",
     "@types/uuid",
-    // We obviously use this, but if the package has been linked with yarn link,
-    // then Knip will flag it as a false positive
-    // https://github.com/webpro-nl/knip/issues/766
-    "@vector-im/compound-web",
-    // We need this so that TypeScript is happy with @livekit/track-processors.
-    // This might be a bug in the LiveKit repo but for now we fix it on the
-    // Element Call side.
-    "@types/dom-mediacapture-transform",
-    "matrix-widget-api",
   ],
   ignoreExportsUsedInFile: true,
 } satisfies KnipConfig;

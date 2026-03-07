@@ -10,6 +10,7 @@ import {
   describe,
   expect,
   it,
+  onTestFinished,
   type MockedFunction,
   vi,
 } from "vitest";
@@ -38,6 +39,7 @@ import { E2eeType } from "../e2ee/e2eeType";
 import { getBasicCallViewModelEnvironment } from "../utils/test-viewmodel";
 import { alice, local } from "../utils/test-fixtures";
 import { ReactionsSenderProvider } from "../reactions/useReactionsSender";
+import { createMatrixCallSessionViewPort } from "../domains/call/infrastructure/MatrixCallSessionViewPort.ts";
 import { useRoomEncryptionSystem } from "../e2ee/sharedKeyManagement";
 import { LivekitRoomAudioRenderer } from "../livekit/MatrixAudioRenderer";
 import { MediaDevicesContext } from "../MediaDevicesContext";
@@ -59,7 +61,10 @@ vi.mock("livekit-client/e2ee-worker?worker");
 vi.mock("../e2ee/sharedKeyManagement");
 vi.mock("../livekit/MatrixAudioRenderer");
 vi.mock("react-use-measure", () => ({
-  default: (): [() => void, object] => [(): void => {}, {}],
+  default: (): [() => void, { width: number; height: number }] => [
+    (): void => {},
+    { width: 0, height: 0 },
+  ],
 }));
 
 const localRtcMember = mockRtcMembership("@carol:example.org", "CCCC");
@@ -77,6 +82,12 @@ let useRoomEncryptionSystemMock: MockedFunction<typeof useRoomEncryptionSystem>;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  const consoleErrorSpy = vi
+    .spyOn(console, "error")
+    .mockImplementation(() => {});
+  onTestFinished(() => {
+    consoleErrorSpy.mockRestore();
+  });
 
   // MatrixAudioRenderer is tested separately.
   (
@@ -144,14 +155,14 @@ function createInCallView(): RenderResult & {
       <MediaDevicesContext value={mockMediaDevices({})}>
         <ReactionsSenderProvider
           vm={vm}
-          rtcSession={rtcSession.asMockedSession()}
+          callSession={createMatrixCallSessionViewPort(rtcSession.asMockedSession())}
+          matrixRoom={room}
         >
           <TooltipProvider>
             <RoomContext value={livekitRoom}>
               <InCallView
                 client={client}
                 header={HeaderStyle.Standard}
-                rtcSession={rtcSession.asMockedSession()}
                 muteStates={muteState}
                 vm={vm}
                 matrixInfo={{

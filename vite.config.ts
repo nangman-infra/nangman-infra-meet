@@ -86,8 +86,6 @@ export default ({
       allow.push(realpathSync(path));
     } catch {}
   }
-  console.log("Allowed vite paths:", allow);
-
   return {
     server: {
       port: 3000,

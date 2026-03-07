@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE in the repository root for full details.
 */
 
-import { describe, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import {
   type FC,
@@ -30,7 +30,25 @@ import {
   UnknownCallError,
 } from "../utils/errors.ts";
 import { mockConfig } from "../utils/test.ts";
-import { ElementWidgetActions, type WidgetHelpers } from "../widget.ts";
+import {
+  closeWidget,
+  hasWidgetHost,
+} from "../domains/widget/application/services/WidgetHostService.ts";
+
+vi.mock("../domains/widget/application/services/WidgetHostService.ts", () => ({
+  closeWidget: vi.fn().mockResolvedValue(undefined),
+  hasWidgetHost: vi.fn(() => false),
+}));
+
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
+beforeEach(() => {
+  consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  consoleErrorSpy.mockRestore();
+});
 
 test.each([
   {
@@ -67,7 +85,6 @@ test.each([
         <GroupCallErrorBoundary
           onError={onErrorMock}
           recoveryActionHandler={vi.fn()}
-          widget={null}
         >
           <TestComponent />
         </GroupCallErrorBoundary>
@@ -96,7 +113,6 @@ test("should render the error page with link back to home", async () => {
       <GroupCallErrorBoundary
         onError={onErrorMock}
         recoveryActionHandler={vi.fn()}
-        widget={null}
       >
         <TestComponent />
       </GroupCallErrorBoundary>
@@ -142,10 +158,7 @@ test("ConnectionLostError: Action handling should reset error state", async () =
 
     return (
       <BrowserRouter>
-        <GroupCallErrorBoundary
-          recoveryActionHandler={reconnectCallback}
-          widget={null}
-        >
+        <GroupCallErrorBoundary recoveryActionHandler={reconnectCallback}>
           <TestComponent fail={failState} />
         </GroupCallErrorBoundary>
       </BrowserRouter>
@@ -187,7 +200,6 @@ describe("Rageshake button", () => {
         <GroupCallErrorBoundary
           onError={vi.fn()}
           recoveryActionHandler={vi.fn()}
-          widget={null}
         >
           <TestComponent />
         </GroupCallErrorBoundary>
@@ -217,19 +229,13 @@ test("should have a close button in widget mode", async () => {
   const TestComponent = (): ReactNode => {
     throw error;
   };
-
-  const mockWidget = {
-    api: {
-      transport: { send: vi.fn().mockResolvedValue(undefined), stop: vi.fn() },
-    },
-  } as unknown as WidgetHelpers;
+  vi.mocked(hasWidgetHost).mockReturnValue(true);
 
   const user = userEvent.setup();
   const onErrorMock = vi.fn();
   const { asFragment } = render(
     <BrowserRouter>
       <GroupCallErrorBoundary
-        widget={mockWidget}
         onError={onErrorMock}
         recoveryActionHandler={vi.fn()}
       >
@@ -246,9 +252,5 @@ test("should have a close button in widget mode", async () => {
 
   await user.click(screen.getByRole("button", { name: "Close" }));
 
-  expect(mockWidget.api.transport.send).toHaveBeenCalledWith(
-    ElementWidgetActions.Close,
-    expect.anything(),
-  );
-  expect(mockWidget.api.transport.stop).toHaveBeenCalled();
+  expect(closeWidget).toHaveBeenCalled();
 });

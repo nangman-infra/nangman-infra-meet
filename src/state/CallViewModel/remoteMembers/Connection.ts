@@ -18,27 +18,28 @@ import {
   type RemoteParticipant,
   RoomEvent,
 } from "livekit-client";
-import { type LivekitTransport } from "matrix-js-sdk/lib/matrixrtc";
 import { BehaviorSubject, map, type Observable } from "rxjs";
 import { type Logger } from "matrix-js-sdk/lib/logger";
 
-import {
-  getSFUConfigWithOpenID,
-  type OpenIDClientParts,
-  type SFUConfig,
-} from "../../../livekit/openIDSFU.ts";
+import { type OpenIDClientParts } from "../../../livekit/openIDSFU.ts";
 import { type Behavior } from "../../Behavior.ts";
 import { type ObservableScope } from "../../ObservableScope.ts";
 import {
   InsufficientCapacityError,
   SFURoomCreationRestrictedError,
 } from "../../../utils/errors.ts";
+import {
+  type CallSfuConfig,
+  type CallSfuConfigPort,
+} from "../../../domains/call/application/ports/CallSfuConfigPort.ts";
+import { type CallTransport } from "../../../domains/call/domain/CallTransport.ts";
+import { OpenIdCallSfuConfigAdapter } from "../../../domains/call/infrastructure/OpenIdCallSfuConfigAdapter.ts";
 
 export type PublishingParticipant = LocalParticipant | RemoteParticipant;
 
 export interface ConnectionOpts {
   /** The media transport to connect to. */
-  transport: LivekitTransport;
+  transport: CallTransport;
   /** The Matrix client to use for OpenID and SFU config requests. */
   client: OpenIDClientParts;
   /** The observable scope to use for this connection. */
@@ -46,20 +47,22 @@ export interface ConnectionOpts {
 
   /** Optional factory to create the LiveKit room, mainly for testing purposes. */
   livekitRoomFactory: () => LivekitRoom;
+  /** Optional adapter for resolving SFU connection config. */
+  sfuConfigPort?: CallSfuConfigPort;
 }
 
 export type ConnectionState =
   | { state: "Initialized" }
-  | { state: "FetchingConfig"; transport: LivekitTransport }
-  | { state: "ConnectingToLkRoom"; transport: LivekitTransport }
-  | { state: "PublishingTracks"; transport: LivekitTransport }
-  | { state: "FailedToStart"; error: Error; transport: LivekitTransport }
+  | { state: "FetchingConfig"; transport: CallTransport }
+  | { state: "ConnectingToLkRoom"; transport: CallTransport }
+  | { state: "PublishingTracks"; transport: CallTransport }
+  | { state: "FailedToStart"; error: Error; transport: CallTransport }
   | {
       state: "ConnectedToLkRoom";
       livekitConnectionState$: Observable<LivekitConenctionState>;
-      transport: LivekitTransport;
+      transport: CallTransport;
     }
-  | { state: "Stopped"; transport: LivekitTransport };
+  | { state: "Stopped"; transport: CallTransport };
 
 /**
  * A connection to a Matrix RTC LiveKit backend.
@@ -106,7 +109,7 @@ export class Connection {
         state: "FetchingConfig",
         transport: this.transport,
       });
-      const { url, jwt } = await this.getSFUConfigWithOpenID();
+      const { url, jwt } = await this.getSfuConfig();
       // If we were stopped while fetching the config, don't proceed to connect
       if (this.stopped) return;
 
@@ -157,12 +160,8 @@ export class Connection {
     }
   }
 
-  protected async getSFUConfigWithOpenID(): Promise<SFUConfig> {
-    return await getSFUConfigWithOpenID(
-      this.client,
-      this.transport.livekit_service_url,
-      this.transport.livekit_alias,
-    );
+  protected async getSfuConfig(): Promise<CallSfuConfig> {
+    return await this.sfuConfigPort.get(this.transport);
   }
 
   /**
@@ -173,7 +172,7 @@ export class Connection {
    */
   public async stop(): Promise<void> {
     this.logger.debug(
-      `Stopping connection to ${this.transport.livekit_service_url}`,
+      `Stopping connection to ${this.transport.serviceUrl}`,
     );
     if (this.stopped) return;
     await this.livekitRoom.disconnect();
@@ -196,10 +195,10 @@ export class Connection {
   /**
    * The media transport to connect to.
    */
-  public readonly transport: LivekitTransport;
+  public readonly transport: CallTransport;
 
-  private readonly client: OpenIDClientParts;
   public readonly livekitRoom: LivekitRoom;
+  private readonly sfuConfigPort: CallSfuConfigPort;
 
   private readonly logger: Logger;
 
@@ -213,13 +212,14 @@ export class Connection {
   public constructor(opts: ConnectionOpts, logger: Logger) {
     this.logger = logger.getChild("[Connection]");
     this.logger.info(
-      `[Connection] Creating new connection to ${opts.transport.livekit_service_url} ${opts.transport.livekit_alias}`,
+      `[Connection] Creating new connection to ${opts.transport.serviceUrl} ${opts.transport.roomAlias}`,
     );
     const { transport, client, scope } = opts;
 
     this.livekitRoom = opts.livekitRoomFactory();
     this.transport = transport;
-    this.client = client;
+    this.sfuConfigPort =
+      opts.sfuConfigPort ?? new OpenIdCallSfuConfigAdapter(client);
 
     // REMOTE participants with track!!!
     // this.remoteParticipantsWithTracks$

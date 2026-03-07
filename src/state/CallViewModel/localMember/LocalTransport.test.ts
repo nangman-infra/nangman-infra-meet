@@ -6,7 +6,6 @@ Please see LICENSE in the repository root for full details.
 */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { type CallMembership } from "matrix-js-sdk/lib/matrixrtc";
 
 import { mockConfig, flushPromises } from "../../../utils/test";
 import { createLocalTransport$ } from "./LocalTransport";
@@ -17,6 +16,8 @@ import {
   FailToGetOpenIdToken,
 } from "../../../utils/errors";
 import * as openIDSFU from "../../../livekit/openIDSFU";
+import { type CallTransport } from "../../../domains/call/domain/CallTransport";
+import { type CallMember } from "../../../domains/call/domain/CallMember";
 
 describe("LocalTransport", () => {
   let scope: ObservableScope;
@@ -28,7 +29,9 @@ describe("LocalTransport", () => {
       scope,
       roomId: "!room:example.org",
       useOldestMember$: constant(false),
-      memberships$: constant(new Epoch<CallMembership[]>([])),
+      membershipsWithTransport$: constant(
+        new Epoch<{ member: CallMember; transport?: CallTransport }[]>([]),
+      ),
       client: {
         getDomain: () => "",
         // These won't be called in this error path but satisfy the type
@@ -62,7 +65,9 @@ describe("LocalTransport", () => {
       scope,
       roomId: "!room:example.org",
       useOldestMember$: constant(false),
-      memberships$: constant(new Epoch<CallMembership[]>([])),
+      membershipsWithTransport$: constant(
+        new Epoch<{ member: CallMember; transport?: CallTransport }[]>([]),
+      ),
       client: {
         // Use empty domain to skip .well-known and use config directly
         getDomain: () => "",
@@ -99,7 +104,9 @@ describe("LocalTransport", () => {
       scope,
       roomId: "!room:example.org",
       useOldestMember$: constant(false),
-      memberships$: constant(new Epoch<CallMembership[]>([])),
+      membershipsWithTransport$: constant(
+        new Epoch<{ member: CallMember; transport?: CallTransport }[]>([]),
+      ),
       client: {
         getDomain: () => "",
         getOpenIdToken: vi.fn(),
@@ -112,9 +119,9 @@ describe("LocalTransport", () => {
     await flushPromises();
     // final
     expect(localTransport$.value).toStrictEqual({
-      livekit_alias: "!room:example.org",
-      livekit_service_url: "https://lk.example.org",
-      type: "livekit",
-    });
+      kind: "livekit",
+      roomAlias: "!room:example.org",
+      serviceUrl: "https://lk.example.org",
+    } satisfies CallTransport);
   });
 });

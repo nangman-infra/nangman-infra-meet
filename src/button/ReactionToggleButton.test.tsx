@@ -18,6 +18,7 @@ import { getBasicCallViewModelEnvironment } from "../utils/test-viewmodel";
 import { alice, local, localRtcMember } from "../utils/test-fixtures";
 import { type MockRTCSession } from "../utils/test";
 import { ReactionsSenderProvider } from "../reactions/useReactionsSender";
+import { createMatrixCallSessionViewPort } from "../domains/call/infrastructure/MatrixCallSessionViewPort.ts";
 
 vi.mock("livekit-client/e2ee-worker?worker");
 
@@ -34,7 +35,8 @@ function TestComponent({
     <TooltipProvider>
       <ReactionsSenderProvider
         vm={vm}
-        rtcSession={rtcSession.asMockedSession()}
+        callSession={createMatrixCallSessionViewPort(rtcSession.asMockedSession())}
+        matrixRoom={rtcSession.room}
       >
         <ReactionToggleButton vm={vm} identifier={localIdent} />
       </ReactionsSenderProvider>

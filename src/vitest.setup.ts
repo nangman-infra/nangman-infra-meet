@@ -11,7 +11,7 @@ import "@formatjs/intl-segmenter/polyfill";
 import i18n from "i18next";
 import posthog from "posthog-js";
 import { initReactI18next } from "react-i18next";
-import { afterEach } from "vitest";
+import { afterEach, beforeAll, vi } from "vitest";
 import { cleanup } from "@testing-library/react";
 import "vitest-axe/extend-expect";
 import { logger } from "matrix-js-sdk/lib/logger";
@@ -41,6 +41,33 @@ i18n
 
 Config.initDefault();
 posthog.opt_out_capturing();
+
+beforeAll(() => {
+  (
+    globalThis as typeof globalThis & {
+      IS_REACT_ACT_ENVIRONMENT: boolean;
+    }
+  ).IS_REACT_ACT_ENVIRONMENT = true;
+  const originalConsoleError = console.error.bind(console);
+  vi.spyOn(console, "debug").mockImplementation(() => {});
+  vi.spyOn(console, "info").mockImplementation(() => {});
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  vi.spyOn(console, "warn").mockImplementation(() => {});
+  vi.spyOn(console, "error").mockImplementation((...args: unknown[]) => {
+    const text = args
+      .map((arg) =>
+        typeof arg === "string"
+          ? arg
+          : arg instanceof Error
+            ? `${arg.name}: ${arg.message}`
+            : "",
+      )
+      .join(" ");
+    if (text.includes("not wrapped in act(...)")) return;
+    if (text.includes("invalid value for the `width` css style property")) return;
+    originalConsoleError(...args);
+  });
+});
 
 afterEach(cleanup);
 

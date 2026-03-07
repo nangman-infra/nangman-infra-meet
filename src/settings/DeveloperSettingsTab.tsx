@@ -8,6 +8,7 @@ Please see LICENSE in the repository root for full details.
 import {
   type ChangeEvent,
   type FC,
+  Fragment,
   useCallback,
   useEffect,
   useMemo,
@@ -304,7 +305,9 @@ export const DeveloperSettingsTab: FC<Props> = ({
         </InlineField>
       </Form>
       {livekitRooms?.map((livekitRoom) => (
-        <>
+        <Fragment
+          key={`${livekitRoom.url}-${livekitRoom.isLocal ? "local" : "remote"}`}
+        >
           <h3>
             {t("developer_mode.livekit_sfu", {
               url: livekitRoom.url || "unknown",
@@ -321,7 +324,7 @@ export const DeveloperSettingsTab: FC<Props> = ({
               : "undefined"}
             {livekitRoom.room.metadata}
           </pre>
-        </>
+        </Fragment>
       ))}
       <p>{t("developer_mode.environment_variables")}</p>
       <pre>{JSON.stringify(env, null, 2)}</pre>

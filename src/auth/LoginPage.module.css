@@ -5,65 +5,71 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE in the repository root for full details.
 */
 
-.logo {
-  max-width: 300px;
-  margin: 80px 0;
-  height: auto;
-}
-
 .container {
+  min-height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0 20px;
-  height: 100%;
-}
-
-.content {
-  display: flex;
-  flex-direction: column;
-  max-width: 400px;
-  width: 100%;
-  min-height: 100%;
-}
-
-.formContainer {
-  display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1;
+  padding: 48px 20px;
+}
+
+.card {
   width: 100%;
+  max-width: 440px;
+  background: var(--cpd-color-bg-canvas-default, #ffffff);
+  border: 1px solid var(--cpd-color-border-subtle, #e3e8f0);
+  border-radius: 16px;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.08);
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;
 }
 
-.formContainer h2,
-.formContainer h4 {
-  margin-top: 0;
+.logo {
+  max-width: 220px;
+  height: auto;
+  margin: 0 auto 4px;
 }
 
-.formContainer h4 {
-  font-weight: normal;
-  font-size: var(--font-size-subtitle);
-  margin-bottom: 0;
-}
-
-.formContainer form {
+.header {
   width: 100%;
-  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.formContainer button {
+.header h2 {
+  margin: 0;
+}
+
+.subheading {
+  margin: 0;
+  color: var(--cpd-color-text-secondary, #5f6b7a);
+  line-height: 1.5;
+}
+
+.actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.primaryButton {
+  width: 100%;
   height: 48px;
-  width: 100%;
   font-size: var(--font-size-body);
   font-weight: 600;
 }
 
-.authLinks {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  align-items: center;
-  margin-bottom: 100px;
-  font-size: var(--font-size-body);
+.helperText {
+  margin: 0;
+  color: var(--cpd-color-text-secondary, #5f6b7a);
+}
+
+.errorContainer {
+  width: 100%;
+  margin-top: 4px;
 }

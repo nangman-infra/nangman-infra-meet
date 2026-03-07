@@ -21,8 +21,9 @@ import { sleep } from "matrix-js-sdk/lib/utils";
 
 import type { ICreateClientOpts, MatrixClient, Room } from "matrix-js-sdk";
 import IndexedDBWorker from "../IndexedDBWorker?worker";
-import { generateUrlSearchParams, getUrlParams } from "../UrlParams";
+import { generateUrlSearchParams } from "../UrlParams";
 import { Config } from "../config/Config";
+import { getE2eeUrlContext } from "../domains/e2ee/application/readModels/E2eeUrlContext.ts";
 import { E2eeType } from "../e2ee/e2eeType";
 import {
   type EncryptionSystem,
@@ -112,7 +113,7 @@ export async function initClient(
   // the values around, but we initialise the matrix client in
   // many different places so we'd have to pass it into all of
   // them.
-  const { e2eEnabled } = getUrlParams();
+  const { e2eEnabled } = getE2eeUrlContext();
   if (!e2eEnabled) {
     logger.info("Disabling E2E: group call signalling will NOT be encrypted.");
   }

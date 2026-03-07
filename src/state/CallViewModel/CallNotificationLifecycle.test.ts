@@ -5,18 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE in the repository root for full details.
 */
 
-import {
-  type ICallNotifyContent,
-  type IRTCNotificationContent,
-} from "matrix-js-sdk/lib/matrixrtc";
 import { describe, it } from "vitest";
-import {
-  EventType,
-  type IEvent,
-  type IRoomTimelineData,
-  MatrixEvent,
-  type Room,
-} from "matrix-js-sdk";
 
 import { withTestScheduler } from "../../utils/test";
 import {
@@ -29,19 +18,15 @@ import {
   type Props as CallNotificationLifecycleProps,
 } from "./CallNotificationLifecycle";
 import { trackEpoch } from "../ObservableScope";
+import { type ReceivedCallDecline } from "../../domains/call/domain/CallNotification";
 
-const mockLegacyRingEvent = {} as { event_id: string } & ICallNotifyContent;
-function mockRingEvent(
-  eventId: string,
-  lifetimeMs: number | undefined,
-  sender = local.userId,
-): { event_id: string } & IRTCNotificationContent {
-  return {
-    event_id: eventId,
-    ...(lifetimeMs === undefined ? {} : { lifetime: lifetimeMs }),
-    notification_type: "ring",
-    sender,
-  } as unknown as { event_id: string } & IRTCNotificationContent;
+interface DeclineReference {
+  content?: {
+    "m.relates_to"?: {
+      event_id?: string;
+    };
+  };
+  sender?: string;
 }
 
 describe("waitForCallPickup$", () => {
@@ -54,7 +39,11 @@ describe("waitForCallPickup$", () => {
           behavior("a", { a: [] }).pipe(trackEpoch()),
         ),
         sentCallNotification$: hot("10ms a", {
-          a: [mockRingEvent("$notif1", 30), mockLegacyRingEvent],
+          a: {
+            eventId: "$notif1",
+            notificationType: "ring",
+            lifetimeMs: 30,
+          },
         }),
         receivedDecline$: hot(""),
         options: {
@@ -86,7 +75,11 @@ describe("waitForCallPickup$", () => {
           }).pipe(trackEpoch()),
         ),
         sentCallNotification$: hot("5ms a", {
-          a: [mockRingEvent("$notif2", 100), mockLegacyRingEvent],
+          a: {
+            eventId: "$notif2",
+            notificationType: "ring",
+            lifetimeMs: 100,
+          },
         }),
         receivedDecline$: hot(""),
         options: {
@@ -115,7 +108,11 @@ describe("waitForCallPickup$", () => {
           }).pipe(trackEpoch()),
         ),
         sentCallNotification$: hot("20ms a", {
-          a: [mockRingEvent("$notif2", 50), mockLegacyRingEvent],
+          a: {
+            eventId: "$notif2",
+            notificationType: "ring",
+            lifetimeMs: 50,
+          },
         }),
         receivedDecline$: hot(""),
         options: {
@@ -142,7 +139,11 @@ describe("waitForCallPickup$", () => {
           }).pipe(trackEpoch()),
         ),
         sentCallNotification$: hot("10ms a", {
-          a: [mockRingEvent("$notif2", undefined), mockLegacyRingEvent],
+          a: {
+            eventId: "$notif2",
+            notificationType: "ring",
+            lifetimeMs: 0,
+          },
         }),
         receivedDecline$: hot(""),
         options: {
@@ -171,7 +172,11 @@ describe("waitForCallPickup$", () => {
           }).pipe(trackEpoch()),
         ),
         sentCallNotification$: hot("10ms a", {
-          a: [mockRingEvent("$notif5", 30), mockLegacyRingEvent],
+          a: {
+            eventId: "$notif5",
+            notificationType: "ring",
+            lifetimeMs: 30,
+          },
         }),
         receivedDecline$: hot(""),
         options: {
@@ -210,24 +215,17 @@ describe("waitForCallPickup$", () => {
           }).pipe(trackEpoch()),
         ),
         sentCallNotification$: hot("10ms a", {
-          a: [mockRingEvent("$decl1", 50), mockLegacyRingEvent],
+          a: {
+            eventId: "$decl1",
+            notificationType: "ring",
+            lifetimeMs: 50,
+          },
         }),
         receivedDecline$: hot("40ms d", {
-          d: [
-            new MatrixEvent({
-              type: EventType.RTCDecline,
-              content: {
-                "m.relates_to": {
-                  rel_type: "m.reference",
-                  event_id: "$decl1",
-                },
-              },
-            }),
-            {} as Room,
-            undefined,
-            false,
-            {} as IRoomTimelineData,
-          ],
+          d: {
+            relatedEventId: "$decl1",
+            sender: "@other:example.org",
+          } satisfies ReceivedCallDecline,
         }),
         options: {
           waitForCallPickup: true,
@@ -254,24 +252,17 @@ describe("waitForCallPickup$", () => {
           }).pipe(trackEpoch()),
         ),
         sentCallNotification$: hot("10ms a", {
-          a: [mockRingEvent("$decl", 20), mockLegacyRingEvent],
+          a: {
+            eventId: "$decl",
+            notificationType: "ring",
+            lifetimeMs: 20,
+          },
         }),
         receivedDecline$: hot("40ms d", {
-          d: [
-            new MatrixEvent({
-              type: EventType.RTCDecline,
-              content: {
-                "m.relates_to": {
-                  rel_type: "m.reference",
-                  event_id: "$decl",
-                },
-              },
-            }),
-            {} as Room,
-            undefined,
-            false,
-            {} as IRoomTimelineData,
-          ],
+          d: {
+            relatedEventId: "$decl",
+            sender: "@other:example.org",
+          } satisfies ReceivedCallDecline,
         }),
         options: {
           waitForCallPickup: true,
@@ -292,7 +283,7 @@ describe("waitForCallPickup$", () => {
   });
   //
   function testStaysRinging(
-    declineEvent: Partial<IEvent>,
+    declineEvent: DeclineReference,
     expectDecline: boolean,
   ): void {
     withTestScheduler(({ scope, hot, behavior, expectObservable }) => {
@@ -305,16 +296,18 @@ describe("waitForCallPickup$", () => {
           }).pipe(trackEpoch()),
         ),
         sentCallNotification$: hot("10ms a", {
-          a: [mockRingEvent("$right", 50), mockLegacyRingEvent],
+          a: {
+            eventId: "$right",
+            notificationType: "ring",
+            lifetimeMs: 50,
+          },
         }),
         receivedDecline$: hot("20ms d", {
-          d: [
-            new MatrixEvent(declineEvent),
-            {} as Room,
-            undefined,
-            false,
-            {} as IRoomTimelineData,
-          ],
+          d: {
+            relatedEventId:
+              declineEvent.content?.["m.relates_to"]?.event_id ?? undefined,
+            sender: declineEvent.sender,
+          } satisfies ReceivedCallDecline,
         }),
         options: {
           waitForCallPickup: true,
@@ -331,13 +324,10 @@ describe("waitForCallPickup$", () => {
       });
     });
   }
-  const reference = (refId?: string, sender?: string): Partial<IEvent> => ({
-    event_id: "$decline",
-    type: EventType.RTCDecline,
+  const reference = (refId?: string, sender?: string): DeclineReference => ({
     sender: sender ?? "@other:example.org",
     content: {
       "m.relates_to": {
-        rel_type: "m.reference",
         event_id: refId ?? "$right",
       },
     },

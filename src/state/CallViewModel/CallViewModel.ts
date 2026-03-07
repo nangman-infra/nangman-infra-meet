@@ -7,9 +7,7 @@ Please see LICENSE in the repository root for full details.
 */
 
 import {
-  type BaseKeyProvider,
   type ConnectionState,
-  ExternalE2EEKeyProvider,
   type Room as LivekitRoom,
   type RoomOptions,
 } from "livekit-client";
@@ -22,7 +20,6 @@ import {
   fromEvent,
   map,
   merge,
-  NEVER,
   type Observable,
   of,
   pairwise,
@@ -41,11 +38,6 @@ import {
   timer,
 } from "rxjs";
 import { logger as rootLogger } from "matrix-js-sdk/lib/logger";
-import {
-  type LivekitTransport,
-  type MatrixRTCSession,
-} from "matrix-js-sdk/lib/matrixrtc";
-import { type IWidgetApiRequest } from "matrix-widget-api";
 
 import {
   LocalUserMediaViewModel,
@@ -78,12 +70,15 @@ import {
 import { shallowEquals } from "../../utils/array";
 import { type MediaDevices } from "../MediaDevices";
 import { type Behavior } from "../Behavior";
-import { E2eeType } from "../../e2ee/e2eeType";
-import { MatrixKeyProvider } from "../../e2ee/matrixKeyProvider";
 import { type MuteStates } from "../MuteStates";
-import { getUrlParams } from "../../UrlParams";
+import { type CallViewModelSessionContext } from "../../domains/call/application/ports/CallViewModelSessionPort.ts";
+import { getMediaUrlContext } from "../../domains/media/application/readModels/MediaUrlContext.ts";
 import { type ProcessorState } from "../../livekit/TrackProcessorContext";
-import { ElementWidgetActions, widget } from "../../widget";
+import { ElementWidgetActions } from "../../domains/widget/application/ports/WidgetHostPort.ts";
+import {
+  observeWidgetAction$,
+  replyToWidgetAction,
+} from "../../domains/widget/application/services/WidgetActionService.ts";
 import { UserMedia } from "../UserMedia.ts";
 import { ScreenShare } from "../ScreenShare.ts";
 import {
@@ -96,19 +91,13 @@ import {
   type SpotlightPortraitLayoutMedia,
 } from "../layout-types.ts";
 import { type ElementCallError } from "../../utils/errors.ts";
-import { type ObservableScope } from "../ObservableScope.ts";
-import { createHomeserverConnected$ } from "./localMember/HomeserverConnected.ts";
+import { mapEpoch, type ObservableScope } from "../ObservableScope.ts";
 import {
   createLocalMembership$,
-  enterRTCSession,
   LivekitState,
   type LocalMemberConnectionState,
 } from "./localMember/LocalMembership.ts";
 import { createLocalTransport$ } from "./localMember/LocalTransport.ts";
-import {
-  createMemberships$,
-  membershipsAndTransports$,
-} from "../SessionBehaviors.ts";
 import { ECConnectionFactory } from "./remoteMembers/ConnectionFactory.ts";
 import { createConnectionManager$ } from "./remoteMembers/ConnectionManager.ts";
 import {
@@ -118,16 +107,25 @@ import {
 import {
   type AutoLeaveReason,
   createCallNotificationLifecycle$,
-  createReceivedDecline$,
-  createSentCallNotification$,
 } from "./CallNotificationLifecycle.ts";
 import {
-  createDMMember$,
   createMatrixMemberMetadata$,
-  createRoomMembers$,
 } from "./remoteMembers/MatrixMemberMetadata.ts";
+import {
+  createDirectMessageMemberProfile$,
+  createRoomMemberProfiles$,
+} from "../../domains/room/infrastructure/MatrixRoomMemberProfiles.ts";
 import { Publisher } from "./localMember/Publisher.ts";
 import { type Connection } from "./remoteMembers/Connection.ts";
+import { type CallTransport } from "../../domains/call/domain/CallTransport.ts";
+import {
+  getCallMemberId,
+  type CallMember,
+  toCallMember,
+} from "../../domains/call/domain/CallMember.ts";
+import {
+  createReceivedDecline$,
+} from "../../domains/call/infrastructure/MatrixCallNotificationEventSource.ts";
 
 const logger = rootLogger.getChild("[CallViewModel]");
 //TODO
@@ -355,8 +353,7 @@ export interface CallViewModel {
 // "memberships", and LiveKit "participants".
 export function createCallViewModel$(
   scope: ObservableScope,
-  // A call is permanently tied to a single Matrix room
-  matrixRTCSession: MatrixRTCSession,
+  sessionContext: CallViewModelSessionContext,
   matrixRoom: MatrixRoom,
   mediaDevices: MediaDevices,
   muteStates: MuteStates,
@@ -368,10 +365,7 @@ export function createCallViewModel$(
   const client = matrixRoom.client;
   const userId = client.getUserId()!;
   const deviceId = client.getDeviceId()!;
-  const livekitKeyProvider = getE2eeKeyProvider(
-    options.encryptionSystem,
-    matrixRTCSession,
-  );
+  const connectionEncryption = sessionContext.connectionEncryption;
 
   // Each hbar seperates a block of input variables required for the CallViewModel to function.
   // The outputs of this block is written under the hbar.
@@ -381,26 +375,18 @@ export function createCallViewModel$(
   // The class does not need anything except the values underneath the bar.
   // The creations of the values under the bar are all tested independently and testing the callViewModel Should
   // not test their creation. Call view model only needs:
-  //  - memberships$ via createMemberships$
+  //  - membershipsWithTransport$ via createMembershipsAndTransportsFromSession$
   //  - localMembership via createLocalMembership$
   //  - callLifecycle via createCallNotificationLifecycle$
   //  - matrixMemberMetadataStore via createMatrixMemberMetadata$
 
   // ------------------------------------------------------------------------
-  // memberships$
-  const memberships$ = createMemberships$(scope, matrixRTCSession);
-
-  // ------------------------------------------------------------------------
-  // matrixLivekitMembers$ AND localMembership
-
-  const membershipsAndTransports = membershipsAndTransports$(
-    scope,
-    memberships$,
-  );
+  // membershipsWithTransport$
+  const membershipsAndTransports = sessionContext.membershipsAndTransports;
 
   const localTransport$ = createLocalTransport$({
     scope: scope,
-    memberships$: memberships$,
+    membershipsWithTransport$: membershipsAndTransports.membershipsWithTransport$,
     client,
     roomId: matrixRoom.roomId,
     useOldestMember$: scope.behavior(
@@ -412,8 +398,8 @@ export function createCallViewModel$(
     client,
     mediaDevices,
     trackProcessorState$,
-    livekitKeyProvider,
-    getUrlParams().controlledAudioDevices,
+    connectionEncryption,
+    getMediaUrlContext().controlledAudioDevices,
     options.livekitRoomFactory,
   );
 
@@ -445,7 +431,7 @@ export function createCallViewModel$(
   const connectOptions$ = scope.behavior(
     matrixRTCMode.value$.pipe(
       map((mode) => ({
-        encryptMedia: livekitKeyProvider !== undefined,
+        encryptMedia: connectionEncryption?.enabled ?? false,
         // TODO. This might need to get called again on each change of matrixRTCMode...
         matrixRTCMode: mode,
       })),
@@ -454,18 +440,10 @@ export function createCallViewModel$(
 
   const localMembership = createLocalMembership$({
     scope: scope,
-    homeserverConnected$: createHomeserverConnected$(
-      scope,
-      client,
-      matrixRTCSession,
-    ),
+    homeserverConnected$: sessionContext.homeserverConnected$,
     muteStates: muteStates,
-    joinMatrixRTC: async (transport: LivekitTransport) => {
-      return enterRTCSession(
-        matrixRTCSession,
-        transport,
-        connectOptions$.value,
-      );
+    joinMatrixRTC: async (transport: CallTransport) => {
+      return sessionContext.joinCallSession(transport, connectOptions$.value);
     },
     createPublisherFactory: (connection: Connection) => {
       return new Publisher(
@@ -477,25 +455,32 @@ export function createCallViewModel$(
       );
     },
     connectionManager: connectionManager,
-    matrixRTCSession: matrixRTCSession,
+    matrixRTCSession: sessionContext.callSessionMembership,
     localTransport$: localTransport$,
     logger: logger.getChild(`[${Date.now()}]`),
   });
 
-  const localRtcMembership$ = scope.behavior(
-    memberships$.pipe(
+  const callMembers$ = scope.behavior(
+    membershipsAndTransports.membershipsWithTransport$.pipe(
+      mapEpoch((memberships): CallMember[] =>
+        memberships.map(({ member }) => toCallMember(member)),
+      ),
+    ),
+  );
+
+  const localCallMember$ = scope.behavior(
+    callMembers$.pipe(
       map(
         (memberships) =>
           memberships.value.find(
-            (membership) =>
-              membership.userId === userId && membership.deviceId === deviceId,
+            (member) => member.userId === userId && member.deviceId === deviceId,
           ) ?? null,
       ),
     ),
   );
 
   const localMatrixLivekitMemberUninitialized = {
-    membership$: localRtcMembership$,
+    member$: localCallMember$,
     participant$: localMembership.participant$,
     connection$: localMembership.connection$,
     userId: userId,
@@ -503,11 +488,11 @@ export function createCallViewModel$(
 
   const localMatrixLivekitMember$: Behavior<MatrixLivekitMember | null> =
     scope.behavior(
-      localRtcMembership$.pipe(
-        switchMap((membership) => {
-          if (!membership) return of(null);
+      localCallMember$.pipe(
+        switchMap((member) => {
+          if (!member) return of(null);
           return of(
-            // casting is save here since we know that localRtcMembership$ is !== null since we reached this case.
+            // casting is safe here since we know that localCallMember$ is !== null since we reached this case.
             localMatrixLivekitMemberUninitialized as MatrixLivekitMember,
           );
         }),
@@ -521,8 +506,8 @@ export function createCallViewModel$(
   // Otherwise it looks like we already connected and only than the ringing starts which is weird.
   const { callPickupState$, autoLeave$ } = createCallNotificationLifecycle$({
     scope: scope,
-    memberships$: memberships$,
-    sentCallNotification$: createSentCallNotification$(scope, matrixRTCSession),
+    memberships$: callMembers$,
+    sentCallNotification$: sessionContext.sentCallNotification$,
     receivedDecline$: createReceivedDecline$(matrixRoom),
     options: options,
     localUser: { userId: userId, deviceId: deviceId },
@@ -531,14 +516,18 @@ export function createCallViewModel$(
   // ------------------------------------------------------------------------
   // matrixMemberMetadataStore
 
-  const matrixRoomMembers$ = createRoomMembers$(scope, matrixRoom);
+  const matrixRoomMembers$ = createRoomMemberProfiles$(scope, matrixRoom);
   const matrixMemberMetadataStore = createMatrixMemberMetadata$(
     scope,
-    scope.behavior(memberships$.pipe(map((mems) => mems.value))),
+    scope.behavior(callMembers$.pipe(map((mems) => mems.value))),
     matrixRoomMembers$,
   );
 
-  const dmMember$ = createDMMember$(scope, matrixRoomMembers$, matrixRoom);
+  const dmMember$ = createDirectMessageMemberProfile$(
+    scope,
+    matrixRoomMembers$,
+    matrixRoom,
+  );
   const noUserToCallInRoom$ = scope.behavior(
     matrixRoomMembers$.pipe(
       map(
@@ -560,7 +549,7 @@ export function createCallViewModel$(
           ? `Waiting for ${name} to join…`
           : "Waiting for other participants…";
         const avatarMxc = dmMember
-          ? (dmMember.getMxcAvatarUrl?.() ?? undefined)
+          ? dmMember.avatarUrl
           : (matrixRoom.getMxcAvatarUrl() ?? undefined);
         return {
           name: name ?? id,
@@ -605,7 +594,7 @@ export function createCallViewModel$(
                 if (!connection || !participant || participant.isLocal)
                   return null;
                 const livekitRoom = connection.livekitRoom;
-                const url = connection.transport.livekit_service_url;
+                const url = connection.transport.serviceUrl;
 
                 return {
                   url,
@@ -677,10 +666,9 @@ export function createCallViewModel$(
           let localParticipantId = undefined;
           // add local member if available
           if (localMatrixLivekitMember) {
-            const { userId, participant$, connection$, membership$ } =
+            const { userId, participant$, connection$, member$ } =
               localMatrixLivekitMember;
-            localParticipantId = `${userId}:${membership$.value.deviceId}`; // should be membership$.value.membershipID which is not optional
-            // const participantId = membership$.value.membershipID;
+            localParticipantId = getCallMemberId(member$.value);
             if (localParticipantId) {
               for (let dup = 0; dup < 1 + duplicateTiles; dup++) {
                 yield {
@@ -701,11 +689,10 @@ export function createCallViewModel$(
             userId,
             participant$,
             connection$,
-            membership$,
+            member$,
           } of matrixLivekitMembers) {
-            const participantId = `${userId}:${membership$.value.deviceId}`;
+            const participantId = getCallMemberId(member$.value);
             if (participantId === localParticipantId) continue;
-            // const participantId = membership$.value?.identity;
             for (let dup = 0; dup < 1 + duplicateTiles; dup++) {
               yield {
                 keys: [dup, participantId, userId, participant$, connection$],
@@ -727,7 +714,7 @@ export function createCallViewModel$(
             connection$.pipe(map((c) => c?.livekitRoom)),
           );
           const focusUrl$ = scope.behavior(
-            connection$.pipe(map((c) => c?.transport.livekit_service_url)),
+            connection$.pipe(map((c) => c?.transport.serviceUrl)),
           );
           const displayName$ = scope.behavior(
             matrixMemberMetadataStore
@@ -822,19 +809,13 @@ export function createCallViewModel$(
 
   const userHangup$ = new Subject<void>();
 
-  const widgetHangup$ =
-    widget === null
-      ? NEVER
-      : (
-          fromEvent(
-            widget.lazyActions,
-            ElementWidgetActions.HangupCall,
-          ) as Observable<CustomEvent<IWidgetApiRequest>>
-        ).pipe(
-          tap((ev) => {
-            widget!.api.transport.reply(ev.detail, {});
-          }),
-        );
+  const widgetHangup$ = observeWidgetAction$(
+    ElementWidgetActions.HangupCall,
+  ).pipe(
+    tap((ev) => {
+      replyToWidgetAction(ev.detail, {});
+    }),
+  );
 
   const leave$: Observable<"user" | "timeout" | "decline" | "allOthersLeft"> =
     merge(
@@ -1504,23 +1485,4 @@ export function createCallViewModel$(
     audioOutputSwitcher$: audioOutputSwitcher$,
     reconnecting$: reconnecting$,
   };
-}
-
-function getE2eeKeyProvider(
-  e2eeSystem: EncryptionSystem,
-  rtcSession: MatrixRTCSession,
-): BaseKeyProvider | undefined {
-  if (e2eeSystem.kind === E2eeType.NONE) return undefined;
-
-  if (e2eeSystem.kind === E2eeType.PER_PARTICIPANT) {
-    const keyProvider = new MatrixKeyProvider();
-    keyProvider.setRTCSession(rtcSession);
-    return keyProvider;
-  } else if (e2eeSystem.kind === E2eeType.SHARED_KEY && e2eeSystem.secret) {
-    const keyProvider = new ExternalE2EEKeyProvider();
-    keyProvider
-      .setKey(e2eeSystem.secret)
-      .catch((e) => logger.error("Failed to set shared key for E2EE", e));
-    return keyProvider;
-  }
 }

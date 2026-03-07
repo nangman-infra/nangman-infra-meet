@@ -19,7 +19,7 @@ import { useClient } from "../ClientContext";
 import { Config } from "../config/Config";
 import { ElementCallOpenTelemetry } from "../otel/otel";
 import { type RageshakeRequestModal } from "../room/RageshakeRequestModal";
-import { getUrlParams } from "../UrlParams";
+import { getTelemetryUrlContext } from "../shared/application/readModels/TelemetryUrlContext.ts";
 
 const gzip = async (text: string): Promise<Blob> => {
   // pako is relatively large (200KB), so we only import it when needed
@@ -125,7 +125,7 @@ export function getRageshakeSubmitUrl(): string | undefined {
 
   if (import.meta.env.VITE_PACKAGE === "embedded") {
     // in embedded package we always use the one provided by the widget host
-    return getUrlParams().rageshakeSubmitUrl ?? undefined;
+    return getTelemetryUrlContext().rageshakeSubmitUrl ?? undefined;
   }
 
   return undefined;

@@ -31,30 +31,39 @@ import {
   withTestScheduler,
 } from "../../../utils/test.ts";
 import { type Connection } from "./Connection.ts";
+import { type CallTransport } from "../../../domains/call/domain/CallTransport.ts";
+import {
+  type CallMember,
+  toCallMember,
+} from "../../../domains/call/domain/CallMember.ts";
+import {
+  fromLivekitTransport,
+  toLivekitTransport,
+} from "../../../domains/call/infrastructure/LivekitCallTransportAdapter.ts";
 
 let testScope: ObservableScope;
 
-const transportA: LivekitTransport = {
-  type: "livekit",
-  livekit_service_url: "https://lk.example.org",
-  livekit_alias: "!alias:example.org",
+const transportA: CallTransport = {
+  kind: "livekit",
+  serviceUrl: "https://lk.example.org",
+  roomAlias: "!alias:example.org",
 };
 
-const transportB: LivekitTransport = {
-  type: "livekit",
-  livekit_service_url: "https://lk.sample.com",
-  livekit_alias: "!alias:sample.com",
+const transportB: CallTransport = {
+  kind: "livekit",
+  serviceUrl: "https://lk.sample.com",
+  roomAlias: "!alias:sample.com",
 };
 
 const bobMembership = mockCallMembership(
   "@bob:example.org",
   "DEV000",
-  transportA,
+  toLivekitTransport(transportA),
 );
 const carlMembership = mockCallMembership(
   "@carl:sample.com",
   "DEV111",
-  transportB,
+  toLivekitTransport(transportB),
 );
 
 beforeEach(() => {
@@ -102,8 +111,8 @@ test("should signal participant not yet connected to livekit", () => {
     expectObservable(matrixLivekitMember$.pipe(map((e) => e.value))).toBe("a", {
       a: expect.toSatisfy((data: MatrixLivekitMember[]) => {
         expect(data.length).toEqual(1);
-        expectObservable(data[0].membership$).toBe("a", {
-          a: bobMembership,
+        expectObservable(data[0].member$).toBe("a", {
+          a: toCallMember(bobMembership),
         });
         expectObservable(data[0].participant$).toBe("a", {
           a: null,
@@ -121,7 +130,7 @@ test("should signal participant not yet connected to livekit", () => {
 function fromMemberships$(m$: Observable<CallMembership[]>): {
   memberships$: Observable<Epoch<CallMembership[]>>;
   membershipsWithTransport$: Observable<
-    Epoch<{ membership: CallMembership; transport?: LivekitTransport }[]>
+    Epoch<{ member: CallMember; transport?: CallTransport }[]>
   >;
 } {
   const memberships$ = m$.pipe(trackEpoch());
@@ -130,9 +139,11 @@ function fromMemberships$(m$: Observable<CallMembership[]>): {
       return members.map((m) => {
         const tr = m.getTransport(m);
         return {
-          membership: m,
+          member: toCallMember(m),
           transport:
-            tr?.type === "livekit" ? (tr as LivekitTransport) : undefined,
+            tr?.type === "livekit"
+              ? fromLivekitTransport(tr as LivekitTransport)
+              : undefined,
         };
       });
     }),
@@ -157,7 +168,9 @@ test("should signal participant on a connection that is publishing", () => {
     );
 
     const connection = {
-      transport: bobMembership.getTransport(bobMembership),
+      transport: fromLivekitTransport(
+        bobMembership.getTransport(bobMembership) as LivekitTransport,
+      ),
     } as unknown as Connection;
     const dataWithPublisher = new ConnectionManagerData();
     dataWithPublisher.add(connection, [
@@ -182,8 +195,8 @@ test("should signal participant on a connection that is publishing", () => {
     expectObservable(matrixLivekitMember$.pipe(map((e) => e.value))).toBe("a", {
       a: expect.toSatisfy((data: MatrixLivekitMember[]) => {
         expect(data.length).toEqual(1);
-        expectObservable(data[0].membership$).toBe("a", {
-          a: bobMembership,
+        expectObservable(data[0].member$).toBe("a", {
+          a: toCallMember(bobMembership),
         });
         expectObservable(data[0].participant$).toBe("a", {
           a: expect.toSatisfy((participant) => {
@@ -210,7 +223,9 @@ test("should signal participant on a connection that is not publishing", () => {
     );
 
     const connection = {
-      transport: bobMembership.getTransport(bobMembership),
+      transport: fromLivekitTransport(
+        bobMembership.getTransport(bobMembership) as LivekitTransport,
+      ),
     } as unknown as Connection;
     const dataWithPublisher = new ConnectionManagerData();
     dataWithPublisher.add(connection, []);
@@ -233,8 +248,8 @@ test("should signal participant on a connection that is not publishing", () => {
     expectObservable(matrixLivekitMember$.pipe(map((e) => e.value))).toBe("a", {
       a: expect.toSatisfy((data: MatrixLivekitMember[]) => {
         expect(data.length).toEqual(1);
-        expectObservable(data[0].membership$).toBe("a", {
-          a: bobMembership,
+        expectObservable(data[0].member$).toBe("a", {
+          a: toCallMember(bobMembership),
         });
         expectObservable(data[0].participant$).toBe("a", {
           a: null,
@@ -298,8 +313,8 @@ describe("Publication edge case", () => {
         {
           a: expect.toSatisfy((data: MatrixLivekitMember[]) => {
             expect(data.length).toEqual(2);
-            expectObservable(data[0].membership$).toBe("a", {
-              a: bobMembership,
+            expectObservable(data[0].member$).toBe("a", {
+              a: toCallMember(bobMembership),
             });
             expectObservable(data[0].connection$).toBe("a", {
               // The real connection should be from transportA as per the membership
@@ -364,8 +379,8 @@ describe("Publication edge case", () => {
         {
           a: expect.toSatisfy((data: MatrixLivekitMember[]) => {
             expect(data.length).toEqual(2);
-            expectObservable(data[0].membership$).toBe("a", {
-              a: bobMembership,
+            expectObservable(data[0].member$).toBe("a", {
+              a: toCallMember(bobMembership),
             });
             expectObservable(data[0].connection$).toBe("a", {
               // The real connection should be from transportA as per the membership

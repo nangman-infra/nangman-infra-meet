@@ -8,22 +8,25 @@ Please see LICENSE in the repository root for full details.
 import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { logger } from "matrix-js-sdk/lib/logger";
-import {
-  type RTCCallIntent,
-  type RTCNotificationType,
-} from "matrix-js-sdk/lib/matrixrtc";
 import { pickBy } from "lodash-es";
 
-import { Config } from "./config/Config";
 import { type EncryptionSystem } from "./e2ee/sharedKeyManagement";
 import { E2eeType } from "./e2ee/e2eeType";
 import { platform } from "./Platform";
-
-interface RoomIdentifier {
-  roomAlias: string | null;
-  roomId: string | null;
-  viaServers: string[];
-}
+import {
+  callIntents,
+  type CallIntent,
+  callNotificationTypes,
+  type CallNotificationType,
+} from "./domains/call/domain/CallOptions.ts";
+import { ParamParser } from "./shared/url/ParamParser.ts";
+export type {
+  RoomIdentifier,
+} from "./domains/room/application/readModels/RoomIdentifier.ts";
+export {
+  getRoomIdentifierFromUrl,
+  useRoomIdentifier,
+} from "./domains/room/application/readModels/RoomIdentifier.ts";
 
 export enum UserIntent {
   StartNewCall = "start_call",
@@ -214,7 +217,7 @@ export interface UrlConfiguration {
   /**
    * Whether and what type of notification EC should send, when the user joins the call.
    */
-  sendNotificationType?: RTCNotificationType;
+  sendNotificationType?: CallNotificationType;
   /**
    * Whether the app should automatically leave the call when there
    * is no one left in the call.
@@ -233,11 +236,7 @@ export interface UrlConfiguration {
    */
   waitForCallPickup: boolean;
 
-  callIntent?: RTCCallIntent;
-}
-interface IntentAndPlatformDerivedConfiguration {
-  defaultAudioEnabled?: boolean;
-  defaultVideoEnabled?: boolean;
+  callIntent?: CallIntent;
 }
 interface IntentAndPlatformDerivedConfiguration {
   defaultAudioEnabled?: boolean;
@@ -272,60 +271,6 @@ export function editFragmentQuery(
     0,
     fragmentQueryStart,
   )}?${fragmentParams.toString()}`;
-}
-
-class ParamParser {
-  private fragmentParams: URLSearchParams;
-  private queryParams: URLSearchParams;
-
-  public constructor(search: string, hash: string) {
-    this.queryParams = new URLSearchParams(search);
-
-    const fragmentQueryStart = hash.indexOf("?");
-    this.fragmentParams = new URLSearchParams(
-      fragmentQueryStart === -1 ? "" : hash.substring(fragmentQueryStart),
-    );
-  }
-
-  // Normally, URL params should be encoded in the fragment so as to avoid
-  // leaking them to the server. However, we also check the normal query
-  // string for backwards compatibility with versions that only used that.
-  public getParam(name: string): string | null {
-    return this.fragmentParams.get(name) ?? this.queryParams.get(name);
-  }
-
-  public getEnumParam<T extends string>(
-    name: string,
-    type: { [s: string]: T } | ArrayLike<T>,
-  ): T | undefined {
-    const value = this.getParam(name);
-    if (value !== null && Object.values(type).includes(value as T)) {
-      return value as T;
-    }
-    return undefined;
-  }
-
-  public getAllParams(name: string): string[] {
-    return [
-      ...this.fragmentParams.getAll(name),
-      ...this.queryParams.getAll(name),
-    ];
-  }
-
-  /**
-   * Returns true if the flag exists and is not "false".
-   */
-  public getFlagParam(name: string, defaultValue = false): boolean {
-    const param = this.getParam(name);
-    return param === null ? defaultValue : param !== "false";
-  }
-  /**
-   * Returns the value of the flag if it exists, or undefined if it does not.
-   */
-  public getFlag(name: string): boolean | undefined {
-    const param = this.getParam(name);
-    return param !== null ? param !== "false" : undefined;
-  }
 }
 
 let urlParamCache: {
@@ -519,27 +464,30 @@ export const computeUrlParams = (search = "", hash = ""): UrlParams => {
     // In SPA mode the user should always exit to the home screen when hanging
     // up, rather than being sent back to the lobby
     returnToLobby: isWidget ? parser.getFlag("returnToLobby") : false,
-    sendNotificationType: parser.getEnumParam("sendNotificationType", [
-      "ring",
-      "notification",
-    ]),
+    sendNotificationType: parser.getEnumParam(
+      "sendNotificationType",
+      callNotificationTypes,
+    ),
     waitForCallPickup: parser.getFlag("waitForCallPickup"),
     autoLeaveWhenOthersLeft: parser.getFlag("autoLeave"),
+    callIntent: parser.getEnumParam("callIntent", callIntents),
   };
 
-  // Log the final configuration for debugging purposes.
-  // This will only log when the cache is not yet set.
-  logger.info(
-    "UrlParams: final set of url params\n",
-    "intent:",
-    intent,
-    "\nproperties:",
-    properties,
-    "configuration:",
-    configuration,
-    "intentAndPlatformDerivedConfiguration:",
-    intentAndPlatformDerivedConfiguration,
-  );
+  // Log the final configuration only in local development where URL parsing is
+  // actively being debugged.
+  if (import.meta.env.DEV && import.meta.env.MODE !== "test") {
+    logger.debug(
+      "UrlParams: final set of url params\n",
+      "intent:",
+      intent,
+      "\nproperties:",
+      properties,
+      "configuration:",
+      configuration,
+      "intentAndPlatformDerivedConfiguration:",
+      intentAndPlatformDerivedConfiguration,
+    );
+  }
 
   return {
     ...properties,
@@ -556,79 +504,6 @@ export const computeUrlParams = (search = "", hash = ""): UrlParams => {
 export const useUrlParams = (): UrlParams => {
   const { search, hash } = useLocation();
   return useMemo(() => getUrlParams(search, hash), [search, hash]);
-};
-
-export function getRoomIdentifierFromUrl(
-  pathname: string,
-  search: string,
-  hash: string,
-): RoomIdentifier {
-  let roomAlias: string | null = null;
-  pathname = pathname.substring(1); // Strip the "/"
-  const pathComponents = pathname.split("/");
-  const pathHasRoom = pathComponents[0] == "room";
-  const hasRoomAlias = pathComponents.length > 1;
-
-  // What type is our url: roomAlias in hash, room alias as the search path, roomAlias after /room/
-  if (hash === "" || hash.startsWith("#?")) {
-    if (hasRoomAlias && pathHasRoom) {
-      roomAlias = pathComponents[1];
-    }
-    if (!pathHasRoom) {
-      roomAlias = pathComponents[0];
-    }
-  } else {
-    roomAlias = hash;
-  }
-
-  // Delete "?" and what comes afterwards
-  roomAlias = roomAlias?.split("?")[0] ?? null;
-
-  if (roomAlias) {
-    // Make roomAlias is null, if it only is a "#"
-    if (roomAlias.length <= 1) {
-      roomAlias = null;
-    } else {
-      // Add "#", if not present
-      if (!roomAlias.startsWith("#")) {
-        roomAlias = `#${roomAlias}`;
-      }
-      // Add server part, if not present
-      if (!roomAlias.includes(":")) {
-        roomAlias = `${roomAlias}:${Config.defaultServerName()}`;
-      }
-    }
-  }
-
-  const parser = new ParamParser(search, hash);
-
-  // Make sure roomId is valid
-  let roomId: string | null = parser.getParam("roomId");
-  if (roomId !== null) {
-    // Replace any non-printable characters that another client may have inserted.
-    // For instance on iOS, some copied links end up with zero width characters on the end which get encoded into the URL.
-    // This isn't valid for a roomId, so we can freely strip the content.
-    roomId = roomId.replaceAll(/^[^ -~]+|[^ -~]+$/g, "");
-    if (!roomId.startsWith("!")) {
-      roomId = null;
-    } else if (!roomId.includes("")) {
-      roomId = null;
-    }
-  }
-
-  return {
-    roomAlias,
-    roomId,
-    viaServers: parser.getAllParams("viaServers"),
-  };
-}
-
-export const useRoomIdentifier = (): RoomIdentifier => {
-  const { pathname, search, hash } = useLocation();
-  return useMemo(
-    () => getRoomIdentifierFromUrl(pathname, search, hash),
-    [pathname, search, hash],
-  );
 };
 
 export function generateUrlSearchParams(

@@ -5,15 +5,14 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE in the repository root for full details.
 */
 
-import { useTranslation } from "react-i18next";
 import { type FC } from "react";
+import { useTranslation } from "react-i18next";
+import { Navigate } from "react-router-dom";
 
 import { useClientState } from "../ClientContext";
 import { ErrorPage, LoadingPage } from "../FullScreenView";
-import { UnauthenticatedView } from "./UnauthenticatedView";
-import { RegisteredView } from "./RegisteredView";
 import { usePageTitle } from "../usePageTitle";
-import { widget } from "../widget.ts";
+import { RegisteredView } from "./RegisteredView";
 
 export const HomePage: FC = () => {
   const { t } = useTranslation();
@@ -24,12 +23,12 @@ export const HomePage: FC = () => {
   if (!clientState) {
     return <LoadingPage />;
   } else if (clientState.state === "error") {
-    return <ErrorPage widget={widget} error={clientState.error} />;
+    return <ErrorPage error={clientState.error} />;
   } else {
     return clientState.authenticated ? (
       <RegisteredView client={clientState.authenticated.client} />
     ) : (
-      <UnauthenticatedView />
+      <Navigate to="/login" />
     );
   }
 };

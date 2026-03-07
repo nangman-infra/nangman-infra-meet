@@ -44,7 +44,6 @@ import {
   MockRTCSession,
 } from "../utils/test";
 import { GroupCallView } from "./GroupCallView";
-import { ElementWidgetActions, type WidgetHelpers } from "../widget";
 import { LazyEventEmitter } from "../LazyEventEmitter";
 import { MatrixRTCTransportMissingError } from "../utils/errors";
 import { ProcessorProvider } from "../livekit/TrackProcessorContext";
@@ -52,12 +51,58 @@ import { MediaDevicesContext } from "../MediaDevicesContext";
 import { HeaderStyle } from "../UrlParams";
 import { constant } from "../state/Behavior";
 import { type MuteStates } from "../state/MuteStates.ts";
+import {
+  ElementWidgetActions,
+  type WidgetHostPort as WidgetHelpers,
+} from "../domains/widget/application/ports/WidgetHostPort.ts";
 
 vi.mock("../soundUtils");
 vi.mock("../useAudioContext");
 vi.mock("./InCallView");
+const widgetState = vi.hoisted(() => ({
+  currentWidget: null as WidgetHelpers | null,
+}));
+vi.mock("../domains/widget/application/services/WidgetHostService.ts", () => ({
+  hasWidgetHost: (): boolean => widgetState.currentWidget !== null,
+  setWidgetAlwaysOnScreen: async (value: boolean): Promise<void> => {
+    await widgetState.currentWidget?.api.setAlwaysOnScreen(value);
+  },
+  closeWidget: async (): Promise<void> => {
+    if (!widgetState.currentWidget) return;
+
+    await widgetState.currentWidget.api.transport.send(
+      ElementWidgetActions.Close,
+      {},
+    );
+    await widgetState.currentWidget.api.transport.stop();
+  },
+}));
+vi.mock(
+  "../domains/widget/application/services/WidgetActionService.ts",
+  () => ({
+    subscribeToWidgetAction: (
+      action: string,
+      listener: (event: CustomEvent) => void,
+    ): (() => void) | null => {
+      const widget = widgetState.currentWidget;
+      if (!widget) return null;
+
+      widget.lazyActions.on(action, listener);
+      return (): void => widget.lazyActions.off(action, listener);
+    },
+    replyToWidgetAction: (request: unknown, data: unknown): void => {
+      widgetState.currentWidget?.api.transport.reply(
+        request as never,
+        data as never,
+      );
+    },
+  }),
+);
 vi.mock("react-use-measure", () => ({
-  default: (): [() => void, object] => [(): void => {}, {}],
+  default: (): [() => void, { width: number; height: number }] => [
+    (): void => {},
+    { width: 0, height: 0 },
+  ],
 }));
 
 vi.hoisted(
@@ -95,9 +140,17 @@ const carol = mockMatrixRoomMember(localRtcMember);
 const roomMembers = new Map([carol].map((p) => [p.userId, p]));
 
 const roomId = "!foo:bar";
+const widgetClient = Promise.resolve({} as MatrixClient);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  const consoleErrorSpy = vi
+    .spyOn(console, "error")
+    .mockImplementation(() => {});
+  onTestFinished(() => {
+    consoleErrorSpy.mockRestore();
+  });
+  widgetState.currentWidget = null;
   (prefetchSounds as MockedFunction<typeof prefetchSounds>).mockResolvedValue({
     sound: new ArrayBuffer(0),
   });
@@ -130,6 +183,7 @@ function createGroupCallView(
   rtcSession: MatrixRTCSession;
   getByText: ReturnType<typeof render>["getByText"];
 } {
+  widgetState.currentWidget = widget;
   const client = {
     getUser: () => null,
     getUserId: () => localRtcMember.userId,
@@ -176,7 +230,6 @@ function createGroupCallView(
               header={HeaderStyle.Standard}
               rtcSession={rtcSession.asMockedSession()}
               muteStates={muteState}
-              widget={widget}
               // TODO-MULTI-SFU: Make joined and setJoined work
               joined={true}
               setJoined={function (value: boolean): void {}}
@@ -216,6 +269,7 @@ test.skip("GroupCallView plays a leave sound synchronously in widget mode", asyn
       setAlwaysOnScreen: async () => Promise.resolve(true),
     } as Partial<WidgetHelpers["api"]>,
     lazyActions: new LazyEventEmitter(),
+    client: widgetClient,
   };
   let resolvePlaySound: () => void;
   playSound = vi
@@ -267,6 +321,7 @@ test.skip("Should close widget when all other left and have time to play a sound
       } as unknown as ITransport,
     } as Partial<WidgetHelpers["api"]>,
     lazyActions: new LazyEventEmitter(),
+    client: widgetClient,
   };
   const resolvePlaySound = Promise.withResolvers<void>();
   playSound = vi.fn().mockReturnValue(resolvePlaySound);
@@ -310,6 +365,7 @@ test("Should close widget when all other left", async () => {
       } as unknown as ITransport,
     } as Partial<WidgetHelpers["api"]>,
     lazyActions: new LazyEventEmitter(),
+    client: widgetClient,
   };
 
   const { getByText } = createGroupCallView(widget as WidgetHelpers);
@@ -337,6 +393,7 @@ test("Should not close widget when auto leave due to error", async () => {
       } as unknown as ITransport,
     } as Partial<WidgetHelpers["api"]>,
     lazyActions: new LazyEventEmitter(),
+    client: widgetClient,
   };
 
   const alwaysOnScreenSpy = vi.spyOn(widget.api, "setAlwaysOnScreen");

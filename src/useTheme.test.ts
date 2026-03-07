@@ -19,27 +19,35 @@ import EventEmitter from "events";
 import { WidgetApiToWidgetAction } from "matrix-widget-api";
 
 import { useTheme } from "./useTheme";
-import { getUrlParams } from "./UrlParams";
-import { widget } from "./widget";
+import { getWidgetHost } from "./domains/widget/application/services/WidgetHostService.ts";
+import type { WidgetHostPort } from "./domains/widget/application/ports/WidgetHostPort.ts";
+import { getUiUrlContext } from "./shared/application/readModels/UiUrlContext.ts";
 
-vi.mock("./UrlParams", () => ({ getUrlParams: vi.fn() }));
-vi.mock("./widget", () => ({
-  widget: {
-    api: { transport: { reply: vi.fn() } },
-    lazyActions: new EventEmitter(),
-  },
+vi.mock("./shared/application/readModels/UiUrlContext.ts", () => ({
+  getUiUrlContext: vi.fn(),
+}));
+vi.mock("./domains/widget/application/services/WidgetHostService.ts", () => ({
+  getWidgetHost: vi.fn(),
 }));
 
 describe("useTheme", () => {
   let originalClassList: DOMTokenList;
+  let widgetHost: WidgetHostPort;
+
   beforeEach(() => {
+    widgetHost = {
+      api: { transport: { reply: vi.fn() } },
+      lazyActions: new EventEmitter(),
+    } as unknown as WidgetHostPort;
+
     // Save the original classList to setup spies
     originalClassList = document.body.classList;
 
     vi.spyOn(originalClassList, "add");
     vi.spyOn(originalClassList, "remove");
     vi.spyOn(originalClassList, "item").mockReturnValue(null);
-    (getUrlParams as Mock).mockReturnValue({ theme: "dark" });
+    (getUiUrlContext as Mock).mockReturnValue({ theme: "dark" });
+    (getWidgetHost as Mock).mockReturnValue(widgetHost);
   });
 
   afterEach(() => {
@@ -53,7 +61,7 @@ describe("useTheme", () => {
     { setTheme: "light-high-contrast", add: ["cpd-theme-light-hc"] },
   ])("apply procedure", ({ setTheme, add }) => {
     test(`should apply ${add[0]} theme when ${setTheme} theme is specified`, () => {
-      (getUrlParams as Mock).mockReturnValue({ theme: setTheme });
+      (getUiUrlContext as Mock).mockReturnValue({ theme: setTheme });
 
       renderHook(() => useTheme());
 
@@ -87,7 +95,7 @@ describe("useTheme", () => {
 
     expect(originalClassList.add).toHaveBeenCalledWith("cpd-theme-dark");
     await act(() =>
-      widget!.lazyActions.emit(
+      widgetHost.lazyActions.emit(
         WidgetApiToWidgetAction.ThemeChange,
         new CustomEvent(WidgetApiToWidgetAction.ThemeChange, {
           detail: { data: { name: "light" } },

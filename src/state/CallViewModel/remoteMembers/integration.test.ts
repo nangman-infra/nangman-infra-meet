@@ -16,6 +16,7 @@ import { logger } from "matrix-js-sdk/lib/logger";
 import {
   type Epoch,
   ObservableScope,
+  mapEpoch,
   trackEpoch,
 } from "../../ObservableScope.ts";
 import { ECConnectionFactory } from "./ConnectionFactory.ts";
@@ -27,12 +28,17 @@ import {
 } from "../../../utils/test.ts";
 import { type ProcessorState } from "../../../livekit/TrackProcessorContext.tsx";
 import {
-  areLivekitTransportsEqual,
   createMatrixLivekitMembers$,
   type MatrixLivekitMember,
 } from "./MatrixLivekitMembers.ts";
 import { createConnectionManager$ } from "./ConnectionManager.ts";
 import { membershipsAndTransports$ } from "../../SessionBehaviors.ts";
+import {
+  areCallTransportsEqual,
+} from "../../../domains/call/domain/CallTransport.ts";
+import { toCallMember } from "../../../domains/call/domain/CallMember.ts";
+import { fromMatrixCallMemberships } from "../../../domains/call/infrastructure/MatrixCallMemberTransportBindings.ts";
+import { fromLivekitTransport } from "../../../domains/call/infrastructure/LivekitCallTransportAdapter.ts";
 
 // Test the integration of ConnectionManager and MatrixLivekitMerger
 
@@ -104,17 +110,17 @@ test("bob, carl, then bob joining no tracks yet", () => {
 
     const eMarble = "abc";
     const vMarble = "abc";
-    const memberships$ = scope.behavior(
+    const membershipsWithTransport$ = scope.behavior(
       behavior(eMarble, {
         a: [bobMembership],
         b: [bobMembership, carlMembership],
         c: [bobMembership, carlMembership, daveMembership],
-      }).pipe(trackEpoch()),
+      }).pipe(trackEpoch(), mapEpoch(fromMatrixCallMemberships)),
     );
 
     const membershipsAndTransports = membershipsAndTransports$(
       testScope,
-      memberships$,
+      membershipsWithTransport$,
     );
 
     const connectionManager = createConnectionManager$({
@@ -136,14 +142,16 @@ test("bob, carl, then bob joining no tracks yet", () => {
         const items = e.value;
         expect(items.length).toBe(1);
         const item = items[0]!;
-        expectObservable(item.membership$).toBe("a", {
-          a: bobMembership,
+        expectObservable(item.member$).toBe("a", {
+          a: toCallMember(bobMembership),
         });
         expectObservable(item.connection$).toBe("a", {
           a: expect.toSatisfy((co) =>
-            areLivekitTransportsEqual(
+            areCallTransportsEqual(
               co.transport,
-              bobMembership.transports[0]! as LivekitTransport,
+              fromLivekitTransport(
+                bobMembership.transports[0]! as LivekitTransport,
+              ),
             ),
           ),
         });
@@ -158,8 +166,8 @@ test("bob, carl, then bob joining no tracks yet", () => {
 
         {
           const item = items[0]!;
-          expectObservable(item.membership$).toBe("a", {
-            a: bobMembership,
+          expectObservable(item.member$).toBe("a", {
+            a: toCallMember(bobMembership),
           });
           expectObservable(item.participant$).toBe("a", {
             a: null,
@@ -169,8 +177,8 @@ test("bob, carl, then bob joining no tracks yet", () => {
         {
           const item = items[1]!;
 
-          expectObservable(item.membership$).toBe("a", {
-            a: carlMembership,
+          expectObservable(item.member$).toBe("a", {
+            a: toCallMember(carlMembership),
           });
           expectObservable(item.participant$).toBe("a", {
             a: null,
@@ -178,9 +186,11 @@ test("bob, carl, then bob joining no tracks yet", () => {
           expectObservable(item.connection$).toBe("a", {
             a: expect.toSatisfy((connection) => {
               expect(
-                areLivekitTransportsEqual(
+                areCallTransportsEqual(
                   connection.transport,
-                  carlMembership.transports[0]! as LivekitTransport,
+                  fromLivekitTransport(
+                    carlMembership.transports[0]! as LivekitTransport,
+                  ),
                 ),
               ).toBe(true);
               return true;
@@ -193,24 +203,26 @@ test("bob, carl, then bob joining no tracks yet", () => {
         const items = e.value;
         expect(items.length).toBe(3);
 
-        expectObservable(items[0].membership$).toBe("a", {
-          a: bobMembership,
+        expectObservable(items[0].member$).toBe("a", {
+          a: toCallMember(bobMembership),
         });
-        expectObservable(items[1].membership$).toBe("b", {
-          a: carlMembership,
+        expectObservable(items[1].member$).toBe("b", {
+          a: toCallMember(carlMembership),
         });
 
         {
           const item = items[2]!;
-          expectObservable(item.membership$).toBe("a", {
-            a: daveMembership,
+          expectObservable(item.member$).toBe("a", {
+            a: toCallMember(daveMembership),
           });
           expectObservable(item.connection$).toBe("a", {
             a: expect.toSatisfy((connection) => {
               expect(
-                areLivekitTransportsEqual(
+                areCallTransportsEqual(
                   connection.transport,
-                  daveMembership.transports[0]! as LivekitTransport,
+                  fromLivekitTransport(
+                    daveMembership.transports[0]! as LivekitTransport,
+                  ),
                 ),
               ).toBe(true);
               return true;

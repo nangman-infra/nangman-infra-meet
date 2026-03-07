@@ -46,9 +46,9 @@ export const UserMenuContainer: FC<Props> = ({ preventNavigation = false }) => {
           logout?.();
           break;
         case "login":
-          navigate("/login", { state: { from: location } })?.catch((error) =>
-            logger.error("Failed to navigate to login", error),
-          );
+          navigate("/login", {
+            state: { from: `${location.pathname}${location.search}` },
+          })?.catch((error) => logger.error("Failed to navigate to login", error));
           break;
       }
     },

@@ -7,7 +7,7 @@ Please see LICENSE in the repository root for full details.
 
 import { merge } from "lodash-es";
 
-import { getUrlParams } from "../UrlParams";
+import { getHomeserverUrlContext } from "../domains/auth/application/readModels/HomeserverUrlContext.ts";
 import {
   DEFAULT_CONFIG,
   type ConfigOptions,
@@ -66,13 +66,13 @@ export class Config {
   // Convenience accessors
   public static defaultHomeserverUrl(): string | undefined {
     return (
-      getUrlParams().homeserver ??
+      getHomeserverUrlContext().homeserver ??
       Config.get().default_server_config?.["m.homeserver"].base_url
     );
   }
 
   public static defaultServerName(): string | undefined {
-    const homeserver = getUrlParams().homeserver;
+    const { homeserver } = getHomeserverUrlContext();
     if (homeserver) {
       const url = new URL(homeserver);
       return url.hostname;

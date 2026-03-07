@@ -74,8 +74,10 @@ vi.mock("livekit-client/e2ee-worker?worker");
 
 vi.mock("../e2ee/matrixKeyProvider");
 
-const getUrlParams = vi.hoisted(() => vi.fn(() => ({})));
-vi.mock("../UrlParams", () => ({ getUrlParams }));
+const getMediaUrlContext = vi.hoisted(() => vi.fn(() => ({})));
+vi.mock("../../domains/media/application/readModels/MediaUrlContext.ts", () => ({
+  getMediaUrlContext,
+}));
 
 vi.mock("../rtcSessionHelpers", async (importOriginal) => ({
   ...(await importOriginal()),
@@ -1121,7 +1123,7 @@ describe("CallViewModel", () => {
 
   it.skip("audio output changes when toggling earpiece mode", () => {
     withTestScheduler(({ schedule, expectObservable }) => {
-      getUrlParams.mockReturnValue({ controlledAudioDevices: true });
+      getMediaUrlContext.mockReturnValue({ controlledAudioDevices: true });
       vi.mocked(ComponentsCore.createMediaDeviceObserver).mockReturnValue(
         of([]),
       );

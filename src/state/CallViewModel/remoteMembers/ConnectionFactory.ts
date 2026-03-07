@@ -5,7 +5,6 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE in the repository root for full details.
 */
 
-import { type LivekitTransport } from "matrix-js-sdk/lib/matrixrtc";
 import {
   type E2EEOptions,
   Room as LivekitRoom,
@@ -22,11 +21,14 @@ import type { MediaDevices } from "../../MediaDevices.ts";
 import type { Behavior } from "../../Behavior.ts";
 import type { ProcessorState } from "../../../livekit/TrackProcessorContext.tsx";
 import { defaultLiveKitOptions } from "../../../livekit/options.ts";
+import { type CallTransport } from "../../../domains/call/domain/CallTransport.ts";
+import { type CallConnectionEncryptionPort } from "../../../domains/call/application/ports/CallViewModelSessionPort.ts";
+import { OpenIdCallSfuConfigAdapter } from "../../../domains/call/infrastructure/OpenIdCallSfuConfigAdapter.ts";
 
 // TODO evaluate if this should be done like the Publisher Factory
 export interface ConnectionFactory {
   createConnection(
-    transport: LivekitTransport,
+    transport: CallTransport,
     scope: ObservableScope,
     logger: Logger,
   ): Connection;
@@ -49,7 +51,7 @@ export class ECConnectionFactory implements ConnectionFactory {
     private client: OpenIDClientParts,
     private devices: MediaDevices,
     private processorState$: Behavior<ProcessorState>,
-    livekitKeyProvider: BaseKeyProvider | undefined,
+    connectionEncryption: CallConnectionEncryptionPort | undefined,
     private controlledAudioDevices: boolean,
     livekitRoomFactory?: () => LivekitRoom,
   ) {
@@ -58,12 +60,15 @@ export class ECConnectionFactory implements ConnectionFactory {
         generateRoomOption(
           this.devices,
           this.processorState$.value,
-          livekitKeyProvider && {
-            keyProvider: livekitKeyProvider,
-            // It's important that every room use a separate E2EE worker.
-            // They get confused if given streams from multiple rooms.
-            worker: new E2EEWorker(),
-          },
+          connectionEncryption?.keyProvider
+            ? {
+                keyProvider:
+                  connectionEncryption.keyProvider as BaseKeyProvider,
+                // It's important that every room use a separate E2EE worker.
+                // They get confused if given streams from multiple rooms.
+                worker: new E2EEWorker(),
+              }
+            : undefined,
           this.controlledAudioDevices,
         ),
       );
@@ -71,7 +76,7 @@ export class ECConnectionFactory implements ConnectionFactory {
   }
 
   public createConnection(
-    transport: LivekitTransport,
+    transport: CallTransport,
     scope: ObservableScope,
     logger: Logger,
   ): Connection {
@@ -81,6 +86,7 @@ export class ECConnectionFactory implements ConnectionFactory {
         client: this.client,
         scope: scope,
         livekitRoomFactory: this.livekitRoomFactory,
+        sfuConfigPort: new OpenIdCallSfuConfigAdapter(this.client),
       },
       logger,
     );

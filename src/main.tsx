@@ -14,6 +14,7 @@ import "matrix-js-sdk/lib/browser-index";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
+import "./widget";
 import { logger } from "matrix-js-sdk/lib/logger";
 import {
   setLogExtension as setLKLogExtension,

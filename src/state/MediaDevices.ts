@@ -30,7 +30,7 @@ import {
   outputDevice$ as controlledOutputSelection$,
   availableOutputDevices$ as controlledAvailableOutputDevices$,
 } from "../controls";
-import { getUrlParams } from "../UrlParams";
+import { getMediaUrlContext } from "../domains/media/application/readModels/MediaUrlContext.ts";
 import { platform } from "../Platform";
 import { switchWhen } from "../utils/observable";
 import { type Behavior, constant } from "./Behavior";
@@ -431,7 +431,7 @@ export class MediaDevices {
   public readonly audioOutput: MediaDevice<
     AudioOutputDeviceLabel,
     SelectedAudioOutputDevice
-  > = getUrlParams().controlledAudioDevices
+  > = getMediaUrlContext().controlledAudioDevices
     ? new ControlledAudioOutput(this.usingNames$, this.scope)
     : new AudioOutput(this.usingNames$, this.scope);
 

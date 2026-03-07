@@ -24,6 +24,7 @@ import {
   createCallViewModel$,
   type CallViewModelOptions,
 } from "../state/CallViewModel/CallViewModel";
+import { createMatrixCallViewModelContext } from "../domains/call/infrastructure/createMatrixCallViewModelContext.ts";
 import {
   mockConfig,
   mockLivekitRoom,
@@ -143,17 +144,27 @@ export function getBasicCallViewModelEnvironment(
   );
   const handRaisedSubject$ = new BehaviorSubject({});
   const reactionsSubject$ = new BehaviorSubject({});
+  const scope = testScope();
+  const encryptionSystem =
+    callViewModelOptions.encryptionSystem ?? {
+      kind: E2eeType.PER_PARTICIPANT,
+    };
 
   // const remoteParticipants$ = of([aliceParticipant]);
 
   const vm = createCallViewModel$(
-    testScope(),
-    rtcSession.asMockedSession(),
+    scope,
+    createMatrixCallViewModelContext({
+      scope,
+      rtcSession: rtcSession.asMockedSession(),
+      client: matrixRoom.client,
+      encryptionSystem,
+    }),
     matrixRoom,
     mockMediaDevices({}),
     mockMuteStates(),
     {
-      encryptionSystem: { kind: E2eeType.PER_PARTICIPANT },
+      encryptionSystem,
       livekitRoomFactory: (): LivekitRoom =>
         mockLivekitRoom({
           localParticipant: mockLocalParticipant({ identity: "" }),

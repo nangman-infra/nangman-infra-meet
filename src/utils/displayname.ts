@@ -10,8 +10,8 @@ import {
   removeHiddenChars as removeHiddenCharsUncached,
 } from "matrix-js-sdk/lib/utils";
 
-import type { RoomMember } from "matrix-js-sdk";
-import type { CallMembership } from "matrix-js-sdk/lib/matrixrtc";
+import type { CallMember } from "../domains/call/domain/CallMember.ts";
+import type { RoomMemberProfile } from "../domains/room/domain/RoomMemberProfile.ts";
 
 // Calling removeHiddenChars() can be slow on Safari, so we cache the results.
 // To illustrate a simple benchmark:
@@ -39,9 +39,9 @@ function removeHiddenChars(str: string): string {
 
 // Borrowed from https://github.com/matrix-org/matrix-js-sdk/blob/f10deb5ef2e8f061ff005af0476034382ea128ca/src/models/room-member.ts#L409
 export function shouldDisambiguate(
-  member: { rawDisplayName?: string; userId: string },
-  memberships: Pick<CallMembership, "userId">[],
-  roomMembers: Map<string, Pick<RoomMember, "userId">>,
+  member: Pick<RoomMemberProfile, "rawDisplayName" | "userId">,
+  memberships: Pick<CallMember, "userId">[],
+  roomMembers: Map<string, Pick<RoomMemberProfile, "userId" | "rawDisplayName">>,
 ): boolean {
   const { rawDisplayName: displayName, userId } = member;
   if (!displayName || displayName === userId) return false;

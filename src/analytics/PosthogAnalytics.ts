@@ -14,7 +14,6 @@ import { logger } from "matrix-js-sdk/lib/logger";
 import { type MatrixClient } from "matrix-js-sdk";
 import { type Subscription } from "rxjs";
 
-import { widget } from "../widget";
 import {
   CallEndedTracker,
   CallStartedTracker,
@@ -28,8 +27,9 @@ import {
   CallConnectDurationTracker,
 } from "./PosthogEvents";
 import { Config } from "../config/Config";
-import { getUrlParams } from "../UrlParams";
 import { optInAnalytics } from "../settings/settings";
+import { hasWidgetHost } from "../domains/widget/application/services/WidgetHostService.ts";
+import { getTelemetryUrlContext } from "../shared/application/readModels/TelemetryUrlContext.ts";
 
 /* Posthog analytics tracking.
  *
@@ -119,8 +119,9 @@ export class PosthogAnalytics {
     let apiHost: string | undefined;
     if (import.meta.env.VITE_PACKAGE === "embedded") {
       // for the embedded package we always use the values from the URL as the widget host is responsible for analytics configuration
-      apiKey = getUrlParams().posthogApiKey ?? undefined;
-      apiHost = getUrlParams().posthogApiHost ?? undefined;
+      const telemetryUrlContext = getTelemetryUrlContext();
+      apiKey = telemetryUrlContext.posthogApiKey ?? undefined;
+      apiHost = telemetryUrlContext.posthogApiHost ?? undefined;
     } else if (import.meta.env.VITE_PACKAGE === "full") {
       // in full package it is the server responsible for the analytics
       apiKey = Config.get().posthog?.api_key;
@@ -183,11 +184,12 @@ export class PosthogAnalytics {
 
   private static getPlatformProperties(): PlatformProperties {
     const appVersion = import.meta.env.VITE_APP_VERSION || "dev";
+    const widgetMode = hasWidgetHost();
     return {
       appVersion,
-      matrixBackend: widget ? "embedded" : "jssdk",
+      matrixBackend: widgetMode ? "embedded" : "jssdk",
       callBackend: "livekit",
-      cryptoVersion: widget
+      cryptoVersion: widgetMode
         ? undefined
         : window.matrixclient?.getCrypto()?.getVersion(),
     };
@@ -239,7 +241,7 @@ export class PosthogAnalytics {
       // different devices to send the same ID.
       let analyticsID = await this.getAnalyticsId();
       try {
-        if (!analyticsID && !widget) {
+        if (!analyticsID && !hasWidgetHost()) {
           // only try setting up a new analytics ID in the standalone app.
 
           // Couldn't retrieve an analytics ID from user settings, so create one and set it on the server.
@@ -271,8 +273,8 @@ export class PosthogAnalytics {
   private async getAnalyticsId(): Promise<string | null> {
     const client: MatrixClient = window.matrixclient;
     let accountAnalyticsId: string | null;
-    if (widget) {
-      accountAnalyticsId = getUrlParams().posthogUserId;
+    if (hasWidgetHost()) {
+      accountAnalyticsId = getTelemetryUrlContext().posthogUserId;
     } else {
       const accountData = await client.getAccountDataFromServer(
         PosthogAnalytics.ANALYTICS_EVENT_TYPE,
@@ -304,7 +306,7 @@ export class PosthogAnalytics {
   }
 
   private async setAccountAnalyticsId(analyticsID: string): Promise<void> {
-    if (!widget) {
+    if (!hasWidgetHost()) {
       const client = window.matrixclient;
 
       // the analytics ID only needs to be set in the standalone version.

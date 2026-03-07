@@ -6,10 +6,7 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE in the repository root for full details.
 */
 
-import {
-  type LivekitTransport,
-  type ParticipantId,
-} from "matrix-js-sdk/lib/matrixrtc";
+import { type ParticipantId } from "matrix-js-sdk/lib/matrixrtc";
 import { BehaviorSubject, combineLatest, map, of, switchMap, tap } from "rxjs";
 import { type Logger } from "matrix-js-sdk/lib/logger";
 import { type LocalParticipant, type RemoteParticipant } from "livekit-client";
@@ -18,8 +15,12 @@ import { type Behavior } from "../../Behavior.ts";
 import { type Connection } from "./Connection.ts";
 import { Epoch, type ObservableScope } from "../../ObservableScope.ts";
 import { generateItemsWithEpoch } from "../../../utils/observable.ts";
-import { areLivekitTransportsEqual } from "./MatrixLivekitMembers.ts";
 import { type ConnectionFactory } from "./ConnectionFactory.ts";
+import {
+  areCallTransportsEqual,
+  getCallTransportKey,
+  type CallTransport,
+} from "../../../domains/call/domain/CallTransport.ts";
 
 export class ConnectionManagerData {
   private readonly store: Map<
@@ -42,8 +43,8 @@ export class ConnectionManagerData {
     }
   }
 
-  private getKey(transport: LivekitTransport): string {
-    return transport.livekit_service_url + "|" + transport.livekit_alias;
+  private getKey(transport: CallTransport): string {
+    return getCallTransportKey(transport);
   }
 
   public getConnections(): Connection[] {
@@ -51,15 +52,15 @@ export class ConnectionManagerData {
   }
 
   public getConnectionForTransport(
-    transport: LivekitTransport,
+    transport: CallTransport,
   ): Connection | null {
     return this.store.get(this.getKey(transport))?.[0] ?? null;
   }
 
   public getParticipantForTransport(
-    transport: LivekitTransport,
+    transport: CallTransport,
   ): (LocalParticipant | RemoteParticipant)[] {
-    const key = transport.livekit_service_url + "|" + transport.livekit_alias;
+    const key = getCallTransportKey(transport);
     const existing = this.store.get(key);
     if (existing) {
       return existing[1];
@@ -87,12 +88,12 @@ export class ConnectionManagerData {
 interface Props {
   scope: ObservableScope;
   connectionFactory: ConnectionFactory;
-  inputTransports$: Behavior<Epoch<LivekitTransport[]>>;
+  inputTransports$: Behavior<Epoch<CallTransport[]>>;
   logger: Logger;
 }
 // TODO - write test for scopes (do we really need to bind scope)
 export interface IConnectionManager {
-  transports$: Behavior<Epoch<LivekitTransport[]>>;
+  transports$: Behavior<Epoch<CallTransport[]>>;
   connectionManagerData$: Behavior<Epoch<ConnectionManagerData>>;
 }
 /**
@@ -137,7 +138,7 @@ export function createConnectionManager$({
       map((transports) => transports.mapInner(removeDuplicateTransports)),
       tap(({ value: transports }) => {
         logger.trace(
-          `Managing transports: ${transports.map((t) => t.livekit_service_url).join(", ")}`,
+          `Managing transports: ${transports.map((t) => t.serviceUrl).join(", ")}`,
         );
       }),
     ),
@@ -152,18 +153,14 @@ export function createConnectionManager$({
         function* (transports) {
           for (const transport of transports)
             yield {
-              keys: [transport.livekit_service_url, transport.livekit_alias],
+              keys: [transport.serviceUrl, transport.roomAlias],
               data: undefined,
             };
         },
-        (scope, _data$, serviceUrl, alias) => {
-          logger.debug(`Creating connection to ${serviceUrl} (${alias})`);
+        (scope, _data$, serviceUrl, roomAlias) => {
+          logger.debug(`Creating connection to ${serviceUrl} (${roomAlias})`);
           const connection = connectionFactory.createConnection(
-            {
-              type: "livekit",
-              livekit_service_url: serviceUrl,
-              livekit_alias: alias,
-            },
+            { kind: "livekit", serviceUrl, roomAlias },
             scope,
             logger,
           );
@@ -220,11 +217,11 @@ export function createConnectionManager$({
 }
 
 function removeDuplicateTransports(
-  transports: LivekitTransport[],
-): LivekitTransport[] {
+  transports: CallTransport[],
+): CallTransport[] {
   return transports.reduce((acc, transport) => {
-    if (!acc.some((t) => areLivekitTransportsEqual(t, transport)))
+    if (!acc.some((t) => areCallTransportsEqual(t, transport)))
       acc.push(transport);
     return acc;
-  }, [] as LivekitTransport[]);
+  }, [] as CallTransport[]);
 }

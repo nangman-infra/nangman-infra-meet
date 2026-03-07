@@ -6,33 +6,29 @@ Please see LICENSE in the repository root for full details.
 */
 
 import { it, vi, expect } from "vitest";
-import EventEmitter from "events";
+import { fromEvent } from "rxjs";
 
 // import * as ComponentsCore from "@livekit/components-core";
 import { withCallViewModel } from "./CallViewModel/CallViewModelTestUtils.ts";
 import { type CallViewModel } from "./CallViewModel/CallViewModel.ts";
 import { constant } from "./Behavior.ts";
 import { aliceParticipant, localRtcMember } from "../utils/test-fixtures.ts";
-import { ElementWidgetActions, widget } from "../widget.ts";
+import { ElementWidgetActions } from "../domains/widget/application/ports/WidgetHostPort.ts";
 import { E2eeType } from "../e2ee/e2eeType.ts";
 
 vi.mock("@livekit/components-core", { spy: true });
 
-vi.mock("../widget", () => ({
-  ElementWidgetActions: {
-    HangupCall: "HangupCall",
-    // Add other actions if needed
-  },
-  widget: {
-    api: {
-      transport: {
-        send: vi.fn().mockResolvedValue(undefined),
-        reply: vi.fn().mockResolvedValue(undefined),
-      },
-    },
-    lazyActions: new EventEmitter(),
-  },
-}));
+const widgetActions = vi.hoisted(() => new EventTarget());
+
+vi.mock(
+  "../domains/widget/application/services/WidgetActionService.ts",
+  () => ({
+    observeWidgetAction$: (action: string): ReturnType<typeof fromEvent> =>
+      fromEvent(widgetActions, action),
+    replyToWidgetAction: vi.fn(),
+    sendWidgetAction: vi.fn().mockResolvedValue(undefined),
+  }),
+);
 
 it("expect leave when ElementWidgetActions.HangupCall is called", async () => {
   const pr = Promise.withResolvers<string>();
@@ -46,8 +42,7 @@ it("expect leave when ElementWidgetActions.HangupCall is called", async () => {
         pr.resolve(s);
       });
 
-      widget!.lazyActions!.emit(
-        ElementWidgetActions.HangupCall,
+      widgetActions.dispatchEvent(
         new CustomEvent(ElementWidgetActions.HangupCall, {
           detail: {
             action: "im.vector.hangup",

@@ -29,6 +29,7 @@ import {
   createCallViewModel$,
   type CallViewModelOptions,
 } from "./CallViewModel";
+import { createMatrixCallViewModelContext } from "../../domains/call/infrastructure/createMatrixCallViewModelContext.ts";
 import {
   mockConfig,
   mockLivekitRoom,
@@ -157,10 +158,16 @@ export function withCallViewModel(
   const muteStates = mockMuteStates();
   const raisedHands$ = new BehaviorSubject<Record<string, RaisedHandInfo>>({});
   const reactions$ = new BehaviorSubject<Record<string, ReactionInfo>>({});
+  const scope = testScope();
 
   const vm = createCallViewModel$(
-    testScope(),
-    rtcSession.asMockedSession(),
+    scope,
+    createMatrixCallViewModelContext({
+      scope,
+      rtcSession: rtcSession.asMockedSession(),
+      client: room.client,
+      encryptionSystem: options.encryptionSystem,
+    }),
     room,
     mediaDevices,
     muteStates,

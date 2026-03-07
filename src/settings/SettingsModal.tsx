@@ -8,7 +8,7 @@ Please see LICENSE in the repository root for full details.
 import { type FC, type ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { type MatrixClient } from "matrix-js-sdk";
-import { Button, Root as Form, Separator } from "@vector-im/compound-web";
+import { Button, Root as Form, Separator, Text } from "@vector-im/compound-web";
 import { type Room as LivekitRoom } from "livekit-client";
 
 import { Modal } from "../Modal";
@@ -18,7 +18,6 @@ import { ProfileSettingsTab } from "./ProfileSettingsTab";
 import { FeedbackSettingsTab } from "./FeedbackSettingsTab";
 import { iosDeviceMenu$ } from "../state/MediaDevices";
 import { useMediaDevices } from "../MediaDevicesContext";
-import { widget } from "../widget";
 import {
   useSetting,
   soundEffectVolume as soundEffectVolumeSetting,
@@ -32,8 +31,14 @@ import { useTrackProcessor } from "../livekit/TrackProcessorContext";
 import { DeveloperSettingsTab } from "./DeveloperSettingsTab";
 import { FieldRow, InputField } from "../input/Input";
 import { useSubmitRageshake } from "./submit-rageshake";
-import { useUrlParams } from "../UrlParams";
 import { useBehavior } from "../useBehavior";
+import { useMediaUrlContext } from "../domains/media/application/readModels/MediaUrlContext.ts";
+import { hasWidgetHost } from "../domains/widget/application/services/WidgetHostService.ts";
+
+const sourceCodeUrl = "https://github.com/nangman-infra/nangman-infra-meet";
+const upstreamUrl = "https://github.com/element-hq/element-call";
+const agplLicenseUrl =
+  "https://github.com/nangman-infra/nangman-infra-meet/blob/main/LICENSE-AGPL-3.0";
 
 type SettingsTab =
   | "audio"
@@ -114,7 +119,7 @@ export const SettingsModal: FC<Props> = ({
   // a single device. These are called "headset" or "speaker" (or similar) but contain both input and output.
   // On EC, we decided that it is less confusing for the user if they see those options in the output section
   // rather than the input section.
-  const { controlledAudioDevices } = useUrlParams();
+  const { controlledAudioDevices } = useMediaUrlContext();
   // If we are on iOS we will show a button to open the native audio device picker.
   const iosDeviceMenu = useBehavior(iosDeviceMenu$);
 
@@ -204,13 +209,14 @@ export const SettingsModal: FC<Props> = ({
     name: t("settings.feedback_tab_title"),
     content: <FeedbackSettingsTab roomId={roomId} />,
   };
+  const settingsEnv = import.meta.env;
 
   const developerTab: Tab<SettingsTab> = {
     key: "developer",
     name: t("settings.developer_tab_title"),
     content: (
       <DeveloperSettingsTab
-        env={import.meta.env}
+        env={settingsEnv}
         client={client}
         livekitRooms={livekitRooms}
       />
@@ -218,7 +224,7 @@ export const SettingsModal: FC<Props> = ({
   };
 
   const tabs = [audioTab, videoTab];
-  if (widget === null) tabs.push(profileTab);
+  if (!hasWidgetHost()) tabs.push(profileTab);
   tabs.push(preferencesTab);
   if (isRageshakeAvailable || import.meta.env.VITE_PACKAGE === "full") {
     // for full package we want to show the analytics consent checkbox
@@ -241,6 +247,25 @@ export const SettingsModal: FC<Props> = ({
         onTabChange={onTabChange}
         tabs={tabs}
       />
+      <Separator />
+      <div className={styles.legalNotice}>
+        <Text size="sm" as="p">
+          Nangman Infra Meet is a community-maintained fork of Element Call.
+        </Text>
+        <Text size="sm" as="p">
+          <a href={sourceCodeUrl} target="_blank" rel="noreferrer">
+            Source code
+          </a>
+          {" · "}
+          <a href={upstreamUrl} target="_blank" rel="noreferrer">
+            Upstream project
+          </a>
+          {" · "}
+          <a href={agplLicenseUrl} target="_blank" rel="noreferrer">
+            AGPL license
+          </a>
+        </Text>
+      </div>
     </Modal>
   );
 };

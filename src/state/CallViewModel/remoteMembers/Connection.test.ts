@@ -27,7 +27,6 @@ import EventEmitter from "events";
 import { type IOpenIDToken } from "matrix-js-sdk";
 import { logger } from "matrix-js-sdk/lib/logger";
 
-import type { LivekitTransport } from "matrix-js-sdk/lib/matrixrtc";
 import {
   Connection,
   type ConnectionOpts,
@@ -37,6 +36,7 @@ import {
 import { ObservableScope } from "../../ObservableScope.ts";
 import { type OpenIDClientParts } from "../../../livekit/openIDSFU.ts";
 import { FailToGetOpenIdToken } from "../../../utils/errors.ts";
+import { type CallTransport } from "../../../domains/call/domain/CallTransport.ts";
 
 let testScope: ObservableScope;
 
@@ -52,10 +52,10 @@ let fakeRoomEventEmiter: EventEmitter;
 //   { membership: CallMembership; transport: LivekitTransport }[]
 // >;
 
-const livekitFocus: LivekitTransport = {
-  livekit_alias: "!roomID:example.org",
-  livekit_service_url: "https://matrix-rtc.example.org/livekit/jwt",
-  type: "livekit",
+const livekitFocus: CallTransport = {
+  kind: "livekit",
+  roomAlias: "!roomID:example.org",
+  serviceUrl: "https://matrix-rtc.example.org/livekit/jwt",
 };
 
 function setupTest(): void {
@@ -115,7 +115,7 @@ function setupRemoteConnection(): Connection {
     livekitRoomFactory: () => fakeLivekitRoom,
   };
 
-  fetchMock.post(`${livekitFocus.livekit_service_url}/sfu/get`, () => {
+  fetchMock.post(`${livekitFocus.serviceUrl}/sfu/get`, () => {
     return {
       status: 200,
       body: {
@@ -193,8 +193,8 @@ describe("Start connection states", () => {
     capturedState = capturedStates.pop();
     if (capturedState!.state === "FailedToStart") {
       expect(capturedState!.error.message).toEqual("Something went wrong");
-      expect(capturedState!.transport.livekit_alias).toEqual(
-        livekitFocus.livekit_alias,
+      expect(capturedState!.transport.roomAlias).toEqual(
+        livekitFocus.roomAlias,
       );
     } else {
       expect.fail(
@@ -224,7 +224,7 @@ describe("Start connection states", () => {
 
     const deferredSFU = Promise.withResolvers<void>();
     // mock the /sfu/get call
-    fetchMock.post(`${livekitFocus.livekit_service_url}/sfu/get`, async () => {
+    fetchMock.post(`${livekitFocus.serviceUrl}/sfu/get`, async () => {
       await deferredSFU.promise;
       return {
         status: 500,
@@ -249,8 +249,8 @@ describe("Start connection states", () => {
       expect(capturedState?.error.message).toContain(
         "SFU Config fetch failed with exception Error",
       );
-      expect(capturedState?.transport.livekit_alias).toEqual(
-        livekitFocus.livekit_alias,
+      expect(capturedState?.transport.roomAlias).toEqual(
+        livekitFocus.roomAlias,
       );
     } else {
       expect.fail(
@@ -280,7 +280,7 @@ describe("Start connection states", () => {
 
     const deferredSFU = Promise.withResolvers<void>();
     // mock the /sfu/get call
-    fetchMock.post(`${livekitFocus.livekit_service_url}/sfu/get`, () => {
+    fetchMock.post(`${livekitFocus.serviceUrl}/sfu/get`, () => {
       return {
         status: 200,
         body: {
@@ -313,8 +313,8 @@ describe("Start connection states", () => {
       expect(capturedState.error.message).toContain(
         "Failed to connect to livekit",
       );
-      expect(capturedState.transport.livekit_alias).toEqual(
-        livekitFocus.livekit_alias,
+      expect(capturedState.transport.roomAlias).toEqual(
+        livekitFocus.roomAlias,
       );
     } else {
       expect.fail(

@@ -12,7 +12,7 @@ import {
   setLocalStorageItemReactive,
   useLocalStorage,
 } from "../useLocalStorage";
-import { getUrlParams } from "../UrlParams";
+import { getE2eeUrlContext } from "../domains/e2ee/application/readModels/E2eeUrlContext.ts";
 import { E2eeType } from "./e2eeType";
 import { useClient } from "../ClientContext";
 
@@ -58,8 +58,8 @@ const useRoomSharedKey = (
 };
 
 export function getKeyForRoom(roomId: string): string | null {
-  const { roomId: urlRoomId, password } = getUrlParams();
-  if (roomId !== urlRoomId)
+  const { roomId: urlRoomId, password } = getE2eeUrlContext();
+  if (urlRoomId !== null && roomId !== urlRoomId)
     logger.warn(
       "requested key for a roomId which is not the current call room id (from the URL)",
       roomId,

@@ -33,3 +33,15 @@ Please see LICENSE in the repository root for full details.
 .volumeSlider > p {
   color: var(--cpd-color-text-secondary);
 }
+
+.legalNotice {
+  padding-top: var(--cpd-space-2x);
+}
+
+.legalNotice p {
+  margin: 0;
+}
+
+.legalNotice p + p {
+  margin-top: var(--cpd-space-0-5x);
+}

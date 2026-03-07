@@ -24,11 +24,12 @@ import {
   matchRoutes,
 } from "react-router-dom";
 
-import { getUrlParams } from "./UrlParams";
 import { Config } from "./config/Config";
 import { ElementCallOpenTelemetry } from "./otel/otel";
 import { platform } from "./Platform";
 import { isFailure } from "./utils/fetch";
+import { getUiUrlContext } from "./shared/application/readModels/UiUrlContext.ts";
+import { getTelemetryUrlContext } from "./shared/application/readModels/TelemetryUrlContext.ts";
 
 // This generates a map of locale names to their URL (based on import.meta.url), which looks like this:
 // {
@@ -74,7 +75,7 @@ const Backend = {
       }
 
       const response = await fetch(url, {
-        credentials: "omit",
+        credentials: "same-origin",
         headers: {
           Accept: "application/json",
         },
@@ -133,7 +134,7 @@ export class Initializer {
     languageDetector.addDetector({
       name: "urlFragment",
       // Look for a language code in the URL's fragment
-      lookup: () => getUrlParams().lang ?? undefined,
+      lookup: () => getUiUrlContext().lang ?? undefined,
     });
 
     // Synchronise the HTML lang attribute with the i18next language
@@ -172,7 +173,7 @@ export class Initializer {
     }
 
     // Custom fonts
-    const { fonts, fontScale } = getUrlParams();
+    const { fonts, fontScale } = getUiUrlContext();
     if (fontScale !== null) {
       document.documentElement.style.setProperty(
         "--font-scale",
@@ -237,8 +238,8 @@ export class Initializer {
       let environment: string | undefined;
       if (import.meta.env.VITE_PACKAGE === "embedded") {
         // for the embedded package we always use the values from the URL as the widget host is responsible for analytics configuration
-        dsn = getUrlParams().sentryDsn ?? undefined;
-        environment = getUrlParams().sentryEnvironment ?? undefined;
+        dsn = getTelemetryUrlContext().sentryDsn ?? undefined;
+        environment = getTelemetryUrlContext().sentryEnvironment ?? undefined;
       }
       if (import.meta.env.VITE_PACKAGE === "full") {
         // in full package it is the server responsible for the analytics

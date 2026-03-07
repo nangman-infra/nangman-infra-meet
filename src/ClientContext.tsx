@@ -21,15 +21,24 @@ import { logger } from "matrix-js-sdk/lib/logger";
 import { type ISyncStateData, type SyncState } from "matrix-js-sdk/lib/sync";
 import { ClientEvent, type MatrixClient } from "matrix-js-sdk";
 
-import type { WidgetApi } from "matrix-widget-api";
 import { ErrorPage } from "./FullScreenView";
-import { widget } from "./widget";
 import {
   PosthogAnalytics,
   RegistrationType,
 } from "./analytics/PosthogAnalytics";
 import { useEventTarget } from "./useEvents";
 import { OpenElsewhereError } from "./RichError";
+import { LocalStorageSessionStore } from "./domains/auth/infrastructure/LocalStorageSessionStore.ts";
+import type {
+  SessionStorePort,
+  StoredSession,
+} from "./domains/auth/application/ports/SessionStorePort.ts";
+import type { WidgetApiPort } from "./domains/widget/application/ports/WidgetHostPort.ts";
+import {
+  getWidgetApi,
+  hasWidgetHost,
+} from "./domains/widget/application/services/WidgetHostService.ts";
+import { loadMatrixWidgetClient } from "./domains/widget/infrastructure/MatrixWidgetClientRegistry.ts";
 
 declare global {
   interface Window {
@@ -132,6 +141,7 @@ export function useClientLegacy(): {
 
 const loadChannel =
   "BroadcastChannel" in window ? new BroadcastChannel("load") : null;
+const sessionStore: SessionStorePort = new LocalStorageSessionStore();
 
 interface Props {
   children: JSX.Element;
@@ -232,7 +242,7 @@ export const ClientProvider: FC<Props> = ({ children }) => {
   // running instances of the app. This isn't necessary if the app is running in
   // a widget though, since then it'll be mostly stateless.
   useEffect(() => {
-    if (!widget) loadChannel?.postMessage({});
+    if (!hasWidgetHost()) loadChannel?.postMessage({});
   }, []);
 
   const [alreadyOpenedErr, setAlreadyOpenedErr] = useState<Error | undefined>(
@@ -346,53 +356,43 @@ export const ClientProvider: FC<Props> = ({ children }) => {
   }, [initClientState, onSync]);
 
   if (alreadyOpenedErr) {
-    return <ErrorPage widget={widget} error={alreadyOpenedErr} />;
+    return <ErrorPage error={alreadyOpenedErr} />;
   }
 
   return <ClientContext value={state}>{children}</ClientContext>;
 };
 
 export type InitResult = {
-  widgetApi: WidgetApi | null;
+  widgetApi: WidgetApiPort | null;
   client: MatrixClient;
   passwordlessUser: boolean;
 };
 
 async function loadClient(): Promise<InitResult | null> {
-  if (widget) {
+  if (hasWidgetHost()) {
     // We're inside a widget, so let's engage *matryoshka mode*
     logger.log("Using a matryoshka client");
-    const client = await widget.client;
+    const client = await loadMatrixWidgetClient();
+    const widgetApi = getWidgetApi();
+    if (!client || !widgetApi) {
+      throw new Error("Widget host is registered without a client or API");
+    }
     return {
-      widgetApi: widget.api,
+      widgetApi,
       client,
       passwordlessUser: false,
     };
   } else {
     const { initSPA } = await import("./utils/spa");
-    return initSPA(loadSession, clearSession);
+    return initSPA(sessionStore);
   }
 }
 
-export interface Session {
-  user_id: string;
-  device_id: string;
-  access_token: string;
-  passwordlessUser: boolean;
-  tempPassword?: string;
-}
+export type Session = StoredSession;
 
-const clearSession = (): void => localStorage.removeItem("matrix-auth-store");
-const saveSession = (s: Session): void =>
-  localStorage.setItem("matrix-auth-store", JSON.stringify(s));
-const loadSession = (): Session | undefined => {
-  const data = localStorage.getItem("matrix-auth-store");
-  if (!data) {
-    return undefined;
-  }
-
-  return JSON.parse(data);
-};
+const clearSession = (): void => sessionStore.clear();
+const saveSession = (s: Session): void => sessionStore.save(s);
+const loadSession = (): Session | undefined => sessionStore.load();
 
 const clientIsDisconnected = (
   syncState: SyncState,

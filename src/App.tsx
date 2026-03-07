@@ -13,25 +13,33 @@ import {
   useMemo,
   useState,
 } from "react";
-import { BrowserRouter, Route, useLocation, Routes } from "react-router-dom";
+import {
+  BrowserRouter,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
 import * as Sentry from "@sentry/react";
 import { TooltipProvider } from "@vector-im/compound-web";
 import { logger } from "matrix-js-sdk/lib/logger";
 
 import { HomePage } from "./home/HomePage";
 import { LoginPage } from "./auth/LoginPage";
-import { RegisterPage } from "./auth/RegisterPage";
 import { RoomPage } from "./room/RoomPage";
 import { ClientProvider } from "./ClientContext";
 import { ErrorPage, LoadingPage } from "./FullScreenView";
 import { Initializer } from "./initializer";
-import { widget } from "./widget";
 import { useTheme } from "./useTheme";
 import { ProcessorProvider } from "./livekit/TrackProcessorContext";
 import { type AppViewModel } from "./state/AppViewModel";
 import { MediaDevicesContext } from "./MediaDevicesContext";
 import { getUrlParams, HeaderStyle } from "./UrlParams";
 import { AppBar } from "./AppBar";
+import {
+  hasWidgetHost,
+  sendWidgetContentLoaded,
+} from "./domains/widget/application/services/WidgetHostService.ts";
 
 const SentryRoute = Sentry.withSentryReactRouterV7Routing(Route);
 
@@ -44,7 +52,7 @@ const BackgroundProvider: FC<SimpleProviderProps> = ({ children }) => {
 
   useEffect(() => {
     let backgroundImage = "";
-    if (!["/login", "/register"].includes(pathname) && !widget) {
+    if (!["/login", "/register"].includes(pathname) && !hasWidgetHost()) {
       backgroundImage = "var(--background-gradient)";
     }
 
@@ -70,7 +78,7 @@ export const App: FC<Props> = ({ vm }) => {
       ?.then(async () => {
         if (loaded) return;
         setLoaded(true);
-        await widget?.api.sendContentLoaded();
+        await sendWidgetContentLoaded();
       })
       .catch(logger.error);
   });
@@ -83,12 +91,15 @@ export const App: FC<Props> = ({ vm }) => {
       <MediaDevicesContext value={vm.mediaDevices}>
         <ProcessorProvider>
           <Sentry.ErrorBoundary
-            fallback={(error) => <ErrorPage error={error} widget={widget} />}
+            fallback={(error) => <ErrorPage error={error} />}
           >
             <Routes>
               <SentryRoute path="/" element={<HomePage />} />
               <SentryRoute path="/login" element={<LoginPage />} />
-              <SentryRoute path="/register" element={<RegisterPage />} />
+              <SentryRoute
+                path="/register"
+                element={<Navigate to="/login" replace />}
+              />
               <SentryRoute path="*" element={<RoomPage />} />
             </Routes>
           </Sentry.ErrorBoundary>

@@ -5,141 +5,125 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE in the repository root for full details.
 */
 
-import { type FC, type FormEvent, useCallback, useRef, useState } from "react";
+import { type FC, useCallback, useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import { Button } from "@vector-im/compound-web";
 
 import Logo from "../icons/LogoLarge.svg?react";
 import { useClient } from "../ClientContext";
-import { FieldRow, InputField, ErrorMessage } from "../input/Input";
+import { ErrorMessage } from "../input/Input";
 import styles from "./LoginPage.module.css";
-import { useInteractiveLogin } from "./useInteractiveLogin";
+import { useSSOLogin } from "./useSSOLogin";
 import { usePageTitle } from "../usePageTitle";
 import { PosthogAnalytics } from "../analytics/PosthogAnalytics";
 import { Config } from "../config/Config";
-import { Link } from "../button/Link";
+
+const LOGIN_REDIRECT_STORAGE_KEY = "element-call-login-redirect";
 
 export const LoginPage: FC = () => {
   const { t } = useTranslation();
   usePageTitle(t("login_title"));
 
-  const { client, setClient } = useClient();
-  const login = useInteractiveLogin(client);
+  const { setClient } = useClient();
+  const { startSSOLogin, completeSSOLogin } = useSSOLogin();
   const homeserver = Config.defaultHomeserverUrl(); // TODO: Make this configurable
-  const usernameRef = useRef<HTMLInputElement>(null);
-  const passwordRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error>();
 
-  // TODO: Handle hitting login page with authenticated client
+  // Check for loginToken in URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const loginToken = params.get("loginToken");
 
-  const onSubmitLoginForm = useCallback(
-    (e: FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
+    if (loginToken && homeserver && setClient) {
       setLoading(true);
-
-      if (!homeserver || !usernameRef.current || !passwordRef.current) {
-        setError(Error("Login parameters are undefined"));
-        setLoading(false);
-        return;
-      }
-
-      login(homeserver, usernameRef.current.value, passwordRef.current.value)
-        .then(async ([client, session]) => {
-          if (!setClient) {
-            return;
-          }
-
+      completeSSOLogin(homeserver, loginToken)
+        .then(([client, session]) => {
           setClient(client, session);
-
-          const locationState = location.state;
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          if (locationState && locationState.from) {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            await navigate(locationState.from);
-          } else {
-            await navigate("/");
-          }
+          const redirectPath =
+            sessionStorage.getItem(LOGIN_REDIRECT_STORAGE_KEY) ?? "/";
+          sessionStorage.removeItem(LOGIN_REDIRECT_STORAGE_KEY);
+          void navigate(redirectPath);
           PosthogAnalytics.instance.eventLogin.track();
         })
         .catch((error) => {
           setError(error);
           setLoading(false);
         });
-    },
-    [login, location, navigate, homeserver, setClient],
-  );
-  // we need to limit the length of the homserver name to not cover the whole loginview input with the string.
-  let shortendHomeserverName = Config.defaultServerName()?.slice(0, 25);
-  shortendHomeserverName =
-    shortendHomeserverName?.length !== Config.defaultServerName()?.length
-      ? shortendHomeserverName + "..."
-      : shortendHomeserverName;
-  return (
-    <>
-      <div className={styles.container}>
-        <div className={styles.content}>
-          <div className={styles.formContainer}>
-            <Logo width="auto" height="auto" className={styles.logo} />
+    }
+  }, [location.search, homeserver, setClient, completeSSOLogin, navigate]);
 
-            <h2>{t("log_in")}</h2>
-            <h4>{t("login_subheading")}</h4>
-            <form onSubmit={onSubmitLoginForm}>
-              <FieldRow>
-                <InputField
-                  type="text"
-                  ref={usernameRef}
-                  placeholder={t("common.username")}
-                  label={t("common.username")}
-                  autoCorrect="off"
-                  autoCapitalize="none"
-                  prefix="@"
-                  suffix={`:${shortendHomeserverName}`}
-                  data-testid="login_username"
-                />
-              </FieldRow>
-              <FieldRow>
-                <InputField
-                  type="password"
-                  ref={passwordRef}
-                  placeholder={t("common.password")}
-                  label={t("common.password")}
-                  data-testid="login_password"
-                />
-              </FieldRow>
-              {error && (
-                <FieldRow>
-                  <ErrorMessage error={error} />
-                </FieldRow>
-              )}
-              <FieldRow>
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  data-testid="login_login"
-                >
-                  {loading ? t("logging_in") : t("login_title")}
-                </Button>
-              </FieldRow>
-            </form>
-          </div>
-          <div className={styles.authLinks}>
-            <p>{t("login_auth_links_prompt")}</p>
-            <p>
-              <Trans i18nKey="login_auth_links">
-                <Link to="/register">Create an account</Link>
-                {" Or "}
-                <Link to="/">Access as a guest</Link>
-              </Trans>
-            </p>
-          </div>
+  const startLogin = useCallback(() => {
+    if (!homeserver) {
+      setError(Error("Homeserver is undefined"));
+      return;
+    }
+
+    const fromState = (location.state as { from?: unknown } | null)?.from;
+    if (typeof fromState === "string") {
+      sessionStorage.setItem(LOGIN_REDIRECT_STORAGE_KEY, fromState);
+    } else if (
+      fromState &&
+      typeof fromState === "object" &&
+      "pathname" in fromState
+    ) {
+      const { pathname, search } = fromState as {
+        pathname: string;
+        search?: string;
+      };
+      sessionStorage.setItem(
+        LOGIN_REDIRECT_STORAGE_KEY,
+        `${pathname}${search ?? ""}`,
+      );
+    } else {
+      sessionStorage.removeItem(LOGIN_REDIRECT_STORAGE_KEY);
+    }
+
+    setLoading(true);
+    void startSSOLogin(homeserver);
+  }, [homeserver, startSSOLogin, location.state]);
+  return (
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <Logo className={styles.logo} />
+
+        <div className={styles.header}>
+          <h2>{t("log_in")}</h2>
+          <p className={styles.subheading}>{t("login_subheading")}</p>
         </div>
+
+        <div className={styles.actions}>
+          <Button
+            className={styles.primaryButton}
+            type="button"
+            onClick={startLogin}
+            disabled={loading}
+            data-testid="login_sso"
+            kind="primary"
+          >
+            {loading
+              ? t("logging_in")
+              : t("login_sso_button", {
+                  defaultValue: "Sign in with SSO",
+                })}
+          </Button>
+          <p className={styles.helperText}>
+            {t("login_sso_helper", {
+              defaultValue:
+                "Use your organization account to continue. Guest access and account creation are disabled.",
+            })}
+          </p>
+        </div>
+
+        {error && (
+          <div className={styles.errorContainer}>
+            <ErrorMessage error={error} />
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 };

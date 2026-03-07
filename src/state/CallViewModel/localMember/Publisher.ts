@@ -29,7 +29,7 @@ import {
   type ProcessorState,
   trackProcessorSync,
 } from "../../../livekit/TrackProcessorContext.tsx";
-import { getUrlParams } from "../../../UrlParams.ts";
+import { getMediaUrlContext } from "../../../domains/media/application/readModels/MediaUrlContext.ts";
 import { observeTrackReference$ } from "../../MediaViewModel.ts";
 import { type Connection } from "../remoteMembers/Connection.ts";
 import { type ObservableScope } from "../../ObservableScope.ts";
@@ -59,7 +59,7 @@ export class Publisher {
     private logger?: Logger,
   ) {
     this.logger?.info("[PublishConnection] Create LiveKit room");
-    const { controlledAudioDevices } = getUrlParams();
+    const { controlledAudioDevices } = getMediaUrlContext();
 
     const room = connection.livekitRoom;
 

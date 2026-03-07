@@ -9,34 +9,38 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { WidgetApiToWidgetAction } from "matrix-widget-api";
 import { type IThemeChangeActionRequest } from "matrix-widget-api";
 
-import { getUrlParams } from "./UrlParams";
-import { widget } from "./widget";
+import { getWidgetHost } from "./domains/widget/application/services/WidgetHostService.ts";
+import { getUiUrlContext } from "./shared/application/readModels/UiUrlContext.ts";
 
 export const useTheme = (): void => {
   const [requestedTheme, setRequestedTheme] = useState(
-    () => getUrlParams().theme,
+    () => getUiUrlContext().theme,
   );
   const previousTheme = useRef<string | null>(document.body.classList.item(0));
 
   useEffect(() => {
-    if (widget) {
-      const onThemeChange = (
-        ev: CustomEvent<IThemeChangeActionRequest>,
-      ): void => {
-        ev.preventDefault();
-        if ("name" in ev.detail.data && typeof ev.detail.data.name === "string")
-          setRequestedTheme(ev.detail.data.name);
-        widget!.api.transport.reply(ev.detail, {});
-      };
+    const widgetHost = getWidgetHost();
+    if (!widgetHost) return;
 
-      widget.lazyActions.on(WidgetApiToWidgetAction.ThemeChange, onThemeChange);
-      return (): void => {
-        widget!.lazyActions.off(
-          WidgetApiToWidgetAction.ThemeChange,
-          onThemeChange,
-        );
-      };
-    }
+    const onThemeChange = (
+      ev: CustomEvent<IThemeChangeActionRequest>,
+    ): void => {
+      ev.preventDefault();
+      if ("name" in ev.detail.data && typeof ev.detail.data.name === "string")
+        setRequestedTheme(ev.detail.data.name);
+      widgetHost.api.transport.reply(ev.detail, {});
+    };
+
+    widgetHost.lazyActions.on(
+      WidgetApiToWidgetAction.ThemeChange,
+      onThemeChange,
+    );
+    return (): void => {
+      widgetHost.lazyActions.off(
+        WidgetApiToWidgetAction.ThemeChange,
+        onThemeChange,
+      );
+    };
   }, []);
 
   useLayoutEffect(() => {

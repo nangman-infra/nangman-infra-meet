@@ -10,15 +10,15 @@ import { logger } from "matrix-js-sdk/lib/logger";
 
 import { Config } from "../config/Config";
 import { fallbackICEServerAllowed, initClient } from "./matrix";
-import type { InitResult, Session } from "../ClientContext";
+import type { InitResult } from "../ClientContext";
+import type { SessionStorePort } from "../domains/auth/application/ports/SessionStorePort";
 
 export async function initSPA(
-  loadSession: () => Session | undefined,
-  clearSession: () => void,
+  sessionStore: Pick<SessionStorePort, "load" | "clear">,
 ): Promise<InitResult | null> {
   // We're running as a standalone application
   try {
-    const session = loadSession();
+    const session = sessionStore.load();
     if (!session) {
       logger.log("No session stored; continuing without a client");
       return null;
@@ -50,14 +50,14 @@ export async function initSPA(
         logger.log(
           "The session from local store is invalid; continuing without a client",
         );
-        clearSession();
+        sessionStore.clear();
         // returning null = "no client` pls register" (undefined = "loading" which is the current value when reaching this line)
         return null;
       }
       throw err;
     }
   } catch (err) {
-    clearSession();
+    sessionStore.clear();
     throw err;
   }
 }

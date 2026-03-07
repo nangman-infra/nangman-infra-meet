@@ -25,10 +25,21 @@ import {
 import { getBasicRTCSession } from "../utils/test-viewmodel";
 import { testScope, withTestScheduler } from "../utils/test";
 import { ElementCallReactionEventType, ReactionSet } from ".";
+import { createMatrixCallSessionViewPort } from "../domains/call/infrastructure/MatrixCallSessionViewPort.ts";
 
 afterEach(() => {
   vitest.useRealTimers();
 });
+
+function createReactionsReader(
+  rtcSession: ReturnType<typeof getBasicRTCSession>["rtcSession"],
+): ReactionsReader {
+  return new ReactionsReader(
+    testScope(),
+    rtcSession.room,
+    createMatrixCallSessionViewPort(rtcSession.asMockedSession()),
+  );
+}
 
 test("handles a hand raised reaction", () => {
   const { rtcSession } = getBasicRTCSession([local, alice]);
@@ -36,10 +47,7 @@ test("handles a hand raised reaction", () => {
   const localTimestamp = new Date();
   withTestScheduler(({ schedule, expectObservable }) => {
     renderHook(() => {
-      const { raisedHands$ } = new ReactionsReader(
-        testScope(),
-        rtcSession.asMockedSession(),
-      );
+      const { raisedHands$ } = createReactionsReader(rtcSession);
       schedule("ab", {
         a: () => {},
         b: () => {
@@ -85,10 +93,7 @@ test("handles a redaction", () => {
   const localTimestamp = new Date();
   withTestScheduler(({ schedule, expectObservable }) => {
     renderHook(() => {
-      const { raisedHands$ } = new ReactionsReader(
-        testScope(),
-        rtcSession.asMockedSession(),
-      );
+      const { raisedHands$ } = createReactionsReader(rtcSession);
       schedule("abc", {
         a: () => {},
         b: () => {
@@ -149,10 +154,7 @@ test("handles waiting for event decryption", () => {
   const localTimestamp = new Date();
   withTestScheduler(({ schedule, expectObservable }) => {
     renderHook(() => {
-      const { raisedHands$ } = new ReactionsReader(
-        testScope(),
-        rtcSession.asMockedSession(),
-      );
+      const { raisedHands$ } = createReactionsReader(rtcSession);
       schedule("abc", {
         a: () => {},
         b: () => {
@@ -219,10 +221,7 @@ test("hands rejecting events without a proper membership", () => {
   const localTimestamp = new Date();
   withTestScheduler(({ schedule, expectObservable }) => {
     renderHook(() => {
-      const { raisedHands$ } = new ReactionsReader(
-        testScope(),
-        rtcSession.asMockedSession(),
-      );
+      const { raisedHands$ } = createReactionsReader(rtcSession);
       schedule("ab", {
         a: () => {},
         b: () => {
@@ -265,10 +264,7 @@ test("handles a reaction", () => {
 
   withTestScheduler(({ schedule, time, expectObservable }) => {
     renderHook(() => {
-      const { reactions$ } = new ReactionsReader(
-        testScope(),
-        rtcSession.asMockedSession(),
-      );
+      const { reactions$ } = createReactionsReader(rtcSession);
       schedule(`abc`, {
         a: () => {},
         b: () => {
@@ -324,10 +320,7 @@ test("ignores bad reaction events", () => {
 
   withTestScheduler(({ schedule, expectObservable }) => {
     renderHook(() => {
-      const { reactions$ } = new ReactionsReader(
-        testScope(),
-        rtcSession.asMockedSession(),
-      );
+      const { reactions$ } = createReactionsReader(rtcSession);
       schedule("ab", {
         a: () => {},
         b: () => {
@@ -449,10 +442,7 @@ test("that reactions cannot be spammed", () => {
 
   withTestScheduler(({ schedule, expectObservable }) => {
     renderHook(() => {
-      const { reactions$ } = new ReactionsReader(
-        testScope(),
-        rtcSession.asMockedSession(),
-      );
+      const { reactions$ } = createReactionsReader(rtcSession);
       schedule("abcd", {
         a: () => {},
         b: () => {

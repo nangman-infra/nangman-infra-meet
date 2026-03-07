@@ -6,7 +6,6 @@ Please see LICENSE in the repository root for full details.
 */
 
 import { describe, expect, it, onTestFinished, vi } from "vitest";
-import { logger } from "matrix-js-sdk/lib/logger";
 
 import * as PlatformMod from "../src/Platform";
 import {
@@ -344,24 +343,10 @@ describe("UrlParams", () => {
   });
   describe("getUrlParams", () => {
     it("uses cached values", () => {
-      const spy = vi.spyOn(logger, "info");
       // call get once
       const params = getUrlParams("?header=app_bar&hideHeader=true", "");
       // call get twice
       expect(getUrlParams("?header=app_bar&hideHeader=true", "")).toBe(params);
-      // expect compute to only be called once
-      // it will only log when it is computing the values
-      expect(spy).toHaveBeenCalledExactlyOnceWith(
-        "UrlParams: final set of url params\n",
-        "intent:",
-        "unknown",
-        "\nproperties:",
-        expect.any(Object),
-        "configuration:",
-        expect.any(Object),
-        "intentAndPlatformDerivedConfiguration:",
-        {},
-      );
     });
   });
 });

@@ -33,7 +33,6 @@ import { useTranslation } from "react-i18next";
 
 import LogoMark from "../icons/LogoMark.svg?react";
 import LogoType from "../icons/LogoType.svg?react";
-import type { IWidgetApiRequest } from "matrix-widget-api";
 import {
   EndCallButton,
   MicButton,
@@ -43,9 +42,8 @@ import {
   ReactionToggleButton,
 } from "../button";
 import { Header, LeftNav, RightNav, RoomHeaderInfo } from "../Header";
-import { type HeaderStyle, useUrlParams } from "../UrlParams";
+import { type HeaderStyle } from "../UrlParams";
 import { useCallViewKeyboardShortcuts } from "../useCallViewKeyboardShortcuts";
-import { ElementWidgetActions, widget } from "../widget";
 import styles from "./InCallView.module.css";
 import { GridTile } from "../tile/GridTile";
 import { type OTelGroupCallMembership } from "../otel/OTelGroupCallMembership";
@@ -108,11 +106,21 @@ import ringtoneOgg from "../sound/ringtone.ogg?url";
 import { useTrackProcessorObservable$ } from "../livekit/TrackProcessorContext.tsx";
 import { type Layout } from "../state/layout-types.ts";
 import { ObservableScope } from "../state/ObservableScope.ts";
+import { ElementWidgetActions } from "../domains/widget/application/ports/WidgetHostPort.ts";
+import {
+  replyToWidgetAction,
+  sendWidgetAction,
+  subscribeToWidgetAction,
+} from "../domains/widget/application/services/WidgetActionService.ts";
+import { useCallUrlContext } from "../domains/call/application/readModels/CallUrlContext.ts";
+import { createMatrixCallViewModelContext } from "../domains/call/infrastructure/createMatrixCallViewModelContext.ts";
+import { createMatrixCallSessionViewPort } from "../domains/call/infrastructure/MatrixCallSessionViewPort.ts";
+import { hasWidgetHost } from "../domains/widget/application/services/WidgetHostService.ts";
 
 const maxTapDurationMs = 400;
 
-export interface ActiveCallProps
-  extends Omit<InCallViewProps, "vm" | "livekitRoom" | "connState"> {
+export interface ActiveCallProps extends Omit<InCallViewProps, "vm"> {
+  rtcSession: MatrixRTCSession;
   e2eeSystem: EncryptionSystem;
   // TODO refactor those reasons into an enum
   onLeft: (
@@ -122,18 +130,33 @@ export interface ActiveCallProps
 
 export const ActiveCall: FC<ActiveCallProps> = (props) => {
   const [vm, setVm] = useState<CallViewModel | null>(null);
-
-  const urlParams = useUrlParams();
+  const {
+    autoLeaveWhenOthersLeft,
+    waitForCallPickup,
+    sendNotificationType,
+  } = useCallUrlContext();
   const mediaDevices = useMediaDevices();
   const trackProcessorState$ = useTrackProcessorObservable$();
+  const callSession = useMemo(
+    () => createMatrixCallSessionViewPort(props.rtcSession),
+    [props.rtcSession],
+  );
   useEffect(() => {
     const scope = new ObservableScope();
-    const reactionsReader = new ReactionsReader(scope, props.rtcSession);
-    const { autoLeaveWhenOthersLeft, waitForCallPickup, sendNotificationType } =
-      urlParams;
+    const reactionsReader = new ReactionsReader(
+      scope,
+      props.matrixRoom,
+      callSession,
+    );
+    const sessionContext = createMatrixCallViewModelContext({
+      scope,
+      rtcSession: props.rtcSession,
+      client: props.matrixRoom.client,
+      encryptionSystem: props.e2eeSystem,
+    });
     const vm = createCallViewModel$(
       scope,
-      props.rtcSession,
+      sessionContext,
       props.matrixRoom,
       mediaDevices,
       props.muteStates,
@@ -158,16 +181,24 @@ export const ActiveCall: FC<ActiveCallProps> = (props) => {
     props.muteStates,
     props.e2eeSystem,
     props.onLeft,
-    urlParams,
     mediaDevices,
     trackProcessorState$,
+    callSession,
+    autoLeaveWhenOthersLeft,
+    waitForCallPickup,
+    sendNotificationType,
   ]);
 
   if (vm === null) return null;
 
+  const { rtcSession: _rtcSession, ...inCallViewProps } = props;
   return (
-    <ReactionsSenderProvider vm={vm} rtcSession={props.rtcSession}>
-      <InCallView {...props} vm={vm} />
+    <ReactionsSenderProvider
+      vm={vm}
+      callSession={callSession}
+      matrixRoom={props.matrixRoom}
+    >
+      <InCallView {...inCallViewProps} vm={vm} />
     </ReactionsSenderProvider>
   );
 };
@@ -176,7 +207,6 @@ export interface InCallViewProps {
   client: MatrixClient;
   vm: CallViewModel;
   matrixInfo: MatrixInfo;
-  rtcSession: MatrixRTCSession;
   matrixRoom: MatrixRoom;
   muteStates: MuteStates;
   header: HeaderStyle;
@@ -194,6 +224,7 @@ export const InCallView: FC<InCallViewProps> = ({
   header: headerStyle,
   onShareClick,
 }) => {
+  const widgetMode = hasWidgetHost();
   const { t } = useTranslation();
   const { supportsReactions, sendReaction, toggleRaisedHand } =
     useReactionsSender();
@@ -215,7 +246,7 @@ export const InCallView: FC<InCallViewProps> = ({
   // Merge the refs so they can attach to the same element
   const containerRef = useMergedRefs(containerRef1, containerRef2);
 
-  const { showControls } = useUrlParams();
+  const { showControls } = useCallUrlContext();
 
   const muteAllAudio = useBehavior(muteAllAudio$);
   // Call pickup state and display names are needed for waiting overlay/sounds
@@ -378,13 +409,13 @@ export const InCallView: FC<InCallViewProps> = ({
   const openProfile = useMemo(
     () =>
       // Profile settings are unavailable in widget mode
-      widget === null
+      !widgetMode
         ? (): void => {
             setSettingsTab("profile");
             setSettingsModalOpen(true);
           }
         : null,
-    [setSettingsTab, setSettingsModalOpen],
+    [setSettingsTab, setSettingsModalOpen, widgetMode],
   );
 
   const [headerRef, headerBounds] = useMeasure();
@@ -424,43 +455,39 @@ export const InCallView: FC<InCallViewProps> = ({
   );
 
   useEffect(() => {
-    widget?.api.transport
-      .send(
-        gridMode === "grid"
-          ? ElementWidgetActions.TileLayout
-          : ElementWidgetActions.SpotlightLayout,
-        {},
-      )
-      .catch((e) => {
-        logger.error("Failed to send layout change to widget API", e);
-      });
+    sendWidgetAction(
+      gridMode === "grid"
+        ? ElementWidgetActions.TileLayout
+        : ElementWidgetActions.SpotlightLayout,
+      {},
+    ).catch((e) => {
+      logger.error("Failed to send layout change to widget API", e);
+    });
   }, [gridMode]);
 
   useEffect(() => {
-    if (widget) {
-      const onTileLayout = (ev: CustomEvent<IWidgetApiRequest>): void => {
-        setGridMode("grid");
-        widget!.api.transport.reply(ev.detail, {});
-      };
-      const onSpotlightLayout = (ev: CustomEvent<IWidgetApiRequest>): void => {
-        setGridMode("spotlight");
-        widget!.api.transport.reply(ev.detail, {});
-      };
+    const onTileLayout = (ev: CustomEvent): void => {
+      setGridMode("grid");
+      replyToWidgetAction(ev.detail, {});
+    };
+    const onSpotlightLayout = (ev: CustomEvent): void => {
+      setGridMode("spotlight");
+      replyToWidgetAction(ev.detail, {});
+    };
 
-      widget.lazyActions.on(ElementWidgetActions.TileLayout, onTileLayout);
-      widget.lazyActions.on(
-        ElementWidgetActions.SpotlightLayout,
-        onSpotlightLayout,
-      );
+    const unsubscribeTileLayout = subscribeToWidgetAction(
+      ElementWidgetActions.TileLayout,
+      onTileLayout,
+    );
+    const unsubscribeSpotlightLayout = subscribeToWidgetAction(
+      ElementWidgetActions.SpotlightLayout,
+      onSpotlightLayout,
+    );
 
-      return (): void => {
-        widget!.lazyActions.off(ElementWidgetActions.TileLayout, onTileLayout);
-        widget!.lazyActions.off(
-          ElementWidgetActions.SpotlightLayout,
-          onSpotlightLayout,
-        );
-      };
-    }
+    return (): void => {
+      unsubscribeTileLayout?.();
+      unsubscribeSpotlightLayout?.();
+    };
   }, [setGridMode]);
 
   useAppBarSecondaryButton(
@@ -751,6 +778,7 @@ export const InCallView: FC<InCallViewProps> = ({
       data-testid="incall_leave"
     />,
   );
+  const productName = import.meta.env.VITE_PRODUCT_NAME || "Element Call";
   const footer = (
     <div
       ref={footerRef}
@@ -766,7 +794,7 @@ export const InCallView: FC<InCallViewProps> = ({
           <LogoType
             width={80}
             height={11}
-            aria-label={import.meta.env.VITE_PRODUCT_NAME || "Element Call"}
+            aria-label={productName}
           />
           {/* Don't mind this odd placement, it's just a little debug label */}
           {debugTileLayout

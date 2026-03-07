@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE in the repository root for full details.
 */
 
-import { EventType, RelationType } from "matrix-js-sdk";
+import { EventType, RelationType, type Room as MatrixRoom } from "matrix-js-sdk";
 import {
   createContext,
   use,
@@ -14,14 +14,14 @@ import {
   useMemo,
   type JSX,
 } from "react";
-import { type MatrixRTCSession } from "matrix-js-sdk/lib/matrixrtc";
 import { logger } from "matrix-js-sdk/lib/logger";
 
-import { useMatrixRTCSessionMemberships } from "../useMatrixRTCSessionMemberships";
 import { useClientState } from "../ClientContext";
 import { ElementCallReactionEventType, type ReactionOption } from ".";
 import { type CallViewModel } from "../state/CallViewModel/CallViewModel";
 import { useBehavior } from "../useBehavior";
+import { type CallSessionViewPort } from "../domains/call/application/ports/CallSessionViewPort.ts";
+import { useCallSessionMemberships } from "../domains/call/presentation/useCallSessionMemberships.ts";
 
 interface ReactionsSenderContextType {
   supportsReactions: boolean;
@@ -46,20 +46,21 @@ export const useReactionsSender = (): ReactionsSenderContextType => {
  */
 export const ReactionsSenderProvider = ({
   children,
-  rtcSession,
+  callSession,
+  matrixRoom,
   vm,
 }: {
   children: ReactNode;
-  rtcSession: MatrixRTCSession;
+  callSession: CallSessionViewPort;
+  matrixRoom: MatrixRoom;
   vm: CallViewModel;
 }): JSX.Element => {
-  const memberships = useMatrixRTCSessionMemberships(rtcSession);
+  const memberships = useCallSessionMemberships(callSession);
   const clientState = useClientState();
   const supportsReactions =
     clientState?.state === "valid" && clientState.supportedFeatures.reactions;
-  const room = rtcSession.room;
-  const myUserId = room.client.getUserId();
-  const myDeviceId = room.client.getDeviceId();
+  const myUserId = matrixRoom.client.getUserId();
+  const myDeviceId = matrixRoom.client.getDeviceId();
   const myMembershipIdentifier = `${myUserId}:${myDeviceId}`;
 
   const myMembershipEvent = useMemo(
@@ -99,8 +100,8 @@ export const ReactionsSenderProvider = ({
         if (!myMembershipEvent) {
           throw new Error("Cannot find own membership event");
         }
-        const reaction = await room.client.sendEvent(
-          rtcSession.room.roomId,
+        const reaction = await matrixRoom.client.sendEvent(
+          matrixRoom.roomId,
           EventType.Reaction,
           {
             "m.relates_to": {
@@ -116,7 +117,7 @@ export const ReactionsSenderProvider = ({
       }
     } else {
       try {
-        await room.client.redactEvent(rtcSession.room.roomId, myReactionId);
+        await matrixRoom.client.redactEvent(matrixRoom.roomId, myReactionId);
         logger.debug("Redacted raise hand event");
       } catch (ex) {
         logger.error("Failed to redact reaction event", myReactionId, ex);
@@ -124,11 +125,10 @@ export const ReactionsSenderProvider = ({
       }
     }
   }, [
+    matrixRoom,
     myMembershipEvent,
     myMembershipIdentifier,
     myRaisedHand,
-    rtcSession,
-    room,
   ]);
 
   const sendReaction = useCallback(
@@ -140,8 +140,8 @@ export const ReactionsSenderProvider = ({
       if (!myMembershipEvent) {
         throw new Error("Cannot find own membership event");
       }
-      await room.client.sendEvent(
-        rtcSession.room.roomId,
+      await matrixRoom.client.sendEvent(
+        matrixRoom.roomId,
         ElementCallReactionEventType,
         {
           "m.relates_to": {
@@ -153,7 +153,7 @@ export const ReactionsSenderProvider = ({
         },
       );
     },
-    [myMembershipEvent, myReaction, room, myMembershipIdentifier, rtcSession],
+    [matrixRoom, myMembershipEvent, myReaction, myMembershipIdentifier],
   );
 
   return (

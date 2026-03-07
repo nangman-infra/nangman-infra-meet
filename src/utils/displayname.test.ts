@@ -20,14 +20,14 @@ import {
   daveRTL,
 } from "./test-fixtures";
 import { mockMatrixRoom } from "./test";
-import { roomToMembersMap } from "../state/CallViewModel/remoteMembers/MatrixMemberMetadata";
+import { roomToMemberProfilesMap } from "../domains/room/infrastructure/MatrixRoomMemberProfiles";
 
 describe("shouldDisambiguate", () => {
   test("should not disambiguate a solo member", () => {
     const room = mockMatrixRoom({
       getMembersWithMembership: () => [],
     });
-    expect(shouldDisambiguate(alice, [], roomToMembersMap(room))).toEqual(
+    expect(shouldDisambiguate(alice, [], roomToMemberProfilesMap(room))).toEqual(
       false,
     );
   });
@@ -39,15 +39,15 @@ describe("shouldDisambiguate", () => {
       shouldDisambiguate(
         { rawDisplayName: "", userId: alice.userId },
         [aliceRtcMember, aliceDoppelgangerRtcMember],
-        roomToMembersMap(room),
+        roomToMemberProfilesMap(room),
       ),
     ).toEqual(false);
   });
   test("should disambiguate a member with RTL characters", () => {
     const room = mockMatrixRoom({ getMembersWithMembership: () => [] });
-    expect(shouldDisambiguate(daveRTL, [], roomToMembersMap(room))).toEqual(
-      true,
-    );
+    expect(
+      shouldDisambiguate(daveRTL, [], roomToMemberProfilesMap(room)),
+    ).toEqual(true);
   });
   test("should disambiguate a member with a matching displayname", () => {
     const room = mockMatrixRoom({
@@ -57,14 +57,14 @@ describe("shouldDisambiguate", () => {
       shouldDisambiguate(
         alice,
         [aliceRtcMember, aliceDoppelgangerRtcMember],
-        roomToMembersMap(room),
+        roomToMemberProfilesMap(room),
       ),
     ).toEqual(true);
     expect(
       shouldDisambiguate(
         aliceDoppelganger,
         [aliceRtcMember, aliceDoppelgangerRtcMember],
-        roomToMembersMap(room),
+        roomToMemberProfilesMap(room),
       ),
     ).toEqual(true);
   });
@@ -76,14 +76,14 @@ describe("shouldDisambiguate", () => {
       shouldDisambiguate(
         bob,
         [bobRtcMember, bobZeroWidthSpaceRtcMember],
-        roomToMembersMap(room),
+        roomToMemberProfilesMap(room),
       ),
     ).toEqual(true);
     expect(
       shouldDisambiguate(
         bobZeroWidthSpace,
         [bobRtcMember, bobZeroWidthSpaceRtcMember],
-        roomToMembersMap(room),
+        roomToMemberProfilesMap(room),
       ),
     ).toEqual(true);
   });
@@ -97,7 +97,7 @@ describe("shouldDisambiguate", () => {
         shouldDisambiguate(
           { rawDisplayName, userId: alice.userId },
           [],
-          roomToMembersMap(room),
+          roomToMemberProfilesMap(room),
         ),
       ).toEqual(true);
     },

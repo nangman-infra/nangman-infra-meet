@@ -5,13 +5,12 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE in the repository root for full details.
 */
 
-import {
-  type CallMembership,
-  MatrixRTCSessionEvent,
-  type MatrixRTCSession,
-} from "matrix-js-sdk/lib/matrixrtc";
 import { logger } from "matrix-js-sdk/lib/logger";
-import { type MatrixEvent, MatrixEventEvent } from "matrix-js-sdk";
+import {
+  type MatrixEvent,
+  MatrixEventEvent,
+  type Room as MatrixRoom,
+} from "matrix-js-sdk";
 import { type ReactionEventContent } from "matrix-js-sdk/lib/types";
 import {
   RelationType,
@@ -28,6 +27,9 @@ import {
   type RaisedHandInfo,
   type ReactionInfo,
 } from ".";
+import { getCallMemberId } from "../domains/call/domain/CallMember.ts";
+import { type CallMemberSession } from "../domains/call/domain/CallMemberSession.ts";
+import { type CallSessionViewPort } from "../domains/call/application/ports/CallSessionViewPort.ts";
 import { type ObservableScope } from "../state/ObservableScope";
 
 export const REACTION_ACTIVE_TIME_MS = 3000;
@@ -35,7 +37,7 @@ export const REACTION_ACTIVE_TIME_MS = 3000;
 /**
  * Listens for reactions from a RTCSession and populates subjects
  * for consumption by the CallViewModel.
- * @param rtcSession
+ * @param callSession
  */
 export class ReactionsReader {
   private readonly raisedHandsSubject$ = new BehaviorSubject<
@@ -55,9 +57,14 @@ export class ReactionsReader {
    */
   public readonly reactions$ = this.reactionsSubject$.asObservable();
 
+  private get memberSessions(): CallMemberSession[] {
+    return this.callSession.getCallMemberSessions();
+  }
+
   public constructor(
     private readonly scope: ObservableScope,
-    private readonly rtcSession: MatrixRTCSession,
+    private readonly matrixRoom: MatrixRoom,
+    private readonly callSession: CallSessionViewPort,
   ) {
     // Hide reactions after a given time.
     this.reactionsSubject$
@@ -76,31 +83,25 @@ export class ReactionsReader {
     // TODO: Convert this class to the functional reactive style and get rid of
     // all this manual setup and teardown for event listeners
 
-    this.rtcSession.room.on(MatrixRoomEvent.Timeline, this.handleReactionEvent);
+    this.matrixRoom.on(MatrixRoomEvent.Timeline, this.handleReactionEvent);
     this.scope.onEnd(() =>
-      this.rtcSession.room.off(
-        MatrixRoomEvent.Timeline,
-        this.handleReactionEvent,
-      ),
+      this.matrixRoom.off(MatrixRoomEvent.Timeline, this.handleReactionEvent),
     );
 
-    this.rtcSession.room.on(
+    this.matrixRoom.on(
       MatrixRoomEvent.Redaction,
       this.handleReactionEvent,
     );
     this.scope.onEnd(() =>
-      this.rtcSession.room.off(
-        MatrixRoomEvent.Redaction,
-        this.handleReactionEvent,
-      ),
+      this.matrixRoom.off(MatrixRoomEvent.Redaction, this.handleReactionEvent),
     );
 
-    this.rtcSession.room.client.on(
+    this.matrixRoom.client.on(
       MatrixEventEvent.Decrypted,
       this.handleReactionEvent,
     );
     this.scope.onEnd(() =>
-      this.rtcSession.room.client.off(
+      this.matrixRoom.client.off(
         MatrixEventEvent.Decrypted,
         this.handleReactionEvent,
       ),
@@ -108,26 +109,23 @@ export class ReactionsReader {
 
     // We listen for a local echo to get the real event ID, as timeline events
     // may still be sending.
-    this.rtcSession.room.on(
+    this.matrixRoom.on(
       MatrixRoomEvent.LocalEchoUpdated,
       this.handleReactionEvent,
     );
     this.scope.onEnd(() =>
-      this.rtcSession.room.off(
+      this.matrixRoom.off(
         MatrixRoomEvent.LocalEchoUpdated,
         this.handleReactionEvent,
       ),
     );
 
-    this.rtcSession.on(
-      MatrixRTCSessionEvent.MembershipsChanged,
-      this.onMembershipsChanged,
-    );
+    const unsubscribeMemberships =
+      this.callSession.subscribeToMembershipsChanged((oldSessions) =>
+        this.onMembershipsChanged(oldSessions),
+      );
     this.scope.onEnd(() =>
-      this.rtcSession.off(
-        MatrixRTCSessionEvent.MembershipsChanged,
-        this.onMembershipsChanged,
-      ),
+      unsubscribeMemberships(),
     );
 
     // Run this once to ensure we have fetched the state from the call.
@@ -145,7 +143,7 @@ export class ReactionsReader {
     membershipEventId: string,
     expectedSender: string,
   ): MatrixEvent | undefined {
-    const relations = this.rtcSession.room.relations.getChildEventsForEvent(
+    const relations = this.matrixRoom.relations.getChildEventsForEvent(
       membershipEventId,
       RelationType.Annotation,
       EventType.Reaction,
@@ -162,23 +160,25 @@ export class ReactionsReader {
   /**
    * Will remove any hand raises by old members, and look for any
    * existing hand raises by new members.
-   * @param oldMemberships Any members who have left the call.
+   * @param oldMemberSessions Any members who have left the call.
    */
-  private onMembershipsChanged = (oldMemberships: CallMembership[]): void => {
+  private onMembershipsChanged = (oldMemberSessions: CallMemberSession[]): void => {
+    const currentMemberSessions = this.memberSessions;
     // Remove any raised hands for users no longer joined to the call.
     for (const identifier of Object.keys(this.raisedHandsSubject$.value).filter(
-      (rhId) => oldMemberships.find((u) => u.userId == rhId),
+      (rhId) =>
+        oldMemberSessions.some((session) => getCallMemberId(session) === rhId),
     )) {
       this.removeRaisedHand(identifier);
     }
 
     // For each member in the call, check to see if a reaction has
     // been raised and adjust.
-    for (const m of this.rtcSession.memberships) {
+    for (const m of currentMemberSessions) {
       if (!m.userId || !m.eventId) {
         continue;
       }
-      const identifier = `${m.userId}:${m.deviceId}`;
+      const identifier = getCallMemberId(m);
       if (
         this.raisedHandsSubject$.value[identifier] &&
         this.raisedHandsSubject$.value[identifier].membershipEventId !==
@@ -194,7 +194,7 @@ export class ReactionsReader {
         if (!eventId) {
           continue;
         }
-        this.addRaisedHand(`${m.userId}:${m.deviceId}`, {
+        this.addRaisedHand(identifier, {
           membershipEventId: m.eventId,
           reactionEventId: eventId,
           time: new Date(reaction.localTimestamp),
@@ -235,7 +235,7 @@ export class ReactionsReader {
    * @param event The incoming matrix event, which may or may not be decrypted.
    */
   private handleReactionEvent = (event: MatrixEvent): void => {
-    const room = this.rtcSession.room;
+    const room = this.matrixRoom;
     // Decrypted events might come from a different room
     if (event.getRoomId() !== room.roomId) return;
     // Skip any events that are still sending.
@@ -255,7 +255,7 @@ export class ReactionsReader {
       const content: ECallReactionEventContent = event.getContent();
 
       const membershipEventId = content?.["m.relates_to"]?.event_id;
-      const membershipEvent = this.rtcSession.memberships.find(
+      const membershipEvent = this.memberSessions.find(
         (e) => e.eventId === membershipEventId && e.userId === sender,
       );
       // Check to see if this reaction was made to a membership event (and the
@@ -267,7 +267,7 @@ export class ReactionsReader {
         return;
       }
       // TODO refactor to use memer id `membershipEvent.membershipID` (needs to happen in combination with other memberId refactors)
-      const identifier = `${membershipEvent.userId}:${membershipEvent.deviceId}`;
+      const identifier = getCallMemberId(membershipEvent);
 
       if (!content.emoji) {
         logger.warn(`Reaction had no emoji from ${reactionEventId}`);
@@ -315,7 +315,7 @@ export class ReactionsReader {
 
       // Check to see if this reaction was made to a membership event (and the
       // sender of the reaction matches the membership)
-      const membershipEvent = this.rtcSession.memberships.find(
+      const membershipEvent = this.memberSessions.find(
         (e) => e.eventId === membershipEventId && e.userId === sender,
       );
       if (!membershipEvent) {
@@ -326,14 +326,11 @@ export class ReactionsReader {
       }
 
       if (content?.["m.relates_to"].key === "🖐️") {
-        this.addRaisedHand(
-          `${membershipEvent.userId}:${membershipEvent.deviceId}`,
-          {
-            reactionEventId,
-            membershipEventId,
-            time: new Date(event.localTimestamp),
-          },
-        );
+        this.addRaisedHand(getCallMemberId(membershipEvent), {
+          reactionEventId,
+          membershipEventId,
+          time: new Date(event.localTimestamp),
+        });
       }
     } else if (event.getType() === EventType.RoomRedaction) {
       const targetEvent = event.event.redacts;

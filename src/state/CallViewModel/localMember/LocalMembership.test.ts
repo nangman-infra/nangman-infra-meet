@@ -6,10 +6,6 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 Please see LICENSE in the repository root for full details.
 */
 
-import {
-  type LivekitTransport,
-  type MatrixRTCSession,
-} from "matrix-js-sdk/lib/matrixrtc";
 import { describe, expect, it, vi } from "vitest";
 import { AutoDiscovery } from "matrix-js-sdk/lib/autodiscovery";
 import { map } from "rxjs";
@@ -31,10 +27,27 @@ import { Epoch } from "../../ObservableScope";
 import { constant } from "../../Behavior";
 import { ConnectionManagerData } from "../remoteMembers/ConnectionManager";
 import { type Publisher } from "./Publisher";
+import { type CallTransport } from "../../../domains/call/domain/CallTransport";
+import {
+  type CallSessionMembershipPort,
+  type JoinableCallSessionPort,
+} from "../../../domains/call/application/ports/CallSessionPort.ts";
 
 const MATRIX_RTC_MODE = MatrixRTCMode.Legacy;
-const getUrlParams = vi.hoisted(() => vi.fn(() => ({})));
-vi.mock("../../../UrlParams", () => ({ getUrlParams }));
+const getCallUrlContext = vi.hoisted(() => vi.fn(() => ({})));
+const getMediaUrlContext = vi.hoisted(() => vi.fn(() => ({})));
+vi.mock(
+  "../../../domains/call/application/readModels/CallUrlContext.ts",
+  () => ({
+    getCallUrlContext,
+  }),
+);
+vi.mock(
+  "../../../domains/media/application/readModels/MediaUrlContext.ts",
+  () => ({
+    getMediaUrlContext,
+  }),
+);
 
 describe("LocalMembership", () => {
   describe("enterRTCSession", () => {
@@ -92,7 +105,7 @@ describe("LocalMembership", () => {
           getPreferredFoci: vi.fn().mockReturnValue([focusFromOlderMembership]),
         }),
         joinRoomSession: vi.fn(),
-      }) as unknown as MatrixRTCSession;
+      }) as unknown as JoinableCallSessionPort;
 
       await enterRTCSession(
         mockedSession,
@@ -150,7 +163,7 @@ describe("LocalMembership", () => {
         memberships: [],
         getFocusInUse: vi.fn(),
         joinRoomSession: vi.fn(),
-      }) as unknown as MatrixRTCSession;
+      }) as unknown as JoinableCallSessionPort;
 
       await enterRTCSession(
         mockedSession,
@@ -175,7 +188,7 @@ describe("LocalMembership", () => {
     matrixRTCSession: {
       updateCallIntent: () => {},
       leaveRoomSession: () => {},
-    } as unknown as MatrixRTCSession,
+    } as unknown as CallSessionMembershipPort,
     muteStates: mockMuteStates(),
     isHomeserverConnected: constant(true),
     trackProcessorState$: constant({
@@ -191,10 +204,12 @@ describe("LocalMembership", () => {
   it("throws error on missing RTC config error", () => {
     withTestScheduler(({ scope, hot, expectObservable }) => {
       const goodTransport = {
-        livekit_service_url: "other",
-      } as LivekitTransport;
+        kind: "livekit",
+        serviceUrl: "other",
+        roomAlias: "!room:example.org",
+      } as CallTransport;
 
-      const localTransport$ = scope.behavior<LivekitTransport>(
+      const localTransport$ = scope.behavior<CallTransport>(
         hot("1ms #", {}, new MatrixRTCTransportMissingError("domain.com")),
         goodTransport,
       );

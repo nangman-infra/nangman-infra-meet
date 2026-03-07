@@ -13,11 +13,15 @@ import {
   useRef,
   type JSX,
 } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import { type MatrixError } from "matrix-js-sdk";
 import { logger } from "matrix-js-sdk/lib/logger";
 import { Trans, useTranslation } from "react-i18next";
 import {
   CheckIcon,
+  AdminIcon,
+  CloseIcon,
+  EndCallIcon,
   UnknownSolidIcon,
 } from "@vector-im/compound-design-tokens/assets/web/icons";
 import { useObservable } from "observable-hooks";
@@ -25,15 +29,11 @@ import { map } from "rxjs";
 
 import { useClientLegacy } from "../ClientContext";
 import { ErrorPage, FullScreenView, LoadingPage } from "../FullScreenView";
-import { RoomAuthView } from "./RoomAuthView";
 import { GroupCallView } from "./GroupCallView";
-import { useRoomIdentifier, useUrlParams } from "../UrlParams";
-import { useRegisterPasswordlessUser } from "../auth/useRegisterPasswordlessUser";
 import { HomePage } from "../home/HomePage";
 import { platform } from "../Platform";
 import { AppSelectionModal } from "./AppSelectionModal";
-import { widget } from "../widget";
-import { CallTerminatedMessage, useLoadGroupCall } from "./useLoadGroupCall";
+import { useLoadGroupCall } from "./useLoadGroupCall";
 import { LobbyView } from "./LobbyView";
 import { E2eeType } from "../e2ee/e2eeType";
 import { useProfile } from "../profile/useProfile";
@@ -44,23 +44,23 @@ import { ErrorView } from "../ErrorView";
 import { useMediaDevices } from "../MediaDevicesContext";
 import { MuteStates } from "../state/MuteStates";
 import { ObservableScope } from "../state/ObservableScope";
+import { RoomTerminationError } from "../domains/room/application/errors/RoomTerminationError.ts";
+import { useRoomIdentifier } from "../domains/room/application/readModels/RoomIdentifier.ts";
+import { useRoomEntryUrlContext } from "../domains/room/application/readModels/RoomEntryUrlContext.ts";
 
 export const RoomPage: FC = () => {
-  const { confineToRoom, appPrompt, preload, header, displayName, skipLobby } =
-    useUrlParams();
+  const { confineToRoom, appPrompt, preload, header, skipLobby } =
+    useRoomEntryUrlContext();
   const { t } = useTranslation();
   const { roomAlias, roomId, viaServers } = useRoomIdentifier();
+  const location = useLocation();
 
   const roomIdOrAlias = roomId ?? roomAlias;
   if (!roomIdOrAlias) {
     logger.error("No room specified");
   }
 
-  const { registerPasswordlessUser } = useRegisterPasswordlessUser();
-  const [isRegistering, setIsRegistering] = useState(false);
-
-  const { loading, authenticated, client, error, passwordlessUser } =
-    useClientLegacy();
+  const { loading, client, error, passwordlessUser } = useClientLegacy();
   const { avatarUrl, displayName: userDisplayName } = useProfile(client);
 
   const groupCallState = useLoadGroupCall(client, roomIdOrAlias, viaServers);
@@ -77,27 +77,6 @@ export const RoomPage: FC = () => {
     setMuteStates(new MuteStates(scope, devices, joined$));
     return (): void => scope.end();
   }, [devices, joined$]);
-
-  useEffect(() => {
-    // If we've finished loading, are not already authed and we've been given a display name as
-    // a URL param, automatically register a passwordless user
-    if (!loading && !authenticated && displayName && !widget) {
-      setIsRegistering(true);
-      registerPasswordlessUser(displayName)
-        .catch((e) => {
-          logger.error("Failed to register passwordless user", e);
-        })
-        .finally(() => {
-          setIsRegistering(false);
-        });
-    }
-  }, [
-    loading,
-    authenticated,
-    displayName,
-    setIsRegistering,
-    registerPasswordlessUser,
-  ]);
 
   const [optInAnalytics, setOptInAnalytics] = useOptInAnalytics();
   useEffect(() => {
@@ -119,7 +98,6 @@ export const RoomPage: FC = () => {
         return (
           muteStates && (
             <GroupCallView
-              widget={widget}
               client={client!}
               rtcSession={groupCallState.rtcSession}
               joined={joined}
@@ -158,13 +136,11 @@ export const RoomPage: FC = () => {
                 displayName: userDisplayName ?? "",
                 avatarUrl: avatarUrl ?? "",
                 roomAlias: null,
-                roomId: groupCallState.roomSummary.room_id,
+                roomId: groupCallState.roomSummary.roomId,
                 roomName: groupCallState.roomSummary.name ?? "",
-                roomAvatar: groupCallState.roomSummary.avatar_url ?? null,
+                roomAvatar: groupCallState.roomSummary.avatarUrl ?? null,
                 e2eeSystem: {
-                  kind: groupCallState.roomSummary[
-                    "im.nheko.summary.encryption"
-                  ]
+                  kind: groupCallState.roomSummary.isEncrypted
                     ? E2eeType.PER_PARTICIPANT
                     : E2eeType.NONE,
                 },
@@ -195,7 +171,6 @@ export const RoomPage: FC = () => {
               <ErrorView
                 Icon={UnknownSolidIcon}
                 title={t("error.call_not_found")}
-                widget={widget}
               >
                 <Trans i18nKey="error.call_not_found_description">
                   <p>
@@ -207,15 +182,32 @@ export const RoomPage: FC = () => {
               </ErrorView>
             </FullScreenView>
           );
-        } else if (groupCallState.error instanceof CallTerminatedMessage) {
+        } else if (groupCallState.error instanceof RoomTerminationError) {
+          const terminationMessage =
+            groupCallState.error.kind === "banned"
+              ? {
+                  Icon: AdminIcon,
+                  title: t("group_call_loader.banned_heading"),
+                  body: t("group_call_loader.banned_body"),
+                }
+              : groupCallState.error.kind === "knockRejected"
+                ? {
+                    Icon: CloseIcon,
+                    title: t("group_call_loader.knock_reject_heading"),
+                    body: t("group_call_loader.knock_reject_body"),
+                  }
+                : {
+                    Icon: EndCallIcon,
+                    title: t("group_call_loader.call_ended_heading"),
+                    body: t("group_call_loader.call_ended_body"),
+                  };
           return (
             <FullScreenView>
               <ErrorView
-                Icon={groupCallState.error.icon}
-                title={groupCallState.error.message}
-                widget={widget}
+                Icon={terminationMessage.Icon}
+                title={terminationMessage.title}
               >
-                <p>{groupCallState.error.messageBody}</p>
+                <p>{terminationMessage.body}</p>
                 {groupCallState.error.reason && (
                   <p>
                     {t("group_call_loader.reason", {
@@ -227,7 +219,7 @@ export const RoomPage: FC = () => {
             </FullScreenView>
           );
         } else {
-          return <ErrorPage widget={widget} error={groupCallState.error} />;
+          return <ErrorPage error={groupCallState.error} />;
         }
       default:
         return <> </>;
@@ -235,12 +227,18 @@ export const RoomPage: FC = () => {
   };
 
   let content: ReactNode;
-  if (loading || isRegistering) {
+  if (loading) {
     content = <LoadingPage />;
   } else if (error) {
-    content = <ErrorPage widget={widget} error={error} />;
+    content = <ErrorPage error={error} />;
   } else if (!client) {
-    content = <RoomAuthView />;
+    content = (
+      <Navigate
+        to="/login"
+        state={{ from: `${location.pathname}${location.search}` }}
+        replace
+      />
+    );
   } else if (!roomIdOrAlias) {
     // TODO: This doesn't belong here, the app routes need to be reworked
     content = <HomePage />;

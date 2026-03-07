@@ -13,9 +13,9 @@ import {
   soundEffectVolume as soundEffectVolumeSetting,
   useSetting,
 } from "./settings/settings";
+import { useMediaUrlContext } from "./domains/media/application/readModels/MediaUrlContext.ts";
 import { useEarpieceAudioConfig, useMediaDevices } from "./MediaDevicesContext";
 import { type PrefetchedSounds } from "./soundUtils";
-import { useUrlParams } from "./UrlParams";
 import * as controls from "./controls";
 
 /**
@@ -166,7 +166,7 @@ export function useAudioContext<S extends string>(
   const audioOutputId = useObservableEagerState(
     useMediaDevices().audioOutput.selected$,
   )?.id;
-  const { controlledAudioDevices } = useUrlParams();
+  const { controlledAudioDevices } = useMediaUrlContext();
 
   // Update the sink ID whenever we change devices.
   useEffect(() => {

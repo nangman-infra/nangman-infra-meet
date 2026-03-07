@@ -19,18 +19,22 @@ import {
   isE2EESupported as isE2EESupportedBrowser,
 } from "livekit-client";
 import { logger } from "matrix-js-sdk/lib/logger";
-import {
-  MatrixRTCSessionEvent,
-  type MatrixRTCSession,
-} from "matrix-js-sdk/lib/matrixrtc";
+import { type MatrixRTCSession } from "matrix-js-sdk/lib/matrixrtc";
 import { useNavigate } from "react-router-dom";
 
-import type { IWidgetApiRequest } from "matrix-widget-api";
 import {
   ElementWidgetActions,
   type JoinCallData,
-  type WidgetHelpers,
-} from "../widget";
+} from "../domains/widget/application/ports/WidgetHostPort.ts";
+import {
+  replyToWidgetAction,
+  subscribeToWidgetAction,
+} from "../domains/widget/application/services/WidgetActionService.ts";
+import {
+  closeWidget,
+  hasWidgetHost,
+  setWidgetAlwaysOnScreen,
+} from "../domains/widget/application/services/WidgetHostService.ts";
 import { LobbyView } from "./LobbyView";
 import { type MatrixInfo } from "./VideoPreview";
 import { CallEndedView } from "./CallEndedView";
@@ -40,7 +44,6 @@ import { findDeviceByName } from "../utils/media";
 import { ActiveCall } from "./InCallView";
 import { type MuteStates } from "../state/MuteStates";
 import { useMediaDevices } from "../MediaDevicesContext";
-import { useMatrixRTCSessionMemberships } from "../useMatrixRTCSessionMemberships";
 import {
   saveKeyForRoom,
   useRoomEncryptionSystem,
@@ -49,12 +52,8 @@ import { useRoomAvatar } from "./useRoomAvatar";
 import { useRoomName } from "./useRoomName";
 import { useJoinRule } from "./useJoinRule";
 import { InviteModal } from "./InviteModal";
-import {
-  getUrlParams,
-  HeaderStyle,
-  type UrlParams,
-  useUrlParams,
-} from "../UrlParams";
+import { HeaderStyle, type UrlParams } from "../UrlParams";
+import { useCallUrlContext } from "../domains/call/application/readModels/CallUrlContext.ts";
 import { E2eeType } from "../e2ee/e2eeType";
 import { useAudioContext } from "../useAudioContext";
 import {
@@ -70,10 +69,11 @@ import {
   UnknownCallError,
 } from "../utils/errors.ts";
 import { GroupCallErrorBoundary } from "./GroupCallErrorBoundary.tsx";
-import { useTypedEventEmitter } from "../useEvents";
 import { muteAllAudio$ } from "../state/MuteAllAudioModel.ts";
 import { useAppBarTitle } from "../AppBar.tsx";
 import { useBehavior } from "../useBehavior.ts";
+import { createMatrixCallSessionViewPort } from "../domains/call/infrastructure/MatrixCallSessionViewPort.ts";
+import { useCallSessionMemberships } from "../domains/call/presentation/useCallSessionMemberships.ts";
 
 /**
  * If there already are this many participants in the call, we automatically mute
@@ -98,7 +98,6 @@ interface Props {
   joined: boolean;
   setJoined: (value: boolean) => void;
   muteStates: MuteStates;
-  widget: WidgetHelpers | null;
 }
 
 export const GroupCallView: FC<Props> = ({
@@ -112,13 +111,18 @@ export const GroupCallView: FC<Props> = ({
   joined,
   setJoined,
   muteStates,
-  widget,
 }) => {
+  const widgetMode = hasWidgetHost();
+  const room = rtcSession.room as Room;
+  const callSession = useMemo(
+    () => createMatrixCallSessionViewPort(rtcSession),
+    [rtcSession],
+  );
   // Used to thread through any errors that occur outside the error boundary
   const [externalError, setExternalError] = useState<ElementCallError | null>(
     null,
   );
-  const memberships = useMatrixRTCSessionMemberships(rtcSession);
+  const memberships = useCallSessionMemberships(callSession);
 
   const muteAllAudio = useBehavior(muteAllAudio$);
   const leaveSoundContext = useLatest(
@@ -159,21 +163,20 @@ export const GroupCallView: FC<Props> = ({
     };
   }, [rtcSession]);
 
-  // TODO move this into the callViewModel LocalMembership.ts
-  useTypedEventEmitter(
-    rtcSession,
-    MatrixRTCSessionEvent.MembershipManagerError,
-    (error) => setExternalError(new ConnectionLostError()),
+  useEffect(
+    () =>
+      callSession.subscribeToMembershipManagerError(() =>
+        setExternalError(new ConnectionLostError()),
+      ),
+    [callSession],
   );
   useEffect(() => {
     // Sanity check the room object
-    if (client.getRoom(rtcSession.room.roomId) !== rtcSession.room)
+    if (client.getRoom(room.roomId) !== room)
       logger.warn(
-        `We've ended up with multiple rooms for the same ID (${rtcSession.room.roomId}). This indicates a bug in the group call loading code, and may lead to incomplete room state.`,
+        `We've ended up with multiple rooms for the same ID (${room.roomId}). This indicates a bug in the group call loading code, and may lead to incomplete room state.`,
       );
-  }, [client, rtcSession.room]);
-
-  const room = rtcSession.room as Room;
+  }, [client, room]);
   const { displayName, avatarUrl } = useProfile(client);
   const roomName = useRoomName(room);
   const roomAvatar = useRoomAvatar(room);
@@ -181,7 +184,7 @@ export const GroupCallView: FC<Props> = ({
     perParticipantE2EE,
     returnToLobby,
     password: passwordFromUrl,
-  } = useUrlParams();
+  } = useCallUrlContext();
   const e2eeSystem = useRoomEncryptionSystem(room.roomId);
 
   // Save the password once we start the groupCallView
@@ -277,20 +280,23 @@ export const GroupCallView: FC<Props> = ({
     };
 
     if (skipLobby) {
-      if (widget && preload) {
+      if (widgetMode && preload) {
         // In preload mode without lobby we wait for a join action before entering
-        const onJoin = (ev: CustomEvent<IWidgetApiRequest>): void => {
+        const onJoin = (ev: CustomEvent): void => {
           (async (): Promise<void> => {
             await defaultDeviceSetup(ev.detail.data as unknown as JoinCallData);
             setJoined(true);
-            widget.api.transport.reply(ev.detail, {});
+            replyToWidgetAction(ev.detail, {});
           })().catch((e) => {
             logger.error("Error joining RTC session on preload", e);
           });
         };
-        widget.lazyActions.on(ElementWidgetActions.JoinCall, onJoin);
+        const unsubscribe = subscribeToWidgetAction(
+          ElementWidgetActions.JoinCall,
+          onJoin,
+        );
         return (): void => {
-          widget.lazyActions.off(ElementWidgetActions.JoinCall, onJoin);
+          unsubscribe?.();
         };
       } else {
         // No lobby and no preload: we enter the rtc session right away
@@ -298,7 +304,6 @@ export const GroupCallView: FC<Props> = ({
       }
     }
   }, [
-    widget,
     rtcSession,
     preload,
     skipLobby,
@@ -306,6 +311,7 @@ export const GroupCallView: FC<Props> = ({
     mediaDevices,
     latestMuteStates,
     setJoined,
+    widgetMode,
   ]);
 
   // TODO refactor this + "joined" to just one callState
@@ -329,12 +335,12 @@ export const GroupCallView: FC<Props> = ({
         // To increase the likelihood of the PostHog event being sent out in
         // widget mode before the iframe is killed, we ask it to skip the
         // usual queuing/batching of requests.
-        const sendInstantly = widget !== null;
+        const sendInstantly = widgetMode;
         PosthogAnalytics.instance.eventCallEnded.track(
           room.roomId,
-          rtcSession.memberships.length,
+          callSession.getCallMemberSessions().length,
           sendInstantly,
-          rtcSession,
+          callSession.getCallSessionStats(),
         );
         // Unfortunately the PostHog library provides no way to await the
         // tracking of an event, but we don't really want it to hold up the
@@ -357,10 +363,10 @@ export const GroupCallView: FC<Props> = ({
           )
             void navigate("/");
 
-          if (widget) {
+          if (widgetMode) {
             // After this point the iframe could die at any moment!
             try {
-              await widget.api.setAlwaysOnScreen(false);
+              await setWidgetAlwaysOnScreen(false);
             } catch (e) {
               logger.error(
                 "Failed to set call widget `alwaysOnScreen` to false",
@@ -369,13 +375,12 @@ export const GroupCallView: FC<Props> = ({
             }
             // On a normal user hangup we can shut down and close the widget. But if an
             // error occurs we should keep the widget open until the user reads it.
-            if (reason != "error" && !getUrlParams().returnToLobby) {
+            if (reason != "error" && !returnToLobby) {
               try {
-                await widget.api.transport.send(ElementWidgetActions.Close, {});
+                await closeWidget();
               } catch (e) {
-                logger.error("Failed to send close action", e);
+                logger.error("Failed to close widget", e);
               }
-              widget.api.transport.stop();
             }
           }
         });
@@ -383,22 +388,23 @@ export const GroupCallView: FC<Props> = ({
     [
       setJoined,
       leaveSoundContext,
-      widget,
       room.roomId,
-      rtcSession,
+      callSession,
       isPasswordlessUser,
       confineToRoom,
       navigate,
+      widgetMode,
+      returnToLobby,
     ],
   );
 
   useEffect(() => {
-    if (widget && joined)
+    if (widgetMode && joined)
       // set widget to sticky once joined.
-      widget.api.setAlwaysOnScreen(true).catch((e) => {
+      setWidgetAlwaysOnScreen(true).catch((e) => {
         logger.error("Error calling setAlwaysOnScreen(true)", e);
       });
-  }, [widget, joined, rtcSession]);
+  }, [widgetMode, joined, rtcSession]);
 
   const joinRule = useJoinRule(room);
 
@@ -458,7 +464,7 @@ export const GroupCallView: FC<Props> = ({
         <ActiveCall
           client={client}
           matrixInfo={matrixInfo}
-          rtcSession={rtcSession as MatrixRTCSession}
+          rtcSession={rtcSession}
           matrixRoom={room}
           onLeft={onLeft}
           header={header}
@@ -469,7 +475,7 @@ export const GroupCallView: FC<Props> = ({
         />
       </>
     );
-  } else if (left && widget === null) {
+  } else if (left && !widgetMode) {
     // Left in SPA mode:
 
     // The call ended view is shown for two reasons: prompting guests to create
@@ -480,7 +486,7 @@ export const GroupCallView: FC<Props> = ({
     // submitting anything.
     if (
       isPasswordlessUser ||
-      (PosthogAnalytics.instance.isEnabled() && widget === null)
+      (PosthogAnalytics.instance.isEnabled() && !widgetMode)
     ) {
       body = (
         <CallEndedView
@@ -497,7 +503,7 @@ export const GroupCallView: FC<Props> = ({
       // LobbyView again which would open capture devices again.
       body = null;
     }
-  } else if (left && widget !== null) {
+  } else if (left && widgetMode) {
     // Left in widget mode:
     body = returnToLobby ? lobbyView : null;
   } else if (preload || skipLobby) {
@@ -509,7 +515,6 @@ export const GroupCallView: FC<Props> = ({
 
   return (
     <GroupCallErrorBoundary
-      widget={widget}
       recoveryActionHandler={async (action) => {
         setExternalError(null);
         if (action == "reconnect") {
@@ -521,7 +526,7 @@ export const GroupCallView: FC<Props> = ({
       }}
       onError={
         (/**error*/) => {
-          if (rtcSession.isJoined()) onLeft("error");
+          if (callSession.isJoined()) onLeft("error");
         }
       }
     >

@@ -9,10 +9,6 @@ import {
   type LocalParticipant as LocalLivekitParticipant,
   type RemoteParticipant as RemoteLivekitParticipant,
 } from "livekit-client";
-import {
-  type LivekitTransport,
-  type CallMembership,
-} from "matrix-js-sdk/lib/matrixrtc";
 import { combineLatest, filter, map } from "rxjs";
 import { logger as rootLogger } from "matrix-js-sdk/lib/logger";
 
@@ -21,6 +17,11 @@ import { type IConnectionManager } from "./ConnectionManager";
 import { Epoch, type ObservableScope } from "../../ObservableScope";
 import { type Connection } from "./Connection";
 import { generateItemsWithEpoch } from "../../../utils/observable";
+import { type CallTransport } from "../../../domains/call/domain/CallTransport.ts";
+import {
+  getCallMemberId,
+  type CallMember,
+} from "../../../domains/call/domain/CallMember.ts";
 
 const logger = rootLogger.getChild("[MatrixLivekitMembers]");
 
@@ -30,7 +31,7 @@ const logger = rootLogger.getChild("[MatrixLivekitMembers]");
  * or if it has no livekit transport at all.
  */
 export interface MatrixLivekitMember {
-  membership$: Behavior<CallMembership>;
+  member$: Behavior<CallMember>;
   participant$: Behavior<
     LocalLivekitParticipant | RemoteLivekitParticipant | null
   >;
@@ -43,7 +44,7 @@ export interface MatrixLivekitMember {
 interface Props {
   scope: ObservableScope;
   membershipsWithTransport$: Behavior<
-    Epoch<{ membership: CallMembership; transport?: LivekitTransport }[]>
+    Epoch<{ member: CallMember; transport?: CallTransport }[]>
   >;
   connectionManager: IConnectionManager;
 }
@@ -52,7 +53,7 @@ interface Props {
  *
  * It has a small public interface:
  *  - in (via constructor):
- *    - an observable of CallMembership[] to track the call members (The matrix side)
+ *    - an observable of CallMemberTransportBinding[] to track the call members (The matrix side)
  *    - a `ConnectionManager` for the lk rooms (The livekit side)
  *  - out (via public Observable):
  *    - `remoteMatrixLivekitMember` an observable of MatrixLivekitMember[] to track the remote members and associated livekit data.
@@ -86,9 +87,8 @@ export function createMatrixLivekitMembers$({
         // creates an array of `{key, data}[]`
         // Each change in the keys (new key, missing key) will result in a call to the factory function.
         function* ([membershipsWithTransports, managerData]) {
-          for (const { membership, transport } of membershipsWithTransports) {
-            // TODO! cannot use membership.membershipID yet, Currently its hardcoded by the jwt service to
-            const participantId = /*membership.membershipID*/ `${membership.userId}:${membership.deviceId}`;
+          for (const { member, transport } of membershipsWithTransports) {
+            const participantId = getCallMemberId(member);
 
             const participants = transport
               ? managerData.getParticipantForTransport(transport)
@@ -100,8 +100,8 @@ export function createMatrixLivekitMembers$({
               : null;
 
             yield {
-              keys: [participantId, membership.userId],
-              data: { membership, participant, connection },
+              keys: [participantId, member.userId],
+              data: { member, participant, connection },
             };
           }
         },
@@ -121,18 +121,4 @@ export function createMatrixLivekitMembers$({
       ),
     ),
   );
-}
-
-// TODO add back in the callviewmodel pauseWhen(this.pretendToBeDisconnected$)
-
-// TODO add this to the JS-SDK
-export function areLivekitTransportsEqual(
-  t1: LivekitTransport | null,
-  t2: LivekitTransport | null,
-): boolean {
-  if (t1 && t2) return t1.livekit_service_url === t2.livekit_service_url;
-  // In case we have different lk rooms in the same SFU (depends on the livekit authorization service)
-  // It is only needed in case the livekit authorization service is not behaving as expected (or custom implementation)
-  if (!t1 && !t2) return true;
-  return false;
 }

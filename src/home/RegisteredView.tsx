@@ -37,14 +37,14 @@ import { Form } from "../form/Form";
 import { AnalyticsNotice } from "../analytics/AnalyticsNotice";
 import { E2eeType } from "../e2ee/e2eeType";
 import { useOptInAnalytics } from "../settings/settings";
-import { useUrlParams } from "../UrlParams";
+import { useUiUrlContext } from "../shared/application/readModels/UiUrlContext.ts";
 
 interface Props {
   client: MatrixClient;
 }
 
 export const RegisteredView: FC<Props> = ({ client }) => {
-  const { header } = useUrlParams();
+  const { header } = useUiUrlContext();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error>();
   const [optInAnalytics] = useOptInAnalytics();

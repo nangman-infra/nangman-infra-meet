@@ -1,3 +1,5 @@
+process.env.BROWSERSLIST_IGNORE_OLD_DATA ??= "true";
+
 import { defineConfig, mergeConfig } from "vitest/config";
 
 import viteConfig from "./vite.config";

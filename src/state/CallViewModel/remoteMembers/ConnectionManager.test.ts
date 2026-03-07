@@ -7,7 +7,6 @@ Please see LICENSE in the repository root for full details.
 
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { BehaviorSubject } from "rxjs";
-import { type LivekitTransport } from "matrix-js-sdk/lib/matrixrtc";
 import { type Participant as LivekitParticipant } from "livekit-client";
 import { logger } from "matrix-js-sdk/lib/logger";
 
@@ -19,21 +18,25 @@ import {
 import { type ConnectionFactory } from "./ConnectionFactory.ts";
 import { type Connection } from "./Connection.ts";
 import { withTestScheduler } from "../../../utils/test.ts";
-import { areLivekitTransportsEqual } from "./MatrixLivekitMembers.ts";
 import { type Behavior } from "../../Behavior.ts";
+import {
+  areCallTransportsEqual,
+  getCallTransportKey,
+  type CallTransport,
+} from "../../../domains/call/domain/CallTransport.ts";
 
 // Some test constants
 
-const TRANSPORT_1: LivekitTransport = {
-  type: "livekit",
-  livekit_service_url: "https://lk.example.org",
-  livekit_alias: "!alias:example.org",
+const TRANSPORT_1: CallTransport = {
+  kind: "livekit",
+  serviceUrl: "https://lk.example.org",
+  roomAlias: "!alias:example.org",
 };
 
-const TRANSPORT_2: LivekitTransport = {
-  type: "livekit",
-  livekit_service_url: "https://lk.sample.com",
-  livekit_alias: "!alias:sample.com",
+const TRANSPORT_2: CallTransport = {
+  kind: "livekit",
+  serviceUrl: "https://lk.sample.com",
+  roomAlias: "!alias:sample.com",
 };
 
 let fakeConnectionFactory: ConnectionFactory;
@@ -49,7 +52,7 @@ beforeEach(() => {
   vi.mocked(fakeConnectionFactory).createConnection = vi
     .fn()
     .mockImplementation(
-      (transport: LivekitTransport, scope: ObservableScope) => {
+      (transport: CallTransport, scope: ObservableScope) => {
         const mockConnection = {
           transport,
           remoteParticipantsWithTracks$: new BehaviorSubject([]),
@@ -94,13 +97,13 @@ describe("connections$ stream", () => {
           ).toHaveBeenCalledTimes(2);
 
           const conn1 = connections.find((c) =>
-            areLivekitTransportsEqual(c.transport, TRANSPORT_1),
+            areCallTransportsEqual(c.transport, TRANSPORT_1),
           );
           expect(conn1).toBeDefined();
           expect(conn1!.start).toHaveBeenCalled();
 
           const conn2 = connections.find((c) =>
-            areLivekitTransportsEqual(c.transport, TRANSPORT_2),
+            areCallTransportsEqual(c.transport, TRANSPORT_2),
           );
           expect(conn2).toBeDefined();
           expect(conn2!.start).toHaveBeenCalled();
@@ -139,12 +142,12 @@ describe("connections$ stream", () => {
           ).toHaveBeenCalledTimes(2);
 
           const conn2 = connections.find((c) =>
-            areLivekitTransportsEqual(c.transport, TRANSPORT_2),
+            areCallTransportsEqual(c.transport, TRANSPORT_2),
           );
           expect(conn2).toBeDefined();
 
           const conn1 = connections.find((c) =>
-            areLivekitTransportsEqual(c.transport, TRANSPORT_1),
+            areCallTransportsEqual(c.transport, TRANSPORT_1),
           );
           expect(conn1).toBeDefined();
           expect(conn1!.start).toHaveBeenCalledOnce();
@@ -183,7 +186,7 @@ describe("connections$ stream", () => {
           expect(connections.length).toBe(1);
           // The second connection should have been stopped has it is no longer needed.
           const connection2 = allCreatedConnections.find((c) =>
-            areLivekitTransportsEqual(c.transport, TRANSPORT_2),
+            areCallTransportsEqual(c.transport, TRANSPORT_2),
           );
           expect(connection2).toBeDefined();
           expect(connection2!.stop).toHaveBeenCalled();
@@ -206,15 +209,15 @@ describe("connectionManagerData$ stream", () => {
     Behavior<LivekitParticipant[]>
   >;
 
-  function keyForTransport(transport: LivekitTransport): string {
-    return `${transport.livekit_service_url}|${transport.livekit_alias}`;
+  function keyForTransport(transport: CallTransport): string {
+    return getCallTransportKey(transport);
   }
 
   beforeEach(() => {
     fakePublishingParticipantsStreams = new Map();
 
     function getPublishingParticipantsFor(
-      transport: LivekitTransport,
+      transport: CallTransport,
     ): Behavior<LivekitParticipant[]> {
       return (
         fakePublishingParticipantsStreams.get(keyForTransport(transport)) ??
@@ -226,7 +229,7 @@ describe("connectionManagerData$ stream", () => {
     vi.mocked(fakeConnectionFactory).createConnection = vi
       .fn()
       .mockImplementation(
-        (transport: LivekitTransport, scope: ObservableScope) => {
+        (transport: CallTransport, scope: ObservableScope) => {
           const fakePublishingParticipants$ = new BehaviorSubject<
             LivekitParticipant[]
           >([]);
