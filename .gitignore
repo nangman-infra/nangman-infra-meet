@@ -1,16 +1,35 @@
-node_modules
+# OS / Editor
 .DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Local environment
 .env
-dist
-dist-ssr
+.env.*
+!.env.example
 *.local
 *.bkp
-.idea/
+config.json
 public/config.json
+docker-compose.yml
+nginx.conf
+scripts/deploy-to-remote.sh
+
+# Build output
+node_modules
+dist
+dist-ssr
+/coverage
+.cache/
+.vite/
+.eslintcache
+*.tsbuildinfo
+
+# Local backend state
 backend/synapse_tmp/*
 backend/synapse_tmp_othersite/*
-/coverage
-config.json
 
 # Yarn
 yarn-error.log
@@ -30,3 +49,9 @@ yarn-error.log
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
