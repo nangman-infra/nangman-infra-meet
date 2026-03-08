@@ -232,5 +232,35 @@
     "muted_for_me": "Pro mě ztlumené",
     "volume": "Hlasitost",
     "waiting_for_media": "Čekání na média..."
+  },
+  "room_chat": {
+    "title": "Chat místnosti",
+    "heading": "Chat místnosti",
+    "description": "Zprávy se odesílají přes Matrix místnost a zůstávají v časové ose místnosti.",
+    "open": "Otevřít chat",
+    "unread_badge": "{{count}} nepřečtených zpráv",
+    "empty_state": "Zatím žádné zprávy. Začněte konverzaci pro všechny v této místnosti.",
+    "message_label": "Zpráva",
+    "message_placeholder": "Napište zprávu",
+    "send": "Odeslat",
+    "composer_hint": "Stiskněte Enter pro odeslání. Shift+Enter vloží nový řádek.",
+    "read_only": "Zprávy v této místnosti můžete číst, ale nemáte oprávnění posílat nové.",
+    "sending": "Odesílání…",
+    "failed": "Odeslání se nezdařilo",
+    "you": "Vy"
+  },
+  "room_note": {
+    "title": "Sdílená poznámka",
+    "heading": "Sdílená poznámka",
+    "description": "Použijte téma místnosti jako sdílený program, oznámení nebo následnou poznámku pro všechny v hovoru.",
+    "open": "Otevřít sdílenou poznámku",
+    "current_note": "Aktuální poznámka",
+    "empty_state": "Zatím žádná sdílená poznámka. Přidejte program, odkazy nebo další kroky pro všechny v místnosti.",
+    "editor_label": "Sdílená poznámka",
+    "editor_placeholder": "Napište program, oznámení nebo následné poznámky",
+    "editor_hint": "Pro uložení stiskněte Ctrl+Enter nebo Cmd+Enter.",
+    "reset": "Obnovit",
+    "save": "Uložit poznámku",
+    "read_only": "Sdílenou poznámku můžete zobrazit, ale nemáte oprávnění ji upravovat."
   }
 }

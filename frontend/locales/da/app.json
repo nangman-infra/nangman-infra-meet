@@ -232,5 +232,35 @@
     "muted_for_me": "Dæmpet for mig",
     "volume": "Lydstyrke",
     "waiting_for_media": "Venter på medier..."
+  },
+  "room_chat": {
+    "title": "Rumchat",
+    "heading": "Rumchat",
+    "description": "Beskeder sendes gennem Matrix-rummet og bliver i rummets tidslinje.",
+    "open": "Åbn chat",
+    "unread_badge": "{{count}} ulæste beskeder",
+    "empty_state": "Der er ingen beskeder endnu. Start samtalen for alle i dette rum.",
+    "message_label": "Besked",
+    "message_placeholder": "Skriv en besked",
+    "send": "Send",
+    "composer_hint": "Tryk Enter for at sende. Brug Shift+Enter til en ny linje.",
+    "read_only": "Du kan læse beskederne i dette rum, men du har ikke tilladelse til at sende nye.",
+    "sending": "Sender…",
+    "failed": "Afsendelse mislykkedes",
+    "you": "Dig"
+  },
+  "room_note": {
+    "title": "Delt note",
+    "heading": "Delt note",
+    "description": "Brug rummets emne som fælles dagsorden, meddelelse eller opfølgningsnote for alle i mødet.",
+    "open": "Åbn delt note",
+    "current_note": "Nuværende note",
+    "empty_state": "Der er ingen delt note endnu. Tilføj dagsorden, links eller næste skridt for alle i rummet.",
+    "editor_label": "Delt note",
+    "editor_placeholder": "Skriv en dagsorden, meddelelse eller opfølgningsnoter",
+    "editor_hint": "Tryk Ctrl+Enter eller Cmd+Enter for at gemme.",
+    "reset": "Nulstil",
+    "save": "Gem note",
+    "read_only": "Du kan se den delte note, men du har ikke tilladelse til at opdatere den."
   }
 }

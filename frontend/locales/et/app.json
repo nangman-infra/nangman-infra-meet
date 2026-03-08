@@ -230,5 +230,35 @@
     "muted_for_me": "Minule summutatud",
     "volume": "Helivaljus",
     "waiting_for_media": "Ootame kuni meedia on olemas..."
+  },
+  "room_chat": {
+    "title": "Ruumi vestlus",
+    "heading": "Ruumi vestlus",
+    "description": "Sõnumid saadetakse Matrixi ruumi kaudu ja jäävad ruumi ajajoonele.",
+    "open": "Ava vestlus",
+    "unread_badge": "{{count}} lugemata sõnumit",
+    "empty_state": "Sõnumeid veel pole. Alusta vestlust kõigi jaoks selles ruumis.",
+    "message_label": "Sõnum",
+    "message_placeholder": "Kirjuta sõnum",
+    "send": "Saada",
+    "composer_hint": "Saatmiseks vajuta Enter. Uue rea jaoks kasuta Shift+Enter.",
+    "read_only": "Saad selle ruumi sõnumeid lugeda, kuid sul pole õigust uusi saata.",
+    "sending": "Saatmine…",
+    "failed": "Saatmine ebaõnnestus",
+    "you": "Sina"
+  },
+  "room_note": {
+    "title": "Jagatud märkus",
+    "heading": "Jagatud märkus",
+    "description": "Kasuta ruumi teemat ühise päevakorra, teadaande või järelmärkmena kõigile kõnes osalejatele.",
+    "open": "Ava jagatud märkus",
+    "current_note": "Praegune märkus",
+    "empty_state": "Jagatud märkust veel pole. Lisa päevakord, lingid või järgmised sammud kõigile ruumis olijatele.",
+    "editor_label": "Jagatud märkus",
+    "editor_placeholder": "Kirjuta päevakord, teadaanne või järelmärkused",
+    "editor_hint": "Salvestamiseks vajuta Ctrl+Enter või Cmd+Enter.",
+    "reset": "Lähtesta",
+    "save": "Salvesta märkus",
+    "read_only": "Saad jagatud märkust vaadata, kuid sul pole õigust seda muuta."
   }
 }

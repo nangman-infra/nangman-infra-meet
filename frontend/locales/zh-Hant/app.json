@@ -110,5 +110,35 @@
   "unauthenticated_view_body": "還沒註冊嗎？<2>建立帳號</2>",
   "unauthenticated_view_login_button": "登入您的帳號",
   "unmute_microphone_button_label": "將麥克風取消靜音",
-  "version": "版本： {{version}}"
+  "version": "版本： {{version}}",
+  "room_chat": {
+    "title": "房間聊天",
+    "heading": "房間聊天",
+    "description": "訊息會透過 Matrix 房間傳送，並保留在房間時間軸中。",
+    "open": "開啟聊天",
+    "unread_badge": "{{count}} 則未讀訊息",
+    "empty_state": "目前還沒有訊息。開始為這個房間中的所有人展開對話吧。",
+    "message_label": "訊息",
+    "message_placeholder": "輸入訊息",
+    "send": "送出",
+    "composer_hint": "按 Enter 送出，Shift+Enter 換行。",
+    "read_only": "你可以閱讀此房間中的訊息，但沒有權限傳送新訊息。",
+    "sending": "傳送中…",
+    "failed": "傳送失敗",
+    "you": "你"
+  },
+  "room_note": {
+    "title": "共享筆記",
+    "heading": "共享筆記",
+    "description": "可將房間主題用作通話中所有人的共享議程、公告或後續筆記。",
+    "open": "開啟共享筆記",
+    "current_note": "目前筆記",
+    "empty_state": "目前還沒有共享筆記。為房間中的所有人新增議程、連結或下一步事項。",
+    "editor_label": "共享筆記",
+    "editor_placeholder": "輸入議程、公告或後續筆記",
+    "editor_hint": "按 Ctrl+Enter 或 Cmd+Enter 儲存。",
+    "reset": "重設",
+    "save": "儲存筆記",
+    "read_only": "你可以查看共享筆記，但沒有更新權限。"
+  }
 }

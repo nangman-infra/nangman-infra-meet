@@ -217,5 +217,35 @@
     "muted_for_me": "Wyciszone dla mnie",
     "volume": "Głośność",
     "waiting_for_media": "Oczekiwanie na media..."
+  },
+  "room_chat": {
+    "title": "Czat pokoju",
+    "heading": "Czat pokoju",
+    "description": "Wiadomości są wysyłane przez pokój Matrix i pozostają na osi czasu pokoju.",
+    "open": "Otwórz czat",
+    "unread_badge": "{{count}} nieprzeczytanych wiadomości",
+    "empty_state": "Nie ma jeszcze żadnych wiadomości. Rozpocznij rozmowę dla wszystkich w tym pokoju.",
+    "message_label": "Wiadomość",
+    "message_placeholder": "Napisz wiadomość",
+    "send": "Wyślij",
+    "composer_hint": "Naciśnij Enter, aby wysłać. Użyj Shift+Enter, aby przejść do nowej linii.",
+    "read_only": "Możesz czytać wiadomości w tym pokoju, ale nie masz uprawnień do wysyłania nowych.",
+    "sending": "Wysyłanie…",
+    "failed": "Nie udało się wysłać",
+    "you": "Ty"
+  },
+  "room_note": {
+    "title": "Wspólna notatka",
+    "heading": "Wspólna notatka",
+    "description": "Użyj tematu pokoju jako wspólnej agendy, ogłoszenia lub notatki z dalszymi krokami dla wszystkich uczestników rozmowy.",
+    "open": "Otwórz wspólną notatkę",
+    "current_note": "Aktualna notatka",
+    "empty_state": "Nie ma jeszcze wspólnej notatki. Dodaj agendę, linki lub kolejne kroki dla wszystkich w pokoju.",
+    "editor_label": "Wspólna notatka",
+    "editor_placeholder": "Wpisz agendę, ogłoszenie lub notatki z dalszymi krokami",
+    "editor_hint": "Naciśnij Ctrl+Enter lub Cmd+Enter, aby zapisać.",
+    "reset": "Resetuj",
+    "save": "Zapisz notatkę",
+    "read_only": "Możesz wyświetlić wspólną notatkę, ale nie masz uprawnień do jej aktualizacji."
   }
 }

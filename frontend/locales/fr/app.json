@@ -107,5 +107,35 @@
   "unauthenticated_view_body": "Pas encore de compte ? <2>En créer un</2>",
   "unauthenticated_view_login_button": "Connectez vous à votre compte",
   "unmute_microphone_button_label": "Allumer le microphone",
-  "version": "Version : {{version}}"
+  "version": "Version : {{version}}",
+  "room_chat": {
+    "title": "Discussion de la salle",
+    "heading": "Discussion de la salle",
+    "description": "Les messages sont envoyés via la salle Matrix et restent disponibles dans la chronologie de la salle.",
+    "open": "Ouvrir la discussion",
+    "unread_badge": "{{count}} messages non lus",
+    "empty_state": "Aucun message pour le moment. Lancez la conversation pour toutes les personnes de cette salle.",
+    "message_label": "Message",
+    "message_placeholder": "Écrire un message",
+    "send": "Envoyer",
+    "composer_hint": "Appuyez sur Entrée pour envoyer. Utilisez Maj+Entrée pour une nouvelle ligne.",
+    "read_only": "Vous pouvez lire les messages de cette salle, mais vous n’avez pas l’autorisation d’en envoyer de nouveaux.",
+    "sending": "Envoi…",
+    "failed": "Échec de l’envoi",
+    "you": "Vous"
+  },
+  "room_note": {
+    "title": "Note partagée",
+    "heading": "Note partagée",
+    "description": "Utilisez le sujet de la salle comme ordre du jour partagé, annonce ou note de suivi pour toutes les personnes de l’appel.",
+    "open": "Ouvrir la note partagée",
+    "current_note": "Note actuelle",
+    "empty_state": "Aucune note partagée pour le moment. Ajoutez un ordre du jour, des liens ou les prochaines étapes pour toutes les personnes de la salle.",
+    "editor_label": "Note partagée",
+    "editor_placeholder": "Écrire un ordre du jour, une annonce ou des notes de suivi",
+    "editor_hint": "Appuyez sur Ctrl+Entrée ou Cmd+Entrée pour enregistrer.",
+    "reset": "Réinitialiser",
+    "save": "Enregistrer la note",
+    "read_only": "Vous pouvez consulter la note partagée, mais vous n’avez pas l’autorisation de la modifier."
+  }
 }

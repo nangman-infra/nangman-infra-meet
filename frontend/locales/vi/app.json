@@ -61,5 +61,35 @@
   "submitting": "Đang gửi…",
   "unauthenticated_view_body": "Chưa đăng ký? <2>Tạo tài khoản</2>",
   "unauthenticated_view_login_button": "Đăng nhập vào tài khoản của bạn",
-  "version": "Phiên bản: {{version}}"
+  "version": "Phiên bản: {{version}}",
+  "room_chat": {
+    "title": "Trò chuyện phòng",
+    "heading": "Trò chuyện phòng",
+    "description": "Tin nhắn được gửi qua phòng Matrix và vẫn còn trong dòng thời gian của phòng.",
+    "open": "Mở trò chuyện",
+    "unread_badge": "{{count}} tin nhắn chưa đọc",
+    "empty_state": "Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện cho mọi người trong phòng này.",
+    "message_label": "Tin nhắn",
+    "message_placeholder": "Nhập tin nhắn",
+    "send": "Gửi",
+    "composer_hint": "Nhấn Enter để gửi. Dùng Shift+Enter để xuống dòng.",
+    "read_only": "Bạn có thể đọc tin nhắn trong phòng này nhưng không có quyền gửi tin nhắn mới.",
+    "sending": "Đang gửi…",
+    "failed": "Gửi thất bại",
+    "you": "Bạn"
+  },
+  "room_note": {
+    "title": "Ghi chú chung",
+    "heading": "Ghi chú chung",
+    "description": "Dùng chủ đề phòng làm chương trình họp chung, thông báo hoặc ghi chú theo dõi cho mọi người trong cuộc gọi.",
+    "open": "Mở ghi chú chung",
+    "current_note": "Ghi chú hiện tại",
+    "empty_state": "Chưa có ghi chú chung. Hãy thêm chương trình, liên kết hoặc bước tiếp theo cho mọi người trong phòng.",
+    "editor_label": "Ghi chú chung",
+    "editor_placeholder": "Nhập chương trình, thông báo hoặc ghi chú theo dõi",
+    "editor_hint": "Nhấn Ctrl+Enter hoặc Cmd+Enter để lưu.",
+    "reset": "Đặt lại",
+    "save": "Lưu ghi chú",
+    "read_only": "Bạn có thể xem ghi chú chung nhưng không có quyền cập nhật."
+  }
 }

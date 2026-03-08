@@ -202,5 +202,35 @@
     "muted_for_me": "Dezactivat pentru mine",
     "volume": "VOLUM",
     "waiting_for_media": "Flux multimedia în aşteptare"
+  },
+  "room_chat": {
+    "title": "Chatul camerei",
+    "heading": "Chatul camerei",
+    "description": "Mesajele sunt trimise prin camera Matrix și rămân în cronologia camerei.",
+    "open": "Deschide chatul",
+    "unread_badge": "{{count}} mesaje necitite",
+    "empty_state": "Nu există încă mesaje. Începe conversația pentru toți cei din această cameră.",
+    "message_label": "Mesaj",
+    "message_placeholder": "Scrie un mesaj",
+    "send": "Trimite",
+    "composer_hint": "Apasă Enter pentru trimitere. Folosește Shift+Enter pentru un rând nou.",
+    "read_only": "Poți citi mesajele din această cameră, dar nu ai permisiunea să trimiți unele noi.",
+    "sending": "Se trimite…",
+    "failed": "Trimiterea a eșuat",
+    "you": "Tu"
+  },
+  "room_note": {
+    "title": "Notă partajată",
+    "heading": "Notă partajată",
+    "description": "Folosește subiectul camerei ca agendă comună, anunț sau notă de urmărire pentru toți cei din apel.",
+    "open": "Deschide nota partajată",
+    "current_note": "Nota curentă",
+    "empty_state": "Nu există încă o notă partajată. Adaugă agendă, linkuri sau pașii următori pentru toți cei din cameră.",
+    "editor_label": "Notă partajată",
+    "editor_placeholder": "Scrie o agendă, un anunț sau note de urmărire",
+    "editor_hint": "Apasă Ctrl+Enter sau Cmd+Enter pentru a salva.",
+    "reset": "Resetează",
+    "save": "Salvează nota",
+    "read_only": "Poți vedea nota partajată, dar nu ai permisiunea să o actualizezi."
   }
 }

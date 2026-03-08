@@ -232,5 +232,35 @@
     "muted_for_me": "Tystad för mig",
     "volume": "Volym",
     "waiting_for_media": "Väntar på media …"
+  },
+  "room_chat": {
+    "title": "Rumschatt",
+    "heading": "Rumschatt",
+    "description": "Meddelanden skickas via Matrix-rummet och finns kvar i rummets tidslinje.",
+    "open": "Öppna chatten",
+    "unread_badge": "{{count}} olästa meddelanden",
+    "empty_state": "Det finns inga meddelanden ännu. Starta samtalet för alla i det här rummet.",
+    "message_label": "Meddelande",
+    "message_placeholder": "Skriv ett meddelande",
+    "send": "Skicka",
+    "composer_hint": "Tryck Enter för att skicka. Använd Shift+Enter för en ny rad.",
+    "read_only": "Du kan läsa meddelanden i det här rummet, men du har inte behörighet att skicka nya.",
+    "sending": "Skickar…",
+    "failed": "Det gick inte att skicka",
+    "you": "Du"
+  },
+  "room_note": {
+    "title": "Delad anteckning",
+    "heading": "Delad anteckning",
+    "description": "Använd rummets ämne som en gemensam agenda, ett meddelande eller en uppföljningsanteckning för alla i samtalet.",
+    "open": "Öppna delad anteckning",
+    "current_note": "Aktuell anteckning",
+    "empty_state": "Det finns ingen delad anteckning ännu. Lägg till agenda, länkar eller nästa steg för alla i rummet.",
+    "editor_label": "Delad anteckning",
+    "editor_placeholder": "Skriv en agenda, ett meddelande eller uppföljningsanteckningar",
+    "editor_hint": "Tryck Ctrl+Enter eller Cmd+Enter för att spara.",
+    "reset": "Återställ",
+    "save": "Spara anteckning",
+    "read_only": "Du kan visa den delade anteckningen, men du har inte behörighet att uppdatera den."
   }
 }

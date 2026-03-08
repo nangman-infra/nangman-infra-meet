@@ -233,5 +233,35 @@
     "muted_for_me": "Für mich stumm geschaltet",
     "volume": "Lautstärke",
     "waiting_for_media": "Warten auf Medien..."
+  },
+  "room_chat": {
+    "title": "Raum-Chat",
+    "heading": "Raum-Chat",
+    "description": "Nachrichten werden über den Matrix-Raum gesendet und bleiben in der Raum-Zeitleiste erhalten.",
+    "open": "Chat öffnen",
+    "unread_badge": "{{count}} ungelesene Nachrichten",
+    "empty_state": "Noch keine Nachrichten. Starte die Unterhaltung für alle in diesem Raum.",
+    "message_label": "Nachricht",
+    "message_placeholder": "Nachricht schreiben",
+    "send": "Senden",
+    "composer_hint": "Mit Enter senden. Mit Shift+Enter eine neue Zeile einfügen.",
+    "read_only": "Du kannst die Nachrichten in diesem Raum lesen, hast aber keine Berechtigung, neue zu senden.",
+    "sending": "Wird gesendet…",
+    "failed": "Senden fehlgeschlagen",
+    "you": "Du"
+  },
+  "room_note": {
+    "title": "Geteilte Notiz",
+    "heading": "Geteilte Notiz",
+    "description": "Verwende das Raumthema als gemeinsame Agenda, Ankündigung oder Notiz für nächste Schritte für alle im Gespräch.",
+    "open": "Geteilte Notiz öffnen",
+    "current_note": "Aktuelle Notiz",
+    "empty_state": "Noch keine geteilte Notiz. Füge eine Agenda, Links oder nächste Schritte für alle im Raum hinzu.",
+    "editor_label": "Geteilte Notiz",
+    "editor_placeholder": "Agenda, Ankündigung oder Notizen für nächste Schritte schreiben",
+    "editor_hint": "Zum Speichern Strg+Enter oder Cmd+Enter drücken.",
+    "reset": "Zurücksetzen",
+    "save": "Notiz speichern",
+    "read_only": "Du kannst die geteilte Notiz ansehen, hast aber keine Berechtigung, sie zu bearbeiten."
   }
 }

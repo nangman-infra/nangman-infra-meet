@@ -211,5 +211,35 @@
     "muted_for_me": "Muto per me",
     "volume": "Volume",
     "waiting_for_media": "In attesa dei media..."
+  },
+  "room_chat": {
+    "title": "Chat della stanza",
+    "heading": "Chat della stanza",
+    "description": "I messaggi vengono inviati tramite la stanza Matrix e restano disponibili nella timeline della stanza.",
+    "open": "Apri chat",
+    "unread_badge": "{{count}} messaggi non letti",
+    "empty_state": "Non ci sono ancora messaggi. Avvia la conversazione per tutti in questa stanza.",
+    "message_label": "Messaggio",
+    "message_placeholder": "Scrivi un messaggio",
+    "send": "Invia",
+    "composer_hint": "Premi Invio per inviare. Usa Maiusc+Invio per andare a capo.",
+    "read_only": "Puoi leggere i messaggi di questa stanza, ma non hai i permessi per inviarne di nuovi.",
+    "sending": "Invio in corso…",
+    "failed": "Invio non riuscito",
+    "you": "Tu"
+  },
+  "room_note": {
+    "title": "Nota condivisa",
+    "heading": "Nota condivisa",
+    "description": "Usa l’argomento della stanza come agenda condivisa, annuncio o nota di follow-up per tutti nella chiamata.",
+    "open": "Apri nota condivisa",
+    "current_note": "Nota attuale",
+    "empty_state": "Non c’è ancora alcuna nota condivisa. Aggiungi agenda, link o prossimi passi per tutti nella stanza.",
+    "editor_label": "Nota condivisa",
+    "editor_placeholder": "Scrivi un’agenda, un annuncio o note di follow-up",
+    "editor_hint": "Premi Ctrl+Invio o Cmd+Invio per salvare.",
+    "reset": "Ripristina",
+    "save": "Salva nota",
+    "read_only": "Puoi visualizzare la nota condivisa, ma non hai i permessi per aggiornarla."
   }
 }

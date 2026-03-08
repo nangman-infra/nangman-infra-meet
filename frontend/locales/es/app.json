@@ -84,5 +84,35 @@
   "submitting": "Enviando…",
   "unauthenticated_view_body": "¿No estás registrado todavía? <2>Crear una cuenta</2>",
   "unauthenticated_view_login_button": "Iniciar sesión en tu cuenta",
-  "version": "Versión: {{version}}"
+  "version": "Versión: {{version}}",
+  "room_chat": {
+    "title": "Chat de la sala",
+    "heading": "Chat de la sala",
+    "description": "Los mensajes se envían a través de la sala de Matrix y permanecen en la línea de tiempo de la sala.",
+    "open": "Abrir chat",
+    "unread_badge": "{{count}} mensajes sin leer",
+    "empty_state": "Aún no hay mensajes. Inicia la conversación para todos en esta sala.",
+    "message_label": "Mensaje",
+    "message_placeholder": "Escribe un mensaje",
+    "send": "Enviar",
+    "composer_hint": "Pulsa Enter para enviar. Usa Shift+Enter para una nueva línea.",
+    "read_only": "Puedes leer los mensajes de esta sala, pero no tienes permiso para enviar nuevos.",
+    "sending": "Enviando…",
+    "failed": "No se pudo enviar",
+    "you": "Tú"
+  },
+  "room_note": {
+    "title": "Nota compartida",
+    "heading": "Nota compartida",
+    "description": "Usa el tema de la sala como agenda compartida, anuncio o nota de seguimiento para todos en la llamada.",
+    "open": "Abrir nota compartida",
+    "current_note": "Nota actual",
+    "empty_state": "Todavía no hay una nota compartida. Añade agenda, enlaces o próximos pasos para todos en la sala.",
+    "editor_label": "Nota compartida",
+    "editor_placeholder": "Escribe una agenda, un anuncio o notas de seguimiento",
+    "editor_hint": "Pulsa Ctrl+Enter o Cmd+Enter para guardar.",
+    "reset": "Restablecer",
+    "save": "Guardar nota",
+    "read_only": "Puedes ver la nota compartida, pero no tienes permiso para actualizarla."
+  }
 }

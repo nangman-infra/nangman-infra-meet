@@ -218,5 +218,35 @@
     "muted_for_me": "Man izslēgts",
     "volume": "Skaļums",
     "waiting_for_media": "Gaida medijus..."
+  },
+  "room_chat": {
+    "title": "Istabas tērzēšana",
+    "heading": "Istabas tērzēšana",
+    "description": "Ziņas tiek sūtītas caur Matrix istabu un paliek istabas laika joslā.",
+    "open": "Atvērt tērzēšanu",
+    "unread_badge": "{{count}} nelasīti ziņojumi",
+    "empty_state": "Ziņojumu vēl nav. Sāciet sarunu visiem šajā istabā.",
+    "message_label": "Ziņojums",
+    "message_placeholder": "Rakstiet ziņojumu",
+    "send": "Sūtīt",
+    "composer_hint": "Nospiediet Enter, lai sūtītu. Izmantojiet Shift+Enter jaunai rindai.",
+    "read_only": "Jūs varat lasīt šīs istabas ziņojumus, bet jums nav tiesību sūtīt jaunus.",
+    "sending": "Sūta…",
+    "failed": "Sūtīšana neizdevās",
+    "you": "Jūs"
+  },
+  "room_note": {
+    "title": "Koplietota piezīme",
+    "heading": "Koplietota piezīme",
+    "description": "Izmantojiet istabas tēmu kā kopīgu darba kārtību, paziņojumu vai turpmāko darbību piezīmi visiem zvanā.",
+    "open": "Atvērt koplietoto piezīmi",
+    "current_note": "Pašreizējā piezīme",
+    "empty_state": "Koplietotas piezīmes vēl nav. Pievienojiet darba kārtību, saites vai nākamos soļus visiem istabā.",
+    "editor_label": "Koplietota piezīme",
+    "editor_placeholder": "Rakstiet darba kārtību, paziņojumu vai turpmāko darbību piezīmes",
+    "editor_hint": "Lai saglabātu, nospiediet Ctrl+Enter vai Cmd+Enter.",
+    "reset": "Atiestatīt",
+    "save": "Saglabāt piezīmi",
+    "read_only": "Jūs varat skatīt koplietoto piezīmi, bet jums nav tiesību to atjaunināt."
   }
 }

@@ -205,5 +205,35 @@
     "muted_for_me": "Benim için susturulanlar",
     "volume": "Ses",
     "waiting_for_media": "Ortam bekleniyor..."
+  },
+  "room_chat": {
+    "title": "Oda sohbeti",
+    "heading": "Oda sohbeti",
+    "description": "Mesajlar Matrix odası üzerinden gönderilir ve odanın zaman akışında kalır.",
+    "open": "Sohbeti aç",
+    "unread_badge": "{{count}} okunmamış mesaj",
+    "empty_state": "Henüz mesaj yok. Bu odadaki herkes için konuşmayı başlatın.",
+    "message_label": "Mesaj",
+    "message_placeholder": "Bir mesaj yazın",
+    "send": "Gönder",
+    "composer_hint": "Göndermek için Enter’a basın. Yeni satır için Shift+Enter kullanın.",
+    "read_only": "Bu odadaki mesajları okuyabilirsiniz, ancak yeni mesaj gönderme izniniz yok.",
+    "sending": "Gönderiliyor…",
+    "failed": "Gönderilemedi",
+    "you": "Siz"
+  },
+  "room_note": {
+    "title": "Paylaşılan not",
+    "heading": "Paylaşılan not",
+    "description": "Oda konusunu, aramadaki herkes için ortak gündem, duyuru veya takip notu olarak kullanın.",
+    "open": "Paylaşılan notu aç",
+    "current_note": "Geçerli not",
+    "empty_state": "Henüz paylaşılan bir not yok. Odadaki herkes için gündem, bağlantılar veya sonraki adımları ekleyin.",
+    "editor_label": "Paylaşılan not",
+    "editor_placeholder": "Bir gündem, duyuru veya takip notları yazın",
+    "editor_hint": "Kaydetmek için Ctrl+Enter veya Cmd+Enter’a basın.",
+    "reset": "Sıfırla",
+    "save": "Notu kaydet",
+    "read_only": "Paylaşılan notu görüntüleyebilirsiniz, ancak güncelleme izniniz yok."
   }
 }

@@ -119,5 +119,35 @@
     "change_fit_contain": "フレームに合わせる",
     "mute_for_me": "ミュートする",
     "volume": "ボリューム"
+  },
+  "room_chat": {
+    "title": "ルームチャット",
+    "heading": "ルームチャット",
+    "description": "メッセージは Matrix ルームを通じて送信され、ルームのタイムラインに残ります。",
+    "open": "チャットを開く",
+    "unread_badge": "未読メッセージ {{count}} 件",
+    "empty_state": "まだメッセージがありません。このルームのみんなに向けて会話を始めましょう。",
+    "message_label": "メッセージ",
+    "message_placeholder": "メッセージを入力",
+    "send": "送信",
+    "composer_hint": "Enter で送信、Shift+Enter で改行します。",
+    "read_only": "このルームのメッセージは読めますが、新しいメッセージを送信する権限はありません。",
+    "sending": "送信中…",
+    "failed": "送信に失敗しました",
+    "you": "あなた"
+  },
+  "room_note": {
+    "title": "共有メモ",
+    "heading": "共有メモ",
+    "description": "ルームトピックを、通話中の全員向けの共有アジェンダ、告知、フォローアップメモとして使えます。",
+    "open": "共有メモを開く",
+    "current_note": "現在のメモ",
+    "empty_state": "まだ共有メモがありません。アジェンダ、リンク、次のアクションをルームのみんなのために追加しましょう。",
+    "editor_label": "共有メモ",
+    "editor_placeholder": "アジェンダ、告知、フォローアップメモを入力",
+    "editor_hint": "Ctrl+Enter または Cmd+Enter で保存します。",
+    "reset": "リセット",
+    "save": "メモを保存",
+    "read_only": "共有メモは閲覧できますが、更新する権限はありません。"
   }
 }

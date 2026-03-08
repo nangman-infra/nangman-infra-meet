@@ -129,5 +129,35 @@
     "change_fit_contain": "贴合框架",
     "mute_for_me": "为我静音",
     "volume": "音量"
+  },
+  "room_chat": {
+    "title": "房间聊天",
+    "heading": "房间聊天",
+    "description": "消息会通过 Matrix 房间发送，并保留在房间时间线中。",
+    "open": "打开聊天",
+    "unread_badge": "{{count}} 条未读消息",
+    "empty_state": "还没有消息。为这个房间里的所有人开始对话吧。",
+    "message_label": "消息",
+    "message_placeholder": "输入消息",
+    "send": "发送",
+    "composer_hint": "按 Enter 发送，Shift+Enter 换行。",
+    "read_only": "你可以阅读这个房间中的消息，但没有发送新消息的权限。",
+    "sending": "发送中…",
+    "failed": "发送失败",
+    "you": "你"
+  },
+  "room_note": {
+    "title": "共享备注",
+    "heading": "共享备注",
+    "description": "可以将房间主题用作通话中所有人的共享议程、公告或跟进备注。",
+    "open": "打开共享备注",
+    "current_note": "当前备注",
+    "empty_state": "还没有共享备注。为房间中的所有人添加议程、链接或下一步事项。",
+    "editor_label": "共享备注",
+    "editor_placeholder": "输入议程、公告或跟进备注",
+    "editor_hint": "按 Ctrl+Enter 或 Cmd+Enter 保存。",
+    "reset": "重置",
+    "save": "保存备注",
+    "read_only": "你可以查看共享备注，但没有更新权限。"
   }
 }

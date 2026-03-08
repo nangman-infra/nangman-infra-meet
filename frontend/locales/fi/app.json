@@ -220,5 +220,35 @@
     "muted_for_me": "Mykistetty minulle",
     "volume": "Äänenvoimakkuus",
     "waiting_for_media": "Odotetaan mediaa..."
+  },
+  "room_chat": {
+    "title": "Huonekeskustelu",
+    "heading": "Huonekeskustelu",
+    "description": "Viestit lähetetään Matrix-huoneen kautta ja ne jäävät huoneen aikajanalle.",
+    "open": "Avaa keskustelu",
+    "unread_badge": "{{count}} lukematonta viestiä",
+    "empty_state": "Viestejä ei vielä ole. Aloita keskustelu kaikille tässä huoneessa.",
+    "message_label": "Viesti",
+    "message_placeholder": "Kirjoita viesti",
+    "send": "Lähetä",
+    "composer_hint": "Lähetä Enterillä. Lisää uusi rivi Shift+Enterillä.",
+    "read_only": "Voit lukea tämän huoneen viestejä, mutta sinulla ei ole oikeutta lähettää uusia.",
+    "sending": "Lähetetään…",
+    "failed": "Lähetys epäonnistui",
+    "you": "Sinä"
+  },
+  "room_note": {
+    "title": "Jaettu muistiinpano",
+    "heading": "Jaettu muistiinpano",
+    "description": "Käytä huoneen aihetta yhteisenä agendana, ilmoituksena tai jatkomuistiona kaikille puhelussa oleville.",
+    "open": "Avaa jaettu muistiinpano",
+    "current_note": "Nykyinen muistiinpano",
+    "empty_state": "Jaettua muistiinpanoa ei vielä ole. Lisää agenda, linkit tai seuraavat askeleet kaikille huoneessa oleville.",
+    "editor_label": "Jaettu muistiinpano",
+    "editor_placeholder": "Kirjoita agenda, ilmoitus tai jatkomuistiinpanot",
+    "editor_hint": "Tallenna painamalla Ctrl+Enter tai Cmd+Enter.",
+    "reset": "Palauta",
+    "save": "Tallenna muistiinpano",
+    "read_only": "Voit tarkastella jaettua muistiinpanoa, mutta sinulla ei ole oikeutta muokata sitä."
   }
 }

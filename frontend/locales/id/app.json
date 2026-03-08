@@ -219,5 +219,35 @@
     "muted_for_me": "Dibisukan untuk saya",
     "volume": "Volume",
     "waiting_for_media": "Menunggu media..."
+  },
+  "room_chat": {
+    "title": "Obrolan ruangan",
+    "heading": "Obrolan ruangan",
+    "description": "Pesan dikirim melalui ruangan Matrix dan tetap tersedia di linimasa ruangan.",
+    "open": "Buka obrolan",
+    "unread_badge": "{{count}} pesan belum dibaca",
+    "empty_state": "Belum ada pesan. Mulai percakapan untuk semua orang di ruangan ini.",
+    "message_label": "Pesan",
+    "message_placeholder": "Tulis pesan",
+    "send": "Kirim",
+    "composer_hint": "Tekan Enter untuk mengirim. Gunakan Shift+Enter untuk baris baru.",
+    "read_only": "Anda dapat membaca pesan di ruangan ini, tetapi tidak memiliki izin untuk mengirim pesan baru.",
+    "sending": "Mengirim…",
+    "failed": "Gagal mengirim",
+    "you": "Anda"
+  },
+  "room_note": {
+    "title": "Catatan bersama",
+    "heading": "Catatan bersama",
+    "description": "Gunakan topik ruangan sebagai agenda bersama, pengumuman, atau catatan tindak lanjut untuk semua orang di panggilan.",
+    "open": "Buka catatan bersama",
+    "current_note": "Catatan saat ini",
+    "empty_state": "Belum ada catatan bersama. Tambahkan agenda, tautan, atau langkah berikutnya untuk semua orang di ruangan.",
+    "editor_label": "Catatan bersama",
+    "editor_placeholder": "Tulis agenda, pengumuman, atau catatan tindak lanjut",
+    "editor_hint": "Tekan Ctrl+Enter atau Cmd+Enter untuk menyimpan.",
+    "reset": "Reset",
+    "save": "Simpan catatan",
+    "read_only": "Anda dapat melihat catatan bersama, tetapi tidak memiliki izin untuk memperbaruinya."
   }
 }
