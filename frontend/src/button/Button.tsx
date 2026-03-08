@@ -16,6 +16,8 @@ import {
   EndCallIcon,
   ShareScreenSolidIcon,
   SettingsSolidIcon,
+  ChatSolidIcon,
+  EditSolidIcon,
 } from "@vector-im/compound-design-tokens/assets/web/icons";
 
 import styles from "./Button.module.css";
@@ -121,6 +123,65 @@ export const SettingsButton: FC<ComponentPropsWithoutRef<"button">> = (
         iconOnly
         Icon={SettingsSolidIcon}
         kind="secondary"
+        {...props}
+      />
+    </Tooltip>
+  );
+};
+
+interface ChatButtonProps extends ComponentPropsWithoutRef<"button"> {
+  open: boolean;
+  unreadCount?: number;
+}
+
+function formatUnreadCount(unreadCount: number): string {
+  return unreadCount > 9 ? "9+" : `${unreadCount}`;
+}
+
+export const ChatButton: FC<ChatButtonProps> = ({
+  open,
+  unreadCount = 0,
+  ...props
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <Tooltip label={t("room_chat.open")}>
+      <span className={styles.iconButtonWrap}>
+        <CpdButton
+          iconOnly
+          Icon={ChatSolidIcon}
+          kind={open ? "primary" : "secondary"}
+          aria-pressed={open}
+          {...props}
+        />
+        {unreadCount > 0 && !open && (
+          <span
+            aria-label={t("room_chat.unread_badge", { count: unreadCount })}
+            className={styles.unreadBadge}
+          >
+            {formatUnreadCount(unreadCount)}
+          </span>
+        )}
+      </span>
+    </Tooltip>
+  );
+};
+
+interface NoteButtonProps extends ComponentPropsWithoutRef<"button"> {
+  open: boolean;
+}
+
+export const NoteButton: FC<NoteButtonProps> = ({ open, ...props }) => {
+  const { t } = useTranslation();
+
+  return (
+    <Tooltip label={t("room_note.open")}>
+      <CpdButton
+        iconOnly
+        Icon={EditSolidIcon}
+        kind={open ? "primary" : "secondary"}
+        aria-pressed={open}
         {...props}
       />
     </Tooltip>

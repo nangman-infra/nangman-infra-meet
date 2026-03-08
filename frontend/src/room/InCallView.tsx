@@ -40,6 +40,8 @@ import {
   ShareScreenButton,
   SettingsButton,
   ReactionToggleButton,
+  ChatButton,
+  NoteButton,
 } from "../button";
 import { Header, LeftNav, RightNav, RoomHeaderInfo } from "../Header";
 import { type HeaderStyle } from "../UrlParams";
@@ -116,6 +118,9 @@ import { useCallUrlContext } from "../domains/call/application/readModels/CallUr
 import { createMatrixCallViewModelContext } from "../domains/call/infrastructure/createMatrixCallViewModelContext.ts";
 import { createMatrixCallSessionViewPort } from "../domains/call/infrastructure/MatrixCallSessionViewPort.ts";
 import { hasWidgetHost } from "../domains/widget/application/services/WidgetHostService.ts";
+import { RoomChatPanel } from "../domains/messaging/presentation/RoomChatPanel.tsx";
+import { useRoomChatIndicator } from "../domains/messaging/presentation/useRoomChatIndicator.ts";
+import { RoomNotePanel } from "../domains/notes/presentation/RoomNotePanel.tsx";
 
 const maxTapDurationMs = 400;
 
@@ -396,6 +401,12 @@ export const InCallView: FC<InCallViewProps> = ({
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState(defaultSettingsTab);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const { unreadCount: unreadChatCount } = useRoomChatIndicator(
+    matrixRoom,
+    chatOpen,
+  );
 
   const openSettings = useCallback(
     () => setSettingsModalOpen(true),
@@ -405,6 +416,16 @@ export const InCallView: FC<InCallViewProps> = ({
     () => setSettingsModalOpen(false),
     [setSettingsModalOpen],
   );
+  const openChat = useCallback(() => {
+    setNoteOpen(false);
+    setChatOpen(true);
+  }, [setChatOpen, setNoteOpen]);
+  const closeChat = useCallback(() => setChatOpen(false), [setChatOpen]);
+  const openNote = useCallback(() => {
+    setChatOpen(false);
+    setNoteOpen(true);
+  }, [setChatOpen, setNoteOpen]);
+  const closeNote = useCallback(() => setNoteOpen(false), [setNoteOpen]);
 
   const openProfile = useMemo(
     () =>
@@ -759,6 +780,21 @@ export const InCallView: FC<InCallViewProps> = ({
       />,
     );
   }
+  buttons.push(
+    <ChatButton
+      key="chat"
+      open={chatOpen}
+      unreadCount={unreadChatCount}
+      onClick={openChat}
+      onTouchEnd={onControlsTouchEnd}
+    />,
+    <NoteButton
+      key="note"
+      open={noteOpen}
+      onClick={openNote}
+      onTouchEnd={onControlsTouchEnd}
+    />,
+  );
   if (layout.type !== "pip")
     buttons.push(
       <SettingsButton
@@ -842,6 +878,20 @@ export const InCallView: FC<InCallViewProps> = ({
       <ReactionsOverlay vm={vm} />
       {waitingOverlay}
       {footer}
+      {chatOpen && (
+        <RoomChatPanel
+          matrixRoom={matrixRoom}
+          open={chatOpen}
+          onDismiss={closeChat}
+        />
+      )}
+      {noteOpen && (
+        <RoomNotePanel
+          matrixRoom={matrixRoom}
+          open={noteOpen}
+          onDismiss={closeNote}
+        />
+      )}
       {layout.type !== "pip" && (
         <>
           <RageshakeRequestModal {...rageshakeRequestModalProps} />

@@ -9,6 +9,7 @@ import {
   type ChangeEvent,
   type FC,
   type ForwardedRef,
+  type KeyboardEventHandler,
   type ReactNode,
   useId,
   type JSX,
@@ -78,6 +79,7 @@ interface InputFieldProps {
   min?: number | string;
   step?: number | string;
   onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
+  onKeyDown?: KeyboardEventHandler<HTMLInputElement | HTMLTextAreaElement>;
 }
 
 export const InputField: FC<InputFieldProps> = ({
@@ -95,6 +97,7 @@ export const InputField: FC<InputFieldProps> = ({
   step,
   ...rest
 }) => {
+  const fieldId = id ?? useId();
   const descriptionId = useId();
 
   return (
@@ -113,7 +116,7 @@ export const InputField: FC<InputFieldProps> = ({
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         <textarea
-          id={id}
+          id={fieldId}
           ref={ref as ForwardedRef<HTMLTextAreaElement>}
           disabled={disabled}
           aria-describedby={descriptionId}
@@ -121,7 +124,7 @@ export const InputField: FC<InputFieldProps> = ({
         />
       ) : (
         <input
-          id={id}
+          id={fieldId}
           ref={ref as ForwardedRef<HTMLInputElement>}
           type={type}
           checked={checked}
@@ -133,7 +136,7 @@ export const InputField: FC<InputFieldProps> = ({
         />
       )}
 
-      <label htmlFor={id}>
+      <label htmlFor={fieldId}>
         {type === "checkbox" && (
           <div className={styles.checkbox}>
             <CheckIcon />

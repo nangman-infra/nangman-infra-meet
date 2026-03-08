@@ -1,0 +1,32 @@
+{
+  "room_chat": {
+    "title": "채팅",
+    "heading": "채팅",
+    "description": "메시지는 Matrix 룸을 통해 전송되며 룸 타임라인에 그대로 남습니다.",
+    "open": "채팅 열기",
+    "unread_badge": "읽지 않은 채팅 {{count}}개",
+    "empty_state": "아직 메시지가 없습니다. 이 룸의 대화를 시작해보세요.",
+    "message_label": "메시지",
+    "message_placeholder": "메시지를 입력하세요",
+    "send": "보내기",
+    "composer_hint": "Enter로 전송하고 Shift+Enter로 줄바꿈합니다.",
+    "read_only": "이 룸의 메시지는 읽을 수 있지만 새 메시지를 보낼 권한은 없습니다.",
+    "sending": "전송 중…",
+    "failed": "전송 실패",
+    "you": "나"
+  },
+  "room_note": {
+    "title": "공유 메모",
+    "heading": "공유 메모",
+    "description": "룸 토픽을 공유 안건, 공지, 후속 메모로 사용할 수 있습니다.",
+    "open": "공유 메모 열기",
+    "current_note": "현재 메모",
+    "empty_state": "아직 공유 메모가 없습니다. 안건, 링크, 다음 할 일을 남겨보세요.",
+    "editor_label": "공유 메모",
+    "editor_placeholder": "안건, 공지, 후속 메모를 입력하세요",
+    "editor_hint": "Ctrl+Enter 또는 Cmd+Enter로 저장합니다.",
+    "reset": "되돌리기",
+    "save": "메모 저장",
+    "read_only": "공유 메모는 볼 수 있지만 수정 권한은 없습니다."
+  }
+}

@@ -1,0 +1,79 @@
+.modalRoot {
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.modalDesktop {
+  width: min(480px, 100vw - 32px);
+  max-width: 480px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: min(72vh, 760px);
+}
+
+.intro {
+  color: var(--cpd-color-text-secondary);
+  margin-top: 6px;
+}
+
+.noteSurface {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid var(--cpd-color-border-interactive-secondary);
+  border-radius: 20px;
+  background: color-mix(
+    in srgb,
+    var(--cpd-color-bg-subtle-primary) 62%,
+    transparent
+  );
+}
+
+.noteText {
+  white-space: pre-wrap;
+  color: var(--cpd-color-text-primary);
+}
+
+.emptyState {
+  color: var(--cpd-color-text-secondary);
+}
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.composerField {
+  width: 100%;
+}
+
+.composerHint {
+  color: var(--cpd-color-text-secondary);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.permissionHint {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: color-mix(
+    in srgb,
+    var(--cpd-color-bg-subtle-secondary) 72%,
+    transparent
+  );
+  color: var(--cpd-color-text-secondary);
+}
+
+.error {
+  margin-top: -4px;
+}
