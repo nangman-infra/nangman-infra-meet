@@ -121,8 +121,12 @@ import { hasWidgetHost } from "../domains/widget/application/services/WidgetHost
 import { RoomChatPanel } from "../domains/messaging/presentation/RoomChatPanel.tsx";
 import { useRoomChatIndicator } from "../domains/messaging/presentation/useRoomChatIndicator.ts";
 import { RoomNotePanel } from "../domains/notes/presentation/RoomNotePanel.tsx";
+import { useMediaQuery } from "../useMediaQuery";
 
 const maxTapDurationMs = 400;
+const CALL_SIDE_PANEL_WIDTH_PX = 380;
+const CALL_SIDE_PANEL_GAP_PX = 24;
+const CALL_SIDE_PANEL_INSET_PX = 16;
 
 export interface ActiveCallProps extends Omit<InCallViewProps, "vm"> {
   rtcSession: MatrixRTCSession;
@@ -403,6 +407,9 @@ export const InCallView: FC<InCallViewProps> = ({
   const [settingsTab, setSettingsTab] = useState(defaultSettingsTab);
   const [chatOpen, setChatOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
+  const useInlineSidePanel = useMediaQuery(
+    "(min-width: 1180px) and (min-height: 760px) and (hover: hover) and (pointer: fine)",
+  );
   const { unreadCount: unreadChatCount } = useRoomChatIndicator(
     matrixRoom,
     chatOpen,
@@ -417,15 +424,40 @@ export const InCallView: FC<InCallViewProps> = ({
     [setSettingsModalOpen],
   );
   const openChat = useCallback(() => {
-    setNoteOpen(false);
-    setChatOpen(true);
+    setChatOpen((previous) => {
+      const next = !previous;
+      if (next) setNoteOpen(false);
+      return next;
+    });
   }, [setChatOpen, setNoteOpen]);
   const closeChat = useCallback(() => setChatOpen(false), [setChatOpen]);
   const openNote = useCallback(() => {
-    setChatOpen(false);
-    setNoteOpen(true);
+    setNoteOpen((previous) => {
+      const next = !previous;
+      if (next) setChatOpen(false);
+      return next;
+    });
   }, [setChatOpen, setNoteOpen]);
   const closeNote = useCallback(() => setNoteOpen(false), [setNoteOpen]);
+  const activeSidePanel = chatOpen ? "chat" : noteOpen ? "note" : null;
+  const sidePanelReservedWidth =
+    useInlineSidePanel && activeSidePanel
+      ? CALL_SIDE_PANEL_WIDTH_PX + CALL_SIDE_PANEL_GAP_PX
+      : 0;
+
+  useEffect(() => {
+    if (!useInlineSidePanel || !activeSidePanel) return;
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") {
+        setChatOpen(false);
+        setNoteOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeSidePanel, useInlineSidePanel]);
 
   const openProfile = useMemo(
     () =>
@@ -444,7 +476,7 @@ export const InCallView: FC<InCallViewProps> = ({
 
   const gridBounds = useMemo(
     () => ({
-      width: bounds.width,
+      width: Math.max(320, bounds.width - sidePanelReservedWidth),
       height:
         bounds.height -
         headerBounds.height -
@@ -456,6 +488,7 @@ export const InCallView: FC<InCallViewProps> = ({
       headerBounds.height,
       footerBounds.height,
       windowMode,
+      sidePanelReservedWidth,
     ],
   );
   const gridBoundsObservable$ = useObservable(
@@ -878,19 +911,51 @@ export const InCallView: FC<InCallViewProps> = ({
       <ReactionsOverlay vm={vm} />
       {waitingOverlay}
       {footer}
-      {chatOpen && (
+      {chatOpen && !useInlineSidePanel && (
         <RoomChatPanel
           matrixRoom={matrixRoom}
           open={chatOpen}
           onDismiss={closeChat}
         />
       )}
-      {noteOpen && (
+      {noteOpen && !useInlineSidePanel && (
         <RoomNotePanel
           matrixRoom={matrixRoom}
           open={noteOpen}
           onDismiss={closeNote}
         />
+      )}
+      {useInlineSidePanel && activeSidePanel && (
+        <aside
+          className={styles.sidePanelRail}
+          style={{
+            width: CALL_SIDE_PANEL_WIDTH_PX,
+            top: headerBounds.height
+              ? headerBounds.height + CALL_SIDE_PANEL_INSET_PX
+              : CALL_SIDE_PANEL_INSET_PX,
+            right: CALL_SIDE_PANEL_INSET_PX,
+            bottom:
+              windowMode === "flat"
+                ? CALL_SIDE_PANEL_INSET_PX
+                : footerBounds.height + CALL_SIDE_PANEL_INSET_PX,
+          }}
+        >
+          {activeSidePanel === "chat" ? (
+            <RoomChatPanel
+              matrixRoom={matrixRoom}
+              open
+              onDismiss={closeChat}
+              presentation="inline"
+            />
+          ) : (
+            <RoomNotePanel
+              matrixRoom={matrixRoom}
+              open
+              onDismiss={closeNote}
+              presentation="inline"
+            />
+          )}
+        </aside>
       )}
       {layout.type !== "pip" && (
         <>

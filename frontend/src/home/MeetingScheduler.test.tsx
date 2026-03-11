@@ -131,7 +131,13 @@ describe("MeetingScheduler", () => {
       );
     });
     await waitFor(() => {
-      expect(onScheduled).toHaveBeenCalled();
+      expect(onScheduled).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: "meeting-1",
+          joinUrl: "/room/weekly-infra-sync",
+          title: "Weekly infra sync",
+        }),
+      );
     });
   });
 });

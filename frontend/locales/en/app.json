@@ -139,13 +139,31 @@
   "header_label": "Element Call Home",
   "header_participants_label": "Participants",
   "home_dashboard": {
-    "description": "Instant calls should feel like a launcher. Planned meetings should feel like a workspace with timing, status, and clear next actions.",
-    "eyebrow": "Calls and meetings",
-    "instant_call_description": "Create a secure room and jump in immediately. This area keeps the one-step action isolated from the meeting-planning flow.",
+    "description": "Pick the fastest path for what you need to do right now: start immediately, jump into an existing room, or schedule something for later.",
+    "eyebrow": "Meeting workspace",
+    "errors": {
+      "invalid_join_target": "Enter a valid room link, room alias, or room ID."
+    },
+    "instant_call_action": "Start call now",
+    "instant_call_description": "Create a new room and jump in immediately when the next step is to talk now.",
     "instant_call_eyebrow": "Instant call",
-    "recent_rooms_description": "Jump back into rooms you recently used without creating another space.",
+    "instant_call_label": "Call name",
+    "instant_call_placeholder": "Weekly sync",
+    "instant_call_title": "Start a new call",
+    "join_call_action": "Join meeting",
+    "join_call_description": "Paste a meeting link, room alias, or room ID to jump into an existing call without creating anything new.",
+    "join_call_eyebrow": "Join existing",
+    "join_call_hint": "Accepted formats: full meeting links, #room-alias:server, or !room-id:server.",
+    "join_call_label": "Link or room",
+    "join_call_placeholder": "Paste a join link or room alias",
+    "join_call_title": "Join a meeting that already exists",
+    "recent_rooms_description": "Rooms you recently opened stay here so you can jump back in without searching.",
     "recent_rooms_title": "Recent rooms",
-    "title": "Start a call fast, then manage what is next in a separate flow."
+    "schedule_card_action": "Open scheduler",
+    "schedule_card_description": "Set up a meeting in a dedicated flow, then return to upcoming meetings when it is time to start or share it.",
+    "schedule_card_eyebrow": "Plan ahead",
+    "schedule_card_title": "Plan a meeting for later",
+    "title": "Start, join, or schedule a meeting."
   },
   "invite_modal": {
     "link_copied_toast": "Link copied to clipboard",
@@ -173,7 +191,7 @@
   "login_title": "Login",
   "meeting_planner": {
     "date_label": "Date",
-    "description": "Schedule in a dedicated flow, then return here to start, join, or copy links without mixing that work into the fast-start action.",
+    "description": "See what is scheduled, start live meetings, or copy links without mixing that work into the instant-call flow.",
     "description_label": "Description",
     "description_placeholder": "Agenda or context",
     "empty_description": "Use the schedule flow to add a meeting, then it will appear here with the correct next action.",
@@ -211,7 +229,7 @@
       "scheduled": "Scheduled"
     },
     "time_label": "Time",
-    "title": "Upcoming meetings live here, not inside the instant call launcher.",
+    "title": "Upcoming meetings",
     "title_label": "Meeting title",
     "title_placeholder": "Weekly infra sync",
     "today_time": "Today · {{time}}",
@@ -222,6 +240,21 @@
     "back_to_home": "Back to home",
     "description": "Set the meeting title and start time in a dedicated planning flow, then return to the meetings workspace to launch or share it when needed.",
     "eyebrow": "Schedule flow",
+    "success": {
+      "back_to_meetings": "Back to upcoming meetings",
+      "clipboard_unavailable": "Clipboard is not available in this browser.",
+      "copy_failed": "Failed to copy the meeting link.",
+      "description": "The meeting has been created. Copy the link now, then start it later from the upcoming meetings workspace when you are ready.",
+      "eyebrow": "Scheduled meeting",
+      "link_hint": "You can copy this now or select it manually if clipboard access is blocked.",
+      "link_label": "Join link",
+      "next_step": "Next step: share the join link now, then start the meeting later from the upcoming meetings list.",
+      "schedule_another": "Schedule another meeting",
+      "summary_label": "Meeting details",
+      "timezone_label": "Local timezone: {{timezone}}",
+      "title": "The meeting is ready for the next step."
+    },
+    "timezone_hint": "Times are shown in {{timezone}}.",
     "title": "Plan the meeting first, then return to the upcoming meetings workspace."
   },
   "room_chat": {

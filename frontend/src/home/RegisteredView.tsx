@@ -39,6 +39,7 @@ import { E2eeType } from "../e2ee/e2eeType";
 import { useOptInAnalytics } from "../settings/settings";
 import { useUiUrlContext } from "../shared/application/readModels/UiUrlContext.ts";
 import { MeetingPlanner } from "./MeetingPlanner";
+import { resolveJoinTarget } from "./resolveJoinTarget";
 
 interface Props {
   client: MatrixClient;
@@ -53,6 +54,8 @@ export const RegisteredView: FC<Props> = ({ client }) => {
   const { t } = useTranslation();
   const [joinExistingCallModalOpen, setJoinExistingCallModalOpen] =
     useState(false);
+  const [joinTarget, setJoinTarget] = useState("");
+  const [joinError, setJoinError] = useState<Error>();
   const onDismissJoinExistingCallModal = useCallback(
     () => setJoinExistingCallModalOpen(false),
     [setJoinExistingCallModalOpen],
@@ -114,6 +117,22 @@ export const RegisteredView: FC<Props> = ({ client }) => {
     });
   }, [navigate, existingAlias]);
 
+  const onJoinSubmit: FormEventHandler<HTMLFormElement> = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      setJoinError(undefined);
+
+      const resolvedTarget = resolveJoinTarget(joinTarget);
+      if (!resolvedTarget) {
+        setJoinError(new Error(t("home_dashboard.errors.invalid_join_target")));
+        return;
+      }
+
+      navigate(resolvedTarget);
+    },
+    [joinTarget, navigate, t],
+  );
+
   return (
     <>
       <div className={commonStyles.container}>
@@ -135,61 +154,136 @@ export const RegisteredView: FC<Props> = ({ client }) => {
               <Text size="sm" className={styles.eyebrow}>
                 {t("home_dashboard.eyebrow")}
               </Text>
-              <Heading size="xl" weight="semibold" className={styles.pageTitle}>
+              <Heading size="lg" weight="semibold" className={styles.pageTitle}>
                 {t("home_dashboard.title")}
               </Heading>
-              <Text size="lg" className={styles.pageDescription}>
+              <Text size="md" className={styles.pageDescription}>
                 {t("home_dashboard.description")}
               </Text>
             </section>
 
-            <section className={styles.instantCard}>
-              <div className={styles.cardHeader}>
-                <Text size="sm" className={styles.cardEyebrow}>
-                  {t("home_dashboard.instant_call_eyebrow")}
-                </Text>
-                <Heading size="xl" weight="semibold">
-                  {t("start_new_call")}
-                </Heading>
-                <Text size="sm" className={styles.cardDescription}>
-                  {t("home_dashboard.instant_call_description")}
-                </Text>
-              </div>
-              <Form className={styles.form} onSubmit={onSubmit}>
-                <FieldRow className={styles.inlineRow}>
-                  <InputField
-                    id="callName"
-                    name="callName"
-                    label={t("call_name")}
-                    placeholder={t("call_name")}
-                    type="text"
-                    required
-                    autoComplete="off"
-                    data-testid="home_callName"
-                  />
-
+            <section className={styles.actionGrid}>
+              <section className={styles.instantCard}>
+                <div className={styles.cardHeader}>
+                  <Text size="sm" className={styles.cardEyebrow}>
+                    {t("home_dashboard.instant_call_eyebrow")}
+                  </Text>
+                  <Heading size="lg" weight="semibold">
+                    {t("home_dashboard.instant_call_title")}
+                  </Heading>
+                  <Text size="sm" className={styles.cardDescription}>
+                    {t("home_dashboard.instant_call_description")}
+                  </Text>
+                </div>
+                <Form className={styles.form} onSubmit={onSubmit}>
+                  <FieldRow className={styles.fieldRow}>
+                    <InputField
+                      id="callName"
+                      name="callName"
+                      label={t("home_dashboard.instant_call_label")}
+                      placeholder={t("home_dashboard.instant_call_placeholder")}
+                      type="text"
+                      required
+                      autoComplete="off"
+                      data-testid="home_callName"
+                    />
+                  </FieldRow>
                   <Button
                     type="submit"
                     size="lg"
                     kind="primary"
-                    className={styles.button}
+                    className={styles.fullWidthButton}
                     disabled={loading}
                     data-testid="home_go"
                   >
-                    {loading ? t("common.loading") : t("action.go")}
+                    {loading
+                      ? t("common.loading")
+                      : t("home_dashboard.instant_call_action")}
                   </Button>
-                </FieldRow>
-                {optInAnalytics === null && (
-                  <Text size="sm" className={styles.notice}>
-                    <AnalyticsNotice />
-                  </Text>
-                )}
-                {error && (
-                  <FieldRow className={styles.fieldRow}>
-                    <ErrorMessage error={error} />
-                  </FieldRow>
-                )}
-              </Form>
+                  {optInAnalytics === null && (
+                    <Text size="sm" className={styles.notice}>
+                      <AnalyticsNotice />
+                    </Text>
+                  )}
+                  {error && (
+                    <FieldRow className={styles.fieldRow}>
+                      <ErrorMessage error={error} />
+                    </FieldRow>
+                  )}
+                </Form>
+              </section>
+
+              <div className={styles.actionStack}>
+                <section className={styles.actionCard}>
+                  <div className={styles.cardHeader}>
+                    <Text size="sm" className={styles.cardEyebrow}>
+                      {t("home_dashboard.join_call_eyebrow")}
+                    </Text>
+                    <Heading size="md" weight="semibold">
+                      {t("home_dashboard.join_call_title")}
+                    </Heading>
+                    <Text size="sm" className={styles.cardDescription}>
+                      {t("home_dashboard.join_call_description")}
+                    </Text>
+                  </div>
+                  <Form className={styles.form} onSubmit={onJoinSubmit}>
+                    <FieldRow className={styles.fieldRow}>
+                      <InputField
+                        id="joinTarget"
+                        name="joinTarget"
+                        label={t("home_dashboard.join_call_label")}
+                        placeholder={t("home_dashboard.join_call_placeholder")}
+                        description={t("home_dashboard.join_call_hint")}
+                        type="text"
+                        required
+                        autoComplete="off"
+                        value={joinTarget}
+                        onChange={(event) => {
+                          setJoinError(undefined);
+                          setJoinTarget(event.target.value);
+                        }}
+                      />
+                    </FieldRow>
+                    {joinError && (
+                      <FieldRow className={styles.fieldRow}>
+                        <ErrorMessage error={joinError} />
+                      </FieldRow>
+                    )}
+                    <Button
+                      type="submit"
+                      size="lg"
+                      kind="secondary"
+                      className={styles.fullWidthButton}
+                    >
+                      {t("home_dashboard.join_call_action")}
+                    </Button>
+                  </Form>
+                </section>
+
+                <section className={styles.actionCard}>
+                  <div className={styles.cardHeader}>
+                    <Text size="sm" className={styles.cardEyebrow}>
+                      {t("home_dashboard.schedule_card_eyebrow")}
+                    </Text>
+                    <Heading size="md" weight="semibold">
+                      {t("home_dashboard.schedule_card_title")}
+                    </Heading>
+                    <Text size="sm" className={styles.cardDescription}>
+                      {t("home_dashboard.schedule_card_description")}
+                    </Text>
+                  </div>
+                  <Button
+                    size="lg"
+                    kind="secondary"
+                    className={styles.fullWidthButton}
+                    onClick={() => {
+                      void navigate("/meetings/new");
+                    }}
+                  >
+                    {t("home_dashboard.schedule_card_action")}
+                  </Button>
+                </section>
+              </div>
             </section>
 
             <MeetingPlanner />

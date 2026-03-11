@@ -4,7 +4,7 @@ Copyright 2026 Nangman Infra
 SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 */
 
-import { type FC } from "react";
+import { type FC, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, Heading, Text } from "@vector-im/compound-web";
 import { type MatrixClient } from "matrix-js-sdk";
@@ -20,6 +20,8 @@ import commonStyles from "./common.module.css";
 import registeredViewStyles from "./RegisteredView.module.css";
 import pageStyles from "./MeetingSchedulePage.module.css";
 import { MeetingScheduler } from "./MeetingScheduler";
+import { Meeting } from "../domains/meetings/domain/Meeting";
+import { ErrorMessage } from "../input/Input";
 
 export const MeetingSchedulePage: FC = () => {
   const { t } = useTranslation();
@@ -46,6 +48,37 @@ const MeetingScheduleView: FC<{ client: MatrixClient }> = ({ client }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { header } = useUiUrlContext();
+  const [scheduledMeeting, setScheduledMeeting] = useState<Meeting | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [copyError, setCopyError] = useState<Error>();
+
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const joinLink = scheduledMeeting
+    ? new URL(scheduledMeeting.joinUrl, window.location.origin).toString()
+    : "";
+
+  async function copyMeetingLink(): Promise<void> {
+    if (!scheduledMeeting) {
+      return;
+    }
+
+    try {
+      if (!navigator.clipboard) {
+        throw new Error(t("meeting_scheduler.success.clipboard_unavailable"));
+      }
+
+      await navigator.clipboard.writeText(joinLink);
+      setCopyError(undefined);
+      setCopied(true);
+    } catch (error) {
+      setCopied(false);
+      setCopyError(
+        error instanceof Error
+          ? error
+          : new Error(t("meeting_scheduler.success.copy_failed")),
+      );
+    }
+  }
 
   return (
     <div className={commonStyles.container}>
@@ -76,30 +109,136 @@ const MeetingScheduleView: FC<{ client: MatrixClient }> = ({ client }) => {
           </div>
 
           <section className={pageStyles.pageCard}>
-            <div className={pageStyles.pageIntro}>
-              <Text size="sm" className={pageStyles.eyebrow}>
-                {t("meeting_scheduler.eyebrow")}
-              </Text>
-              <Heading size="xl" weight="semibold" className={pageStyles.title}>
-                {t("meeting_scheduler.title")}
-              </Heading>
-              <Text size="lg" className={pageStyles.description}>
-                {t("meeting_scheduler.description")}
-              </Text>
-            </div>
+            {scheduledMeeting ? (
+              <div className={pageStyles.successLayout}>
+                <div className={pageStyles.pageIntro}>
+                  <Text size="sm" className={pageStyles.eyebrow}>
+                    {t("meeting_scheduler.success.eyebrow")}
+                  </Text>
+                  <Heading
+                    size="xl"
+                    weight="semibold"
+                    className={pageStyles.title}
+                  >
+                    {t("meeting_scheduler.success.title")}
+                  </Heading>
+                  <Text size="lg" className={pageStyles.description}>
+                    {t("meeting_scheduler.success.description")}
+                  </Text>
+                </div>
 
-            <MeetingScheduler
-              client={client}
-              onCancel={() => {
-                void navigate("/");
-              }}
-              onScheduled={async () => {
-                await navigate("/");
-              }}
-            />
+                <div className={pageStyles.summaryCard}>
+                  <Text size="sm" className={pageStyles.summaryLabel}>
+                    {t("meeting_scheduler.success.summary_label")}
+                  </Text>
+                  <Heading size="lg" weight="semibold">
+                    {scheduledMeeting.title}
+                  </Heading>
+                  <Text size="sm" className={pageStyles.summaryDescription}>
+                    {formatMeetingStart(scheduledMeeting.startsAt)}
+                  </Text>
+                  <Text size="sm" className={pageStyles.summaryDescription}>
+                    {t("meeting_scheduler.success.timezone_label", {
+                      timezone,
+                    })}
+                  </Text>
+                  <Text size="sm" className={pageStyles.summaryDescription}>
+                    {t("meeting_scheduler.success.next_step")}
+                  </Text>
+                  <div className={pageStyles.linkGroup}>
+                    <Text size="sm" className={pageStyles.summaryLabel}>
+                      {t("meeting_scheduler.success.link_label")}
+                    </Text>
+                    <div
+                      className={pageStyles.linkBox}
+                      data-testid="meeting_schedule_link"
+                    >
+                      {joinLink}
+                    </div>
+                    <Text size="sm" className={pageStyles.summaryDescription}>
+                      {t("meeting_scheduler.success.link_hint")}
+                    </Text>
+                  </div>
+                  {copyError && (
+                    <div className={pageStyles.copyError}>
+                      <ErrorMessage error={copyError} />
+                    </div>
+                  )}
+                  <div className={pageStyles.successActions}>
+                    <Button
+                      kind="primary"
+                      onClick={() => {
+                        void copyMeetingLink();
+                      }}
+                    >
+                      {copied ? t("action.copied") : t("action.copy_link")}
+                    </Button>
+                    <Button
+                      kind="secondary"
+                      onClick={() => {
+                        void navigate("/");
+                      }}
+                    >
+                      {t("meeting_scheduler.success.back_to_meetings")}
+                    </Button>
+                    <Button
+                      kind="secondary"
+                      onClick={() => {
+                        setCopied(false);
+                        setCopyError(undefined);
+                        setScheduledMeeting(null);
+                      }}
+                    >
+                      {t("meeting_scheduler.success.schedule_another")}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className={pageStyles.pageIntro}>
+                  <Text size="sm" className={pageStyles.eyebrow}>
+                    {t("meeting_scheduler.eyebrow")}
+                  </Text>
+                  <Heading
+                    size="xl"
+                    weight="semibold"
+                    className={pageStyles.title}
+                  >
+                    {t("meeting_scheduler.title")}
+                  </Heading>
+                  <Text size="lg" className={pageStyles.description}>
+                    {t("meeting_scheduler.description")}
+                  </Text>
+                </div>
+
+                <MeetingScheduler
+                  client={client}
+                  onCancel={() => {
+                    void navigate("/");
+                  }}
+                  onScheduled={async (meeting) => {
+                    setCopied(false);
+                    setCopyError(undefined);
+                    setScheduledMeeting(meeting);
+                  }}
+                />
+              </>
+            )}
           </section>
         </div>
       </main>
     </div>
   );
 };
+
+function formatMeetingStart(startsAt: string | null): string {
+  if (!startsAt) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(startsAt));
+}

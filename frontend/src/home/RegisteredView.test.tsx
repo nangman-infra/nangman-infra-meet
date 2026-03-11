@@ -41,21 +41,41 @@ describe("RegisteredView", () => {
         <Routes>
           <Route path="/" element={<RegisteredView client={{} as MatrixClient} />} />
           <Route path="/meetings/new" element={<div>Schedule route</div>} />
+          <Route path="/room/:roomName" element={<div>Join route</div>} />
         </Routes>
       </MemoryRouter>,
     );
 
     expect(
       screen.getByText(
-        "Start a call fast, then manage what is next in a separate flow.",
+        "Pick the fastest path for what you need to do right now: start immediately, jump into an existing room, or schedule something for later.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("Instant call")).toBeInTheDocument();
     expect(screen.getByText("Planned meetings")).toBeInTheDocument();
+    expect(screen.getByText("Join existing")).toBeInTheDocument();
     expect(screen.queryByLabelText("Meeting title")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Schedule meeting" }));
+    fireEvent.click(screen.getByRole("button", { name: "Open scheduler" }));
 
     expect(await screen.findByText("Schedule route")).toBeInTheDocument();
+  });
+
+  it("supports a direct join flow from the home actions", async () => {
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<RegisteredView client={{} as MatrixClient} />} />
+          <Route path="/room/:roomName" element={<div>Join route</div>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByLabelText("Link or room"), {
+      target: { value: "weekly-sync" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Join meeting" }));
+
+    expect(await screen.findByText("Join route")).toBeInTheDocument();
   });
 });

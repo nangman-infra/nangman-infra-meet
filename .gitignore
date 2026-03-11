@@ -53,6 +53,7 @@ yarn-error.log
 /frontend/playwright/.cache/
 /.playwright-cli/
 /frontend/.playwright-cli/
+/output/
 
 # Logs
 npm-debug.log*

@@ -59,6 +59,11 @@ export interface Props {
    */
   // TODO: Better tabs support
   tabbed?: boolean;
+  /**
+   * Hide the desktop overlay for side-pane style surfaces that should not
+   * dim or block the rest of the call UI.
+   */
+  hideDesktopOverlay?: boolean;
 }
 
 /**
@@ -75,6 +80,7 @@ export const Modal: FC<Props> = ({
   open,
   onDismiss,
   tabbed,
+  hideDesktopOverlay,
   ...rest
 }) => {
   const { t } = useTranslation();
@@ -151,9 +157,11 @@ export const Modal: FC<Props> = ({
     return (
       <DialogRoot open={open} onOpenChange={onOpenChange}>
         <DialogPortal>
-          <DialogOverlay
-            className={classNames(overlayStyles.bg, overlayStyles.animate)}
-          />
+          {!hideDesktopOverlay && (
+            <DialogOverlay
+              className={classNames(overlayStyles.bg, overlayStyles.animate)}
+            />
+          )}
           <DialogContent
             asChild
             // Suppress the warning about there being no description; the modal

@@ -5,25 +5,28 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 */
 
 .modalRoot {
-  inline-size: min(420px, calc(100vw - 32px));
-  block-size: min(720px, calc(100vh - 48px));
+  inline-size: min(380px, calc(100vw - 32px));
+  block-size: auto;
 }
 
 .modalDesktop {
-  inset-inline-start: auto;
-  inset-inline-end: 24px;
-  inset-block-start: 24px;
-  inset-block-end: auto;
+  left: auto !important;
+  top: clamp(16px, 8vh, 88px) !important;
+  right: max(16px, env(safe-area-inset-right)) !important;
+  bottom: clamp(88px, 14vh, 140px) !important;
   transform: none !important;
-  max-inline-size: min(420px, calc(100vw - 32px));
-  inline-size: min(420px, calc(100vw - 32px));
-  max-block-size: calc(100vh - 48px);
-  block-size: min(720px, calc(100vh - 48px));
-  animation-name: chat-panel-in;
+  max-inline-size: min(380px, calc(100vw - 32px));
+  inline-size: min(380px, calc(100vw - 32px));
+  max-block-size: none;
+  block-size: auto;
+}
+
+.modalDesktop[data-state="open"] {
+  animation: chat-panel-in 160ms ease;
 }
 
 .modalDesktop[data-state="closed"] {
-  animation-name: chat-panel-out;
+  animation: chat-panel-out 120ms ease;
 }
 
 @keyframes chat-panel-in {
@@ -49,11 +52,26 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 }
 
 .panel {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   min-block-size: 0;
   block-size: 100%;
   gap: var(--cpd-space-4x);
+}
+
+.panel :global(p),
+.panel :global(h1),
+.panel :global(h2),
+.panel :global(h3),
+.panel :global(h4),
+.panel :global(h5),
+.panel :global(h6) {
+  margin: 0;
+}
+
+.headerBlock {
+  display: grid;
+  gap: var(--cpd-space-3x);
 }
 
 .intro {
@@ -64,14 +82,19 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
   flex: 1 1 auto;
   min-block-size: 0;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: var(--cpd-space-3x);
-  padding-inline-end: var(--cpd-space-1x);
+  border-radius: 18px;
+  background: rgba(2, 10, 22, 0.42);
+  padding: 14px;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .emptyState {
-  flex: 1 1 auto;
+  min-block-size: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -122,6 +145,10 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
   color: var(--cpd-color-text-secondary);
 }
 
+.messageMeta span {
+  display: inline-flex;
+}
+
 .messageBody {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -131,15 +158,26 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
   color: var(--cpd-color-text-secondary);
 }
 
+.composerSection {
+  padding-top: var(--cpd-space-2x);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 .composer {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: end;
   gap: var(--cpd-space-3x);
 }
 
 .composerField {
   margin: 0;
+}
+
+.composer :global(textarea) {
+  min-height: 88px;
+  max-height: 128px;
+  resize: vertical;
 }
 
 .composerHint {

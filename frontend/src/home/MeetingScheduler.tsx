@@ -17,12 +17,13 @@ import {
 } from "../utils/matrix";
 import { E2eeType } from "../e2ee/e2eeType";
 import { createMeeting } from "../domains/meetings/infrastructure/MeetingsApi";
+import { Meeting } from "../domains/meetings/domain/Meeting";
 import styles from "./MeetingScheduler.module.css";
 
 interface Props {
   client: MatrixClient;
   onCancel?: () => void;
-  onScheduled?: () => void | Promise<void>;
+  onScheduled?: (meeting: Meeting) => void | Promise<void>;
 }
 
 interface ScheduleFormState {
@@ -103,7 +104,7 @@ export const MeetingScheduler: FC<Props> = ({
         title,
       );
 
-      await createMeeting({
+      const meeting = await createMeeting({
         title,
         description,
         hostUserId: client.getUserId() ?? "unknown-user",
@@ -116,7 +117,7 @@ export const MeetingScheduler: FC<Props> = ({
 
       form.reset();
       setScheduleForm(getDefaultScheduleValues());
-      await onScheduled?.();
+      await onScheduled?.(meeting);
     }
 
     void submitMeeting()
@@ -196,6 +197,11 @@ export const MeetingScheduler: FC<Props> = ({
           required
         />
       </FieldRow>
+      <p className={styles.timezoneHint}>
+        {t("meeting_scheduler.timezone_hint", {
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        })}
+      </p>
       {formError && (
         <FieldRow>
           <ErrorMessage error={formError} />

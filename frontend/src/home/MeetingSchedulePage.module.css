@@ -58,6 +58,57 @@
   color: var(--cpd-color-text-secondary);
 }
 
+.successLayout {
+  display: grid;
+  gap: 24px;
+}
+
+.summaryCard {
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.summaryLabel {
+  color: rgba(214, 252, 245, 0.78);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.summaryDescription {
+  color: var(--cpd-color-text-secondary);
+}
+
+.linkGroup {
+  display: grid;
+  gap: 10px;
+}
+
+.linkBox {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(2, 8, 23, 0.46);
+  color: var(--cpd-color-text-primary);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.copyError {
+  margin-top: -4px;
+}
+
+.successActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+
 @media (max-width: 720px) {
   .shell {
     width: calc(100% - 32px);
@@ -67,5 +118,9 @@
   .pageCard {
     padding: 24px;
     border-radius: 24px;
+  }
+
+  .successActions {
+    flex-direction: column;
   }
 }

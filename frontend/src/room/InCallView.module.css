@@ -6,6 +6,7 @@ Please see LICENSE in the repository root for full details.
 */
 
 .inRoom {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -177,4 +178,13 @@ Please see LICENSE in the repository root for full details.
 .tile.maximised {
   position: relative;
   flex-grow: 1;
+}
+
+.sidePanelRail {
+  position: absolute;
+  z-index: calc(var(--call-view-header-footer-layer) + 1);
+  display: flex;
+  pointer-events: initial;
+  min-height: 0;
+  max-height: min(720px, calc(100% - 32px));
 }

@@ -19,7 +19,9 @@
     "sign_in": "Accedi",
     "sign_out": "Disconnetti",
     "submit": "Invia",
-    "upload_file": "Carica file"
+    "upload_file": "Carica file",
+    "cancel": "Cancel",
+    "copied": "Copied"
   },
   "analytics_notice": "Partecipando a questa beta, acconsenti alla raccolta di dati anonimi che usiamo per migliorare il prodotto. Puoi trovare più informazioni su quali dati monitoriamo nella nostra <2>informativa sulla privacy</2> e nell'<5>informativa sui cookie</5>.",
   "app_selection_modal": {
@@ -58,7 +60,8 @@
     "settings": "Impostazioni",
     "unencrypted": "Non cifrata",
     "username": "Nome utente",
-    "video": "Video"
+    "video": "Video",
+    "reconnecting": "Reconnecting…"
   },
   "developer_mode": {
     "crypto_version": "Versione crittografica: {{version}}",
@@ -71,7 +74,34 @@
     "matrix_id": "ID Matrix: {{id}}",
     "show_connection_stats": "Mostra le statistiche di connessione",
     "show_non_member_tiles": "Mostra i riquadri per i file multimediali non-membri",
-    "use_new_membership_manager": "Usa la nuova implementazione della chiamata MembershipManager"
+    "use_new_membership_manager": "Usa la nuova implementazione della chiamata MembershipManager",
+    "always_show_iphone_earpiece": "Show iPhone earpiece option on all platforms",
+    "custom_livekit_url": {
+      "current_url": "Currently set to: ",
+      "from_config": "Currently, no overwrite is set. Url from well-known or config is used.",
+      "label": "Custom Livekit-url",
+      "reset": "Reset overwrite",
+      "save": "Save",
+      "saving": "Saving..."
+    },
+    "environment_variables": "Environment variables",
+    "matrixRTCMode": {
+      "Comptibility": {
+        "description": "Compatible with homeservers that do not support sticky events (but all other EC clients are v0.17.0 or later)",
+        "label": "Compatibility: state events & multi SFU"
+      },
+      "Legacy": {
+        "description": "Compatible with old versions of EC that do not support multi SFU",
+        "label": "Legacy: state events & oldest membership SFU"
+      },
+      "Matrix_2_0": {
+        "description": "Compatible only with homservers supporting sticky events and all EC clients v0.17.0 or later",
+        "label": "Matrix 2.0: sticky events & multi SFU"
+      },
+      "title": "MatrixRTC mode"
+    },
+    "mute_all_audio": "Mute all audio (participants, reactions, join sounds)",
+    "url_params": "URL parameters"
   },
   "disconnected_banner": "La connessione al server è stata persa.",
   "error": {
@@ -89,7 +119,10 @@
     "matrix_rtc_focus_missing": "Il server non è configurato per funzionare con {{brand}}. Contatta l'amministratore del tuo server (Dominio: {{domain}}, codice di errore: {{ errorCode }}).",
     "open_elsewhere": "Aperto in un'altra scheda",
     "open_elsewhere_description": "{{brand}} è stato aperto in un'altra scheda. Se non ti sembra corretto, prova a ricaricare la pagina.",
-    "unexpected_ec_error": "Si è verificato un errore imprevisto (<0>Codice errore:</0> <1>{{ errorCode }}</1>). Contatta l'amministratore del tuo server."
+    "unexpected_ec_error": "Si è verificato un errore imprevisto (<0>Codice errore:</0> <1>{{ errorCode }}</1>). Contatta l'amministratore del tuo server.",
+    "matrix_rtc_transport_missing": "The server is not configured to work with {{brand}}. Please contact your server admin (Domain: {{domain}}, Error Code: {{ errorCode }}).",
+    "room_creation_restricted": "Failed to create call",
+    "room_creation_restricted_description": "Call creation might be restricted to authorized users only. Try again later, or contact your server admin if the problem persists."
   },
   "group_call_loader": {
     "banned_body": "Sei stato bandito dalla stanza.",
@@ -168,7 +201,10 @@
       "microphone": "Microfono",
       "microphone_numbered": "Microfono {{n}}",
       "speaker": "Altoparlante",
-      "speaker_numbered": "Altoparlante {{n}}"
+      "speaker_numbered": "Altoparlante {{n}}",
+      "change_device_button": "Change audio device",
+      "handset": "Handset",
+      "loudspeaker": "Loudspeaker"
     },
     "feedback_tab_body": "Se stai riscontrando problemi o semplicemente vuoi dare un'opinione, inviaci una breve descrizione qua sotto.",
     "feedback_tab_description_label": "Il tuo commento",
@@ -187,7 +223,10 @@
       "reactions_show_label": "Mostra reazioni",
       "show_hand_raised_timer_description": "Mostra un contatore quando un partecipante alza la mano",
       "show_hand_raised_timer_label": "Mostra la durata dell'alzata di mano"
-    }
+    },
+    "background_blur_header": "Background",
+    "background_blur_label": "Blur the background of the video",
+    "blur_not_supported_by_browser": "(Background blur is not supported by this device.)"
   },
   "star_rating_input_label_one": "{{count}} stelle",
   "star_rating_input_label_other": "{{count}} stelle",
@@ -241,5 +280,108 @@
     "reset": "Ripristina",
     "save": "Salva nota",
     "read_only": "Puoi visualizzare la nota condivisa, ma non hai i permessi per aggiornarla."
-  }
+  },
+  "home_dashboard": {
+    "description": "Start a call fast, join an existing room, or plan ahead without mixing those actions into the same workflow.",
+    "eyebrow": "Meeting workspace",
+    "errors": {
+      "invalid_join_target": "Enter a valid room link, room alias, or room ID."
+    },
+    "instant_call_description": "Create a new room and jump in immediately when the next step is to talk now.",
+    "instant_call_eyebrow": "Instant call",
+    "join_call_description": "Paste a meeting link, room alias, or room ID to jump into an existing call without creating anything new.",
+    "join_call_eyebrow": "Join existing",
+    "join_call_label": "Link or room",
+    "join_call_placeholder": "Paste a join link or room alias",
+    "join_call_title": "Join a meeting that already exists",
+    "recent_rooms_description": "Rooms you recently opened stay here so you can jump back in without searching.",
+    "recent_rooms_title": "Recent rooms",
+    "schedule_card_action": "Open schedule flow",
+    "schedule_card_description": "Plan ahead in a dedicated scheduling flow, then come back to upcoming meetings when it is time to start or share.",
+    "schedule_card_eyebrow": "Plan ahead",
+    "schedule_card_title": "Schedule a meeting without leaving home",
+    "title": "Choose the right action first, then move into the matching flow.",
+    "join_call_hint": "Accepted formats: full meeting links, #room-alias:server, or !room-id:server.",
+    "instant_call_action": "Start call now",
+    "instant_call_label": "Call name",
+    "instant_call_placeholder": "Weekly sync",
+    "instant_call_title": "Start a new call",
+    "join_call_action": "Join meeting"
+  },
+  "meeting_scheduler": {
+    "back_to_home": "Back to home",
+    "description": "Set the meeting title and start time in a dedicated planning flow, then return to the meetings workspace to launch or share it when needed.",
+    "eyebrow": "Schedule flow",
+    "success": {
+      "back_to_meetings": "Back to upcoming meetings",
+      "description": "The meeting has been created. Copy the link now, then start it later from the upcoming meetings workspace when you are ready.",
+      "eyebrow": "Scheduled meeting",
+      "next_step": "Next step: share the join link now, then start the meeting later from the upcoming meetings list.",
+      "schedule_another": "Schedule another meeting",
+      "summary_label": "Meeting details",
+      "title": "The meeting is ready for the next step.",
+      "clipboard_unavailable": "Clipboard is not available in this browser.",
+      "copy_failed": "Failed to copy the meeting link.",
+      "link_hint": "You can copy this now or select it manually if clipboard access is blocked.",
+      "link_label": "Join link",
+      "timezone_label": "Local timezone: {{timezone}}"
+    },
+    "timezone_hint": "Times are shown in {{timezone}}.",
+    "title": "Plan the meeting first, then return to the upcoming meetings workspace."
+  },
+  "handset": {
+    "overlay_back_button": "Back to Speaker Mode",
+    "overlay_description": "Only works while using app",
+    "overlay_title": "Handset Mode"
+  },
+  "meeting_planner": {
+    "date_label": "Date",
+    "description": "Schedule in a dedicated flow, then return here to start, join, or copy links without mixing that work into the fast-start action.",
+    "description_label": "Description",
+    "description_placeholder": "Agenda or context",
+    "empty_description": "Use the schedule flow to add a meeting, then it will appear here with the correct next action.",
+    "empty_title": "No upcoming meetings yet",
+    "errors": {
+      "clipboard_unavailable": "Clipboard is not available in this browser.",
+      "copy_failed": "Failed to copy meeting link.",
+      "future_start_required": "Choose a future date and time for a scheduled meeting.",
+      "joinable_room_failed": "Failed to create a joinable room for the meeting.",
+      "load_failed": "Failed to load meetings.",
+      "start_required": "Choose both a date and a time before scheduling the meeting.",
+      "schedule_failed": "Failed to schedule meeting.",
+      "start_failed": "Failed to start meeting.",
+      "title_required": "Enter a title before scheduling the meeting."
+    },
+    "eyebrow": "Planned meetings",
+    "join": "Join meeting",
+    "live_count": "{{count}} live now",
+    "live_hint": "Live meetings should be joinable immediately.",
+    "loading": "Loading meetings...",
+    "modal_description": "Date and time are split intentionally so the browser picker stays predictable instead of hiding time selection behind a single unstable field.",
+    "modal_eyebrow": "Schedule flow",
+    "modal_heading": "Add the meeting details first, then return to the meetings list.",
+    "modal_title": "Schedule a meeting",
+    "no_start_time": "No start time",
+    "open_schedule_flow": "Open schedule flow",
+    "schedule": "Schedule meeting",
+    "scheduled_hint": "Scheduled meetings stay inactive until you launch them.",
+    "scheduling": "Scheduling...",
+    "start": "Start meeting",
+    "status": {
+      "draft": "Draft",
+      "ended": "Ended",
+      "live": "Live",
+      "scheduled": "Scheduled"
+    },
+    "time_label": "Time",
+    "title": "Upcoming meetings live here, not inside the instant call launcher.",
+    "title_label": "Meeting title",
+    "title_placeholder": "Weekly infra sync",
+    "today_time": "Today · {{time}}",
+    "tomorrow_time": "Tomorrow · {{time}}",
+    "upcoming_count": "{{count}} upcoming"
+  },
+  "recaptcha_ssla_caption": "This site is protected by ReCAPTCHA and the Google <2>Privacy Policy</2> and <6>Terms of Service</6> apply.<9></9>By clicking \"Register\", you agree to our <12>Software and Services License Agreement (SSLA)</12>",
+  "room_auth_view_ssla_caption": "By clicking \"Join call now\", you agree to our <2>Software and Services License Agreement (SSLA)</2>",
+  "unauthenticated_view_ssla_caption": "By clicking \"Go\", you agree to our <2>Software and Services License Agreement (SSLA)</2>"
 }

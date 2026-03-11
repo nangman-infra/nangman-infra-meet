@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import { Avatar, Size as AvatarSize } from "../../../Avatar";
 import { ErrorMessage, InputField } from "../../../input/Input";
 import { Modal } from "../../../Modal";
+import { SidePanel } from "../../../room/SidePanel";
 import { useRoomChat } from "./useRoomChat";
 import styles from "./RoomChatPanel.module.css";
 
@@ -26,6 +27,7 @@ interface RoomChatPanelProps {
   matrixRoom: MatrixRoom;
   open: boolean;
   onDismiss: () => void;
+  presentation?: "modal" | "inline";
 }
 
 function formatMessageTime(sentAt: number): string {
@@ -39,6 +41,7 @@ export const RoomChatPanel: FC<RoomChatPanelProps> = ({
   matrixRoom,
   open,
   onDismiss,
+  presentation = "modal",
 }) => {
   const { t } = useTranslation();
   const { canSend, clearError, error, messages, sendMessage } =
@@ -81,6 +84,124 @@ export const RoomChatPanel: FC<RoomChatPanelProps> = ({
     }
   };
 
+  const content = (
+    <div className={styles.panel}>
+      <div className={styles.headerBlock}>
+        {presentation === "modal" && (
+          <Heading size="sm" weight="semibold">
+            {t("room_chat.heading")}
+          </Heading>
+        )}
+        <Text as="div" size="sm" className={styles.intro}>
+          {t("room_chat.description")}
+        </Text>
+        {error && (
+          <div className={styles.error}>
+            <ErrorMessage error={error} />
+          </div>
+        )}
+      </div>
+
+      <div className={styles.timeline}>
+        {orderedMessages.length === 0 ? (
+          <div className={styles.emptyState}>
+            <Text as="div" size="sm">
+              {t("room_chat.empty_state")}
+            </Text>
+          </div>
+        ) : (
+          orderedMessages.map((message) => (
+            <article
+              key={message.id}
+              className={[
+                styles.messageRow,
+                message.isOwn ? styles.own : "",
+              ].join(" ")}
+            >
+              <div className={styles.avatarWrap}>
+                <Avatar
+                  id={message.senderId}
+                  name={message.senderName}
+                  size={AvatarSize.SM}
+                  src={message.senderAvatarUrl ?? undefined}
+                />
+              </div>
+              <div className={styles.bubble}>
+                <div className={styles.messageMeta}>
+                  <Text as="span" size="sm" weight="semibold">
+                    {message.isOwn ? t("room_chat.you") : message.senderName}
+                  </Text>
+                  <Text as="span" size="sm">
+                    {formatMessageTime(message.sentAt)}
+                  </Text>
+                </div>
+                <Text as="div" size="md" className={styles.messageBody}>
+                  {message.body}
+                </Text>
+                {message.status !== "sent" && (
+                  <Text as="div" size="sm" className={styles.messageStatus}>
+                    {message.status === "failed"
+                      ? t("room_chat.failed")
+                      : t("room_chat.sending")}
+                  </Text>
+                )}
+              </div>
+            </article>
+          ))
+        )}
+        <div ref={timelineEndRef} />
+      </div>
+
+      {canSend ? (
+        <div className={styles.composerSection}>
+          <div className={styles.composer}>
+            <InputField
+              ref={textareaRef}
+              className={styles.composerField}
+              type="textarea"
+              label={t("room_chat.message_label")}
+              placeholder={t("room_chat.message_placeholder")}
+              value={draft}
+              onChange={(event) => {
+                setDraft(event.target.value);
+              }}
+              disabled={sending}
+              required
+              onKeyDown={onComposerKeyDown}
+            />
+            <Button
+              size="lg"
+              kind="primary"
+              disabled={sending || draft.trim().length === 0}
+              onClick={() => {
+                void submitDraft();
+              }}
+            >
+              {t("room_chat.send")}
+            </Button>
+          </div>
+          <Text as="div" size="sm" className={styles.composerHint}>
+            {t("room_chat.composer_hint")}
+          </Text>
+        </div>
+      ) : (
+        <div className={styles.permissionHint}>
+          <Text as="div" size="sm">
+            {t("room_chat.read_only")}
+          </Text>
+        </div>
+      )}
+    </div>
+  );
+
+  if (presentation === "inline") {
+    return (
+      <SidePanel title={t("room_chat.title")} onClose={onDismiss}>
+        {content}
+      </SidePanel>
+    );
+  }
+
   return (
     <Modal
       open={open}
@@ -88,107 +209,9 @@ export const RoomChatPanel: FC<RoomChatPanelProps> = ({
       title={t("room_chat.title")}
       className={styles.modalRoot}
       classNameModal={styles.modalDesktop}
+      hideDesktopOverlay
     >
-      <div className={styles.panel}>
-        <div>
-          <Heading size="sm" weight="semibold">
-            {t("room_chat.heading")}
-          </Heading>
-          <Text size="sm" className={styles.intro}>
-            {t("room_chat.description")}
-          </Text>
-        </div>
-
-        {error && (
-          <div className={styles.error}>
-            <ErrorMessage error={error} />
-          </div>
-        )}
-
-        <div className={styles.timeline}>
-          {orderedMessages.length === 0 ? (
-            <div className={styles.emptyState}>
-              <Text size="sm">{t("room_chat.empty_state")}</Text>
-            </div>
-          ) : (
-            orderedMessages.map((message) => (
-              <article
-                key={message.id}
-                className={[
-                  styles.messageRow,
-                  message.isOwn ? styles.own : "",
-                ].join(" ")}
-              >
-                <div className={styles.avatarWrap}>
-                  <Avatar
-                    id={message.senderId}
-                    name={message.senderName}
-                    size={AvatarSize.SM}
-                    src={message.senderAvatarUrl ?? undefined}
-                  />
-                </div>
-                <div className={styles.bubble}>
-                  <div className={styles.messageMeta}>
-                    <Text size="sm" weight="semibold">
-                      {message.isOwn ? t("room_chat.you") : message.senderName}
-                    </Text>
-                    <Text size="sm">{formatMessageTime(message.sentAt)}</Text>
-                  </div>
-                  <Text size="md" className={styles.messageBody}>
-                    {message.body}
-                  </Text>
-                  {message.status !== "sent" && (
-                    <Text size="sm" className={styles.messageStatus}>
-                      {message.status === "failed"
-                        ? t("room_chat.failed")
-                        : t("room_chat.sending")}
-                    </Text>
-                  )}
-                </div>
-              </article>
-            ))
-          )}
-          <div ref={timelineEndRef} />
-        </div>
-
-        {canSend ? (
-          <div>
-            <div className={styles.composer}>
-              <InputField
-                ref={textareaRef}
-                className={styles.composerField}
-                type="textarea"
-                label={t("room_chat.message_label")}
-                placeholder={t("room_chat.message_placeholder")}
-                value={draft}
-                onChange={(event) => {
-                  setDraft(event.target.value);
-                }}
-                disabled={sending}
-                required
-                onKeyDown={onComposerKeyDown}
-              />
-              <Button
-                size="lg"
-                kind="primary"
-                disabled={sending || draft.trim().length === 0}
-                onClick={() => {
-                  void submitDraft();
-                }}
-              >
-                {t("room_chat.send")}
-              </Button>
-            </div>
-            <Text size="sm" className={styles.composerHint}>
-              {t("room_chat.composer_hint")}
-            </Text>
-          </div>
-        ) : (
-          <div className={styles.permissionHint}>
-            <Text size="sm">{t("room_chat.read_only")}</Text>
-          </div>
-        )}
-      </div>
+      {content}
     </Modal>
   );
 };

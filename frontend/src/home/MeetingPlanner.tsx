@@ -113,7 +113,7 @@ export const MeetingPlanner: FC = () => {
           <Text size="sm" className={styles.sectionEyebrow}>
             {t("meeting_planner.eyebrow")}
           </Text>
-          <Heading size="xl" weight="semibold" className={styles.sectionTitle}>
+          <Heading size="md" weight="semibold" className={styles.sectionTitle}>
             {t("meeting_planner.title")}
           </Heading>
           <Text size="sm" className={styles.sectionDescription}>
