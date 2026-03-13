@@ -20,6 +20,7 @@ const scheduledMeeting: Meeting = {
   title: "Weekly infra sync",
   description: "Agenda or context",
   hostUserId: "@alice:matrix.nangman.cloud",
+  allowedUserIds: [],
   roomId: "!room:matrix.nangman.cloud",
   roomAlias: "#weekly-sync:matrix.nangman.cloud",
   joinUrl: "/room/weekly-sync",
@@ -99,7 +100,7 @@ describe("MeetingSchedulePage", () => {
       "/room/weekly-sync",
     );
     expect(
-      screen.getByRole("button", { name: "Back to home" }),
+      screen.getByRole("button", { name: "Manage meeting" }),
     ).toBeInTheDocument();
   });
 });

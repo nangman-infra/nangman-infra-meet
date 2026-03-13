@@ -54,6 +54,7 @@ beforeEach(() => {
   mockClient = {
     getOpenIdToken: vi.fn().mockReturnValue(""),
     getDeviceId: vi.fn().mockReturnValue("DEV000"),
+    getUserId: vi.fn().mockReturnValue("@me:example.org"),
   };
 
   lkRoomFactory = vi.fn().mockImplementation(() => {

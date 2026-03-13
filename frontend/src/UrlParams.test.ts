@@ -94,6 +94,22 @@ describe("UrlParams", () => {
         ).roomId,
       ).toBe(ROOM_ID);
     });
+
+    it("(meetingId in query params)", () => {
+      expect(
+        getRoomIdentifierFromUrl("", "?meetingId=meeting-123", "").meetingId,
+      ).toBe("meeting-123");
+    });
+
+    it("(meetingId in fragment params)", () => {
+      expect(
+        getRoomIdentifierFromUrl(
+          "/room/infra-planning",
+          "",
+          "#/infra-planning?meetingId=meeting-123&roomId=!room:localhost",
+        ).meetingId,
+      ).toBe("meeting-123");
+    });
   });
 
   it("ignores room alias", () => {

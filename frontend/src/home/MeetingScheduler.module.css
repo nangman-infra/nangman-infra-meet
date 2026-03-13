@@ -12,6 +12,33 @@
   flex: 1 1 0;
 }
 
+.optionGroup {
+  display: grid;
+  gap: 10px;
+}
+
+.optionButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sectionLabel,
+.helpText {
+  margin: 0;
+}
+
+.sectionLabel {
+  color: var(--cpd-color-text-secondary);
+  font-size: 0.875rem;
+}
+
+.helpText {
+  color: var(--cpd-color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 .timezoneHint {
   margin: 0;
   color: var(--cpd-color-text-secondary);

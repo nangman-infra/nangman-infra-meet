@@ -6,24 +6,33 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 
 import { useCallback, useEffect, useState, type FC } from "react";
 import { type TFunction } from "i18next";
+import { logger } from "matrix-js-sdk/lib/logger";
 import { useTranslation } from "react-i18next";
 import { Button, Heading, Text } from "@vector-im/compound-web";
 import { useNavigate } from "react-router-dom";
 
+import { useClient } from "../ClientContext";
 import {
   listMeetings,
+  listMeetingAttendanceSummaries,
   startMeeting,
 } from "../domains/meetings/infrastructure/MeetingsApi";
 import { type Meeting } from "../domains/meetings/domain/Meeting";
+import { type MeetingAttendanceSummary } from "../domains/meetings/domain/MeetingAttendanceSummary";
 import { ErrorMessage } from "../input/Input";
 import styles from "./MeetingPlanner.module.css";
 
 const COPY_TOAST_TIMEOUT_MS = 1_800;
+const meetingPlannerLogger = logger.getChild("[MeetingPlanner]");
 
 export const MeetingPlanner: FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { client } = useClient();
   const [meetings, setMeetings] = useState<Meeting[]>([]);
+  const [attendanceSummaries, setAttendanceSummaries] = useState<
+    Record<string, MeetingAttendanceSummary>
+  >({});
   const [loadingMeetings, setLoadingMeetings] = useState(true);
   const [copiedMeetingId, setCopiedMeetingId] = useState<string>();
   const [listError, setListError] = useState<Error>();
@@ -32,8 +41,44 @@ export const MeetingPlanner: FC = () => {
     setLoadingMeetings(true);
     try {
       setListError(undefined);
-      setMeetings(await listMeetings());
+      const nextMeetings = await listMeetings({
+        userId: client?.getUserId() ?? undefined,
+      });
+      setMeetings(nextMeetings);
+
+      const summaryMeetingIds = nextMeetings
+        .filter((meeting) => meeting.status === "live")
+        .map((meeting) => meeting.id);
+
+      if (summaryMeetingIds.length === 0) {
+        setAttendanceSummaries({});
+        return;
+      }
+
+      try {
+        const summaries = await listMeetingAttendanceSummaries(
+          summaryMeetingIds,
+          {
+            userId: client?.getUserId() ?? undefined,
+          },
+        );
+        setAttendanceSummaries(
+          Object.fromEntries(
+            summaries.map((summary) => [summary.meetingId, summary]),
+          ),
+        );
+      } catch (error) {
+        setAttendanceSummaries({});
+        meetingPlannerLogger.warn("meeting_attendance_summary_load_failed", {
+          meetingIds: summaryMeetingIds,
+          error:
+            error instanceof Error
+              ? error.message
+              : t("meeting_planner.errors.load_failed"),
+        });
+      }
     } catch (nextError) {
+      setAttendanceSummaries({});
       setListError(
         nextError instanceof Error
           ? nextError
@@ -42,7 +87,7 @@ export const MeetingPlanner: FC = () => {
     } finally {
       setLoadingMeetings(false);
     }
-  }, [t]);
+  }, [client, t]);
 
   useEffect(() => {
     void loadMeetings();
@@ -63,7 +108,9 @@ export const MeetingPlanner: FC = () => {
   async function onStartMeeting(meeting: Meeting): Promise<void> {
     setListError(undefined);
     try {
-      await startMeeting(meeting.id);
+      await startMeeting(meeting.id, {
+        userId: client?.getUserId() ?? undefined,
+      });
       await loadMeetings();
       await navigate(meeting.joinUrl);
     } catch (nextError) {
@@ -213,6 +260,14 @@ export const MeetingPlanner: FC = () => {
                 <Text size="sm" className={styles.meetingTime}>
                   {formatMeetingTime(meeting.startsAt, t)}
                 </Text>
+                {meeting.status === "live" && (
+                  <Text size="sm" className={styles.attendanceSummary}>
+                    {formatMeetingAttendanceSummary(
+                      attendanceSummaries[meeting.id],
+                      t,
+                    )}
+                  </Text>
+                )}
                 {meeting.description && (
                   <Text size="sm" className={styles.meetingDescription}>
                     {meeting.description}
@@ -226,6 +281,15 @@ export const MeetingPlanner: FC = () => {
                     : t("meeting_planner.scheduled_hint")}
                 </Text>
                 <div className={styles.meetingActions}>
+                  <Button
+                    size="sm"
+                    kind="secondary"
+                    onClick={() => {
+                      void navigate(`/meetings/${meeting.id}`);
+                    }}
+                  >
+                    {t("meeting_planner.manage")}
+                  </Button>
                   {meeting.status === "scheduled" ? (
                     <Button
                       size="sm"
@@ -292,6 +356,34 @@ function formatMeetingTime(startsAt: string | null, t: TFunction): string {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(startDate);
+}
+
+function formatMeetingAttendanceSummary(
+  summary: MeetingAttendanceSummary | undefined,
+  t: TFunction,
+): string {
+  if (!summary) {
+    return t("meeting_planner.attendance.none_present");
+  }
+
+  const segments =
+    summary.presentCount === 0
+      ? [t("meeting_planner.attendance.none_present")]
+      : [
+          t("meeting_planner.attendance.present_count", {
+            count: summary.presentCount,
+          }),
+        ];
+
+  if (summary.participantCount > summary.presentCount) {
+    segments.push(
+      t("meeting_planner.attendance.participant_count", {
+        count: summary.participantCount,
+      }),
+    );
+  }
+
+  return segments.join(" · ");
 }
 
 function getMeetingStatusLabel(

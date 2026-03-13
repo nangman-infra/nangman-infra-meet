@@ -24,5 +24,6 @@ import { MeetingsController } from "./presentation/http/meetings.controller";
       useExisting: InMemoryMeetingRepository,
     },
   ],
+  exports: [MEETING_REPOSITORY],
 })
 export class MeetingsModule {}

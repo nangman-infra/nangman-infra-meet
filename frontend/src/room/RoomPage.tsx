@@ -24,6 +24,7 @@ import {
   EndCallIcon,
   UnknownSolidIcon,
 } from "@vector-im/compound-design-tokens/assets/web/icons";
+import { Button } from "@vector-im/compound-web";
 import { useObservable } from "observable-hooks";
 import { map } from "rxjs";
 
@@ -45,14 +46,17 @@ import { useMediaDevices } from "../MediaDevicesContext";
 import { MuteStates } from "../state/MuteStates";
 import { ObservableScope } from "../state/ObservableScope";
 import { RoomTerminationError } from "../domains/room/application/errors/RoomTerminationError.ts";
+import { useMeetingEntryAccess } from "../domains/meetings/presentation/useMeetingEntryAccess";
 import { useRoomIdentifier } from "../domains/room/application/readModels/RoomIdentifier.ts";
 import { useRoomEntryUrlContext } from "../domains/room/application/readModels/RoomEntryUrlContext.ts";
+import { useMeetingAttendanceTracker } from "../domains/meetings/presentation/useMeetingAttendanceTracker";
+import styles from "./RoomPage.module.css";
 
 export const RoomPage: FC = () => {
   const { confineToRoom, appPrompt, preload, header, skipLobby } =
     useRoomEntryUrlContext();
   const { t } = useTranslation();
-  const { roomAlias, roomId, viaServers } = useRoomIdentifier();
+  const { roomAlias, roomId, meetingId, viaServers } = useRoomIdentifier();
   const location = useLocation();
 
   const roomIdOrAlias = roomId ?? roomAlias;
@@ -62,9 +66,25 @@ export const RoomPage: FC = () => {
 
   const { loading, client, error, passwordlessUser } = useClientLegacy();
   const { avatarUrl, displayName: userDisplayName } = useProfile(client);
+  const matrixUserId = client?.getUserId() ?? undefined;
+  const meetingEntryAccess = useMeetingEntryAccess({
+    meetingId,
+    userId: matrixUserId,
+  });
+  const canEnterMeeting =
+    !meetingId || meetingEntryAccess.decision?.kind === "allow";
 
-  const groupCallState = useLoadGroupCall(client, roomIdOrAlias, viaServers);
+  const groupCallState = useLoadGroupCall(
+    client,
+    canEnterMeeting ? roomIdOrAlias : null,
+    viaServers,
+  );
   const [joined, setJoined] = useState(false);
+  useMeetingAttendanceTracker({
+    joined: joined && canEnterMeeting,
+    meetingId,
+    userId: matrixUserId,
+  });
 
   const devices = useMediaDevices();
   const [muteStates, setMuteStates] = useState<MuteStates | null>(null);
@@ -242,6 +262,26 @@ export const RoomPage: FC = () => {
   } else if (!roomIdOrAlias) {
     // TODO: This doesn't belong here, the app routes need to be reworked
     content = <HomePage />;
+  } else if (meetingId && meetingEntryAccess.loading) {
+    content = <LoadingPage />;
+  } else if (meetingId && meetingEntryAccess.error) {
+    content = <ErrorPage error={meetingEntryAccess.error} />;
+  } else if (
+    meetingId &&
+    meetingEntryAccess.decision &&
+    meetingEntryAccess.decision.kind !== "allow"
+  ) {
+    content = (
+      <MeetingEntryGateView
+        decision={meetingEntryAccess.decision}
+        loading={meetingEntryAccess.loading}
+        requesting={meetingEntryAccess.requesting}
+        onRefresh={meetingEntryAccess.refresh}
+        onRequestAccess={() => {
+          void meetingEntryAccess.requestAccess();
+        }}
+      />
+    );
   } else {
     content = groupCallView();
   }
@@ -255,5 +295,87 @@ export const RoomPage: FC = () => {
         (platform === "android" || platform === "ios") &&
         roomId && <AppSelectionModal roomId={roomId} />}
     </>
+  );
+};
+
+interface MeetingEntryGateViewProps {
+  readonly decision: NonNullable<
+    ReturnType<typeof useMeetingEntryAccess>["decision"]
+  >;
+  readonly loading: boolean;
+  readonly requesting: boolean;
+  readonly onRefresh: () => void;
+  readonly onRequestAccess: () => void;
+}
+
+const MeetingEntryGateView: FC<MeetingEntryGateViewProps> = ({
+  decision,
+  loading,
+  requesting,
+  onRefresh,
+  onRequestAccess,
+}) => {
+  const { t } = useTranslation();
+  const isRequestAction =
+    decision.kind === "request_access" || decision.kind === "rejected";
+
+  const metadataKey =
+    decision.kind === "wait_for_host"
+      ? "meeting_entry.wait_for_host"
+      : decision.kind === "request_access"
+        ? "meeting_entry.request_access"
+        : decision.kind === "pending_approval"
+          ? "meeting_entry.pending_approval"
+          : decision.kind === "rejected"
+            ? "meeting_entry.rejected"
+            : decision.kind === "not_invited"
+              ? "meeting_entry.not_invited"
+              : "meeting_entry.meeting_ended";
+
+  const Icon =
+    decision.kind === "wait_for_host" || decision.kind === "pending_approval"
+      ? CheckIcon
+      : decision.kind === "request_access"
+        ? AdminIcon
+        : decision.kind === "meeting_ended"
+          ? EndCallIcon
+          : CloseIcon;
+
+  return (
+    <FullScreenView>
+      <ErrorView Icon={Icon} title={t(`${metadataKey}.title`)}>
+        <p>{t(`${metadataKey}.body`, { title: decision.title })}</p>
+        <p className={styles.gateMeta}>
+          {t("meeting_entry.policy", {
+            accessPolicy: t(`meeting_detail.access_policy.${decision.accessPolicy}`),
+          })}
+        </p>
+        {(decision.kind === "wait_for_host" ||
+          decision.kind === "pending_approval") && (
+          <div className={styles.gateActions}>
+            <Button kind="secondary" disabled={loading} onClick={onRefresh}>
+              {t("meeting_entry.refresh")}
+            </Button>
+          </div>
+        )}
+        {isRequestAction && (
+          <div className={styles.gateActions}>
+            <Button
+              kind="primary"
+              disabled={requesting}
+              onClick={onRequestAccess}
+            >
+              {requesting
+                ? t("meeting_entry.requesting")
+                : t(
+                    decision.kind === "rejected"
+                      ? "meeting_entry.request_again"
+                      : "meeting_entry.request_access_button",
+                  )}
+            </Button>
+          </div>
+        )}
+      </ErrorView>
+    </FullScreenView>
   );
 };

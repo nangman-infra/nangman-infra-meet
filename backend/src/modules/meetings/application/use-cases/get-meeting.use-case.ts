@@ -3,6 +3,7 @@ import {
   MEETING_REPOSITORY,
   MeetingRepositoryPort,
 } from "../ports/meeting-repository.port";
+import { AppLogger } from "../../../../common/logging/app-logger.service";
 import { MeetingPrimitives } from "../../domain/meeting.entity";
 import { MeetingNotFoundError } from "../errors/meeting-not-found.error";
 
@@ -11,6 +12,7 @@ export class GetMeetingUseCase {
   constructor(
     @Inject(MEETING_REPOSITORY)
     private readonly repository: MeetingRepositoryPort,
+    private readonly logger: AppLogger,
   ) {}
 
   async execute(meetingId: string): Promise<MeetingPrimitives> {
@@ -19,6 +21,17 @@ export class GetMeetingUseCase {
       throw new MeetingNotFoundError(meetingId);
     }
 
-    return meeting.toPrimitives();
+    const primitives = meeting.toPrimitives();
+    this.logger.info("meeting.fetched", {
+      module: "meetings",
+      useCase: "GetMeeting",
+      action: "meeting.get",
+      result: "success",
+      meetingId: primitives.id,
+      roomId: primitives.roomId,
+      status: primitives.status,
+    });
+
+    return primitives;
   }
 }

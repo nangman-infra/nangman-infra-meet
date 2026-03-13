@@ -33,6 +33,11 @@
     "description": "진행 중이거나 예정된 회의를 확인하고, 시작하고, 참가 링크를 복사할 수 있습니다.",
     "description_label": "설명",
     "description_placeholder": "안건 또는 맥락",
+    "attendance": {
+      "none_present": "지금 참여 중인 사람이 없습니다",
+      "participant_count": "누적 {{count}}명 참여",
+      "present_count": "지금 {{count}}명 참여 중"
+    },
     "empty_description": "회의를 예약하면 여기에 표시되고, 시작하거나 링크를 공유할 수 있습니다.",
     "empty_title": "표시할 회의가 아직 없습니다",
     "errors": {
@@ -51,6 +56,7 @@
     "live_count": "지금 진행 중 {{count}}개",
     "live_hint": "진행 중인 회의는 바로 참여할 수 있습니다.",
     "loading": "회의를 불러오는 중...",
+    "manage": "관리",
     "modal_description": "브라우저 날짜·시간 선택기가 예측 가능하게 동작하도록 날짜와 시간을 분리했습니다.",
     "modal_eyebrow": "예약 플로우",
     "modal_heading": "먼저 회의 정보를 입력한 뒤, 목록으로 돌아가 시작하거나 공유하세요.",
@@ -79,6 +85,20 @@
     "back_to_home": "홈으로 돌아가기",
     "description": "회의 제목과 시작 시각을 정하고, 준비되면 참가 링크를 공유하세요.",
     "eyebrow": "회의 예약",
+    "errors": {
+      "allowed_users_required": "초대 전용 회의로 저장하려면 허용할 사용자를 한 명 이상 입력하세요."
+    },
+    "form": {
+      "access_policy_label": "참여 정책",
+      "allowed_user_ids_description": "Matrix 사용자 ID를 한 줄에 하나씩 입력하세요. 호스트는 자동으로 참여할 수 있습니다.",
+      "allowed_user_ids_label": "허용할 Matrix 사용자 ID",
+      "allowed_user_ids_placeholder": "@alice:matrix.nangman.cloud\n@bob:matrix.nangman.cloud"
+    },
+    "policy_help": {
+      "host_approval": "링크가 있는 사람은 입장 요청을 보낼 수 있지만, 호스트가 승인해야 실제로 들어올 수 있습니다.",
+      "invite_only": "여기에 적은 사용자만 회의 링크로 들어올 수 있습니다.",
+      "open": "회의 링크가 있으면 누구나, 방이 열렸을 때 바로 들어올 수 있습니다."
+    },
     "success": {
       "back_to_meetings": "홈으로 돌아가기",
       "clipboard_unavailable": "이 브라우저에서는 클립보드를 사용할 수 없습니다.",
@@ -87,6 +107,7 @@
       "eyebrow": "예약 완료",
       "link_hint": "지금 복사하거나, 클립보드 접근이 막혀 있으면 직접 선택해서 복사할 수 있습니다.",
       "link_label": "참가 링크",
+      "manage_meeting": "회의 관리",
       "next_step": "다음 단계: 참가 링크를 공유한 뒤, 준비되면 회의를 시작하세요.",
       "schedule_another": "다른 회의 예약하기",
       "summary_label": "회의 정보",
@@ -95,6 +116,133 @@
     },
     "timezone_hint": "시간은 {{timezone}} 기준으로 표시됩니다.",
     "title": "회의 예약하기"
+  },
+  "meeting_detail": {
+    "access_policy": {
+      "host_approval": "호스트 승인",
+      "invite_only": "초대 전용",
+      "open": "공개"
+    },
+    "access_policy_label": "참여 정책",
+    "allow_join_before_host_no": "호스트가 시작한 뒤에만 참여할 수 있습니다",
+    "allow_join_before_host_yes": "호스트보다 먼저 참여할 수 있습니다",
+    "attendance_description": "현재 참여 중인 사람과 이미 참여했던 사람을 확인할 수 있습니다.",
+    "attendance_empty": "아직 출석 기록이 없습니다.",
+    "attendance_left": "퇴장함",
+    "attendance_present": "지금 참여 중",
+    "attendance_title": "출석",
+    "back_to_home": "홈으로 돌아가기",
+    "cancel": "회의 취소",
+    "description": "회의 정보를 수정하고, 회의 상태를 관리하고, 출석 현황을 확인하세요.",
+    "edit_description": "대시보드를 벗어나지 않고도 제목, 시간, 참여 정책을 바로 조정할 수 있습니다.",
+    "edit_title": "회의 정보 수정",
+    "end": "회의 종료",
+    "ending": "종료 중...",
+    "errors": {
+      "allowed_users_required": "초대 전용 회의로 저장하려면 허용할 사용자를 한 명 이상 입력하세요.",
+      "clipboard_unavailable": "이 브라우저에서는 클립보드를 사용할 수 없습니다.",
+      "copy_failed": "회의 링크를 복사하지 못했습니다.",
+      "end_failed": "회의를 종료하지 못했습니다.",
+      "load_failed": "회의 정보를 불러오지 못했습니다.",
+      "load_requests_failed": "입장 요청 목록을 불러오지 못했습니다.",
+      "moderation_failed": "입장 요청 상태를 변경하지 못했습니다.",
+      "not_found": "회의를 찾을 수 없습니다.",
+      "save_failed": "회의 변경사항을 저장하지 못했습니다.",
+      "start_failed": "회의를 시작하지 못했습니다.",
+      "start_required": "예약 회의를 저장하려면 날짜와 시간을 모두 선택하세요.",
+      "title_required": "회의 제목을 입력한 뒤 저장하세요."
+    },
+    "eyebrow": "회의 워크스페이스",
+    "form": {
+      "access_policy_label": "참여 정책",
+      "allow_join_before_host": "호스트보다 먼저 참여 허용",
+      "allowed_user_ids_description": "Matrix 사용자 ID를 한 줄에 하나씩 입력하세요. 호스트는 자동으로 참여할 수 있습니다.",
+      "allowed_user_ids_label": "허용할 Matrix 사용자 ID",
+      "allowed_user_ids_placeholder": "@alice:matrix.nangman.cloud\n@bob:matrix.nangman.cloud",
+      "date_label": "날짜",
+      "description_label": "설명",
+      "time_label": "시간",
+      "title_label": "회의 제목"
+    },
+    "access_requests_label": "대기 중인 승인",
+    "allowed_users_count": "{{count}}명 초대됨",
+    "allowed_users_empty": "아직 허용한 사용자가 없습니다",
+    "allowed_users_label": "허용 사용자",
+    "allowed_users_not_required": "이 정책에는 고정 사용자 목록이 필요하지 않습니다",
+    "approve_request": "승인",
+    "host_label": "호스트",
+    "join": "회의 참여",
+    "join_before_host_label": "호스트 이전 참여",
+    "joined_at": "{{date}} 참여",
+    "left_at": "{{date}} 퇴장",
+    "link_label": "참가 링크",
+    "moderation_description": "회의 입장을 요청한 사용자를 승인하거나 거절하세요.",
+    "moderation_empty": "아직 입장 요청이 없습니다.",
+    "moderation_title": "입장 요청",
+    "no_start_time": "시작 시각 없음",
+    "notices": {
+      "cancelled": "회의를 취소했습니다.",
+      "ended": "회의를 종료했습니다.",
+      "link_copied": "회의 링크를 복사했습니다.",
+      "request_approved": "{{userId}} 사용자가 이제 회의에 참여할 수 있습니다.",
+      "request_rejected": "{{userId}} 사용자의 입장 요청을 거절했습니다.",
+      "saved": "회의 변경사항을 저장했습니다.",
+      "started": "회의를 시작했습니다."
+    },
+    "overview_title": "개요",
+    "participant_count": "누적 {{count}}명 참여",
+    "pending_requests_count": "{{count}}명 승인 대기 중",
+    "policy_help": {
+      "host_approval": "링크가 있는 사용자는 입장 요청만 보낼 수 있고, 호스트가 승인하기 전에는 회의에 들어오지 못합니다.",
+      "invite_only": "아래에 입력한 Matrix 사용자 ID만 이 회의에 들어올 수 있습니다.",
+      "open": "회의 링크가 있으면 누구나 들어올 수 있고, 호스트 시작 정책만 적용됩니다."
+    },
+    "processing": "처리 중...",
+    "present_count": "지금 {{count}}명 참여 중",
+    "reject_request": "거절",
+    "request_status": {
+      "approved": "승인됨",
+      "pending": "승인 대기",
+      "rejected": "거절됨"
+    },
+    "requested_at": "{{date}} 요청",
+    "responded_at": "{{date}} 처리",
+    "save": "변경 저장",
+    "saving": "저장 중...",
+    "start": "회의 시작",
+    "starting": "시작 중...",
+    "title": "회의 상세"
+  },
+  "meeting_entry": {
+    "meeting_ended": {
+      "body": "\"{{title}}\" 회의는 이미 종료되어 더 이상 입장할 수 없습니다.",
+      "title": "종료된 회의입니다"
+    },
+    "not_invited": {
+      "body": "\"{{title}}\" 회의는 특정 Matrix 사용자만 입장할 수 있습니다.",
+      "title": "허용된 사용자 목록에 없습니다"
+    },
+    "pending_approval": {
+      "body": "\"{{title}}\" 회의에 대한 입장 요청을 보냈습니다. 호스트가 승인하면 바로 들어올 수 있습니다.",
+      "title": "호스트 승인 대기 중"
+    },
+    "policy": "참여 정책: {{accessPolicy}}",
+    "refresh": "새로고침",
+    "request_access": {
+      "body": "\"{{title}}\" 회의는 호스트 승인이 필요합니다. 요청을 보내고 응답을 기다리세요.",
+      "title": "입장 요청 보내기"
+    },
+    "request_access_button": "입장 요청",
+    "request_again": "다시 요청",
+    "requesting": "요청 중...",
+    "rejected": {
+      "body": "이전에 보낸 \"{{title}}\" 회의 입장 요청이 거절되었습니다. 여전히 필요하면 다시 요청할 수 있습니다.",
+      "title": "입장 요청이 거절되었습니다"
+    },
+    "wait_for_host": {
+      "body": "\"{{title}}\" 회의는 예약 상태이며, 호스트가 아직 입장을 열지 않았습니다.",
+      "title": "호스트가 시작하기를 기다리는 중"
+    }
   },
   "room_chat": {
     "title": "채팅",

@@ -1,0 +1,35 @@
+import { Injectable } from "@nestjs/common";
+import { Attendance, AttendancePrimitives } from "../../domain/attendance.entity";
+import { AttendanceRepositoryPort } from "../../application/ports/attendance-repository.port";
+
+@Injectable()
+export class InMemoryAttendanceRepository implements AttendanceRepositoryPort {
+  private readonly attendances = new Map<string, AttendancePrimitives>();
+
+  async findActiveByMeetingAndUser(
+    meetingId: string,
+    userId: string,
+  ): Promise<Attendance | null> {
+    for (const attendance of this.attendances.values()) {
+      if (
+        attendance.meetingId === meetingId &&
+        attendance.userId === userId &&
+        attendance.status === "present"
+      ) {
+        return Attendance.rehydrate(attendance);
+      }
+    }
+
+    return null;
+  }
+
+  async listByMeeting(meetingId: string): Promise<Attendance[]> {
+    return Array.from(this.attendances.values())
+      .filter((attendance) => attendance.meetingId === meetingId)
+      .map((attendance) => Attendance.rehydrate(attendance));
+  }
+
+  async save(attendance: Attendance): Promise<void> {
+    this.attendances.set(attendance.id, attendance.toPrimitives());
+  }
+}

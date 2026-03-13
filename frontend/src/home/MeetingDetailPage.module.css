@@ -1,0 +1,198 @@
+.shell {
+  width: min(1100px, calc(100% - 32px));
+  display: grid;
+  gap: 20px;
+}
+
+.backRow {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.pageCard {
+  display: grid;
+  gap: 20px;
+  padding: 28px;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(25, 212, 186, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(5, 12, 24, 0.88), rgba(4, 10, 20, 0.72));
+  box-shadow:
+    0 24px 80px rgba(2, 8, 23, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(18px);
+}
+
+.hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.heroText,
+.heroStats,
+.panel,
+.summaryList,
+.summaryItem,
+.form,
+.requestList,
+.requestRow,
+.requestBody,
+.attendanceList,
+.attendanceRow,
+.attendanceMeta {
+  display: grid;
+  gap: 12px;
+}
+
+.eyebrow,
+.summaryLabel,
+.muted {
+  color: var(--cpd-color-text-secondary);
+}
+
+.eyebrow {
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  line-height: 1.05;
+}
+
+.description {
+  max-width: 58ch;
+}
+
+.heroStats {
+  align-content: start;
+  justify-items: start;
+}
+
+.statPill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(8, 18, 34, 0.74);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--cpd-color-text-primary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.panel {
+  padding: 22px;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(4, 12, 24, 0.72);
+}
+
+.panelHeader {
+  display: grid;
+  gap: 6px;
+}
+
+.summaryItem {
+  gap: 4px;
+}
+
+.linkValue {
+  word-break: break-all;
+}
+
+.primaryActions,
+.optionButtons,
+.requestActions,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.scheduleRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.optionGroup {
+  display: grid;
+  gap: 10px;
+}
+
+.notice {
+  margin: 0;
+  color: #9ae6cf;
+  font-size: 0.95rem;
+}
+
+.attendanceRow {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(7, 16, 31, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.attendanceMeta {
+  justify-items: end;
+  align-content: start;
+}
+
+.requestRow {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(7, 16, 31, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  align-items: start;
+}
+
+.requestBody {
+  gap: 6px;
+}
+
+@media (max-width: 920px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .requestRow,
+  .attendanceRow {
+    grid-template-columns: 1fr;
+  }
+
+  .attendanceMeta {
+    justify-items: start;
+  }
+}
+
+@media (max-width: 720px) {
+  .shell {
+    width: min(100%, calc(100% - 24px));
+  }
+
+  .pageCard {
+    padding: 22px;
+    border-radius: 22px;
+  }
+
+  .panel {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .scheduleRow {
+    grid-template-columns: 1fr;
+  }
+}

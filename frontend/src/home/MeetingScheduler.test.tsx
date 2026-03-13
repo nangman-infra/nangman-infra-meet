@@ -24,6 +24,7 @@ describe("MeetingScheduler", () => {
       title: "Weekly infra sync",
       description: "Agenda or context",
       hostUserId: "@alice:matrix.nangman.cloud",
+      allowedUserIds: [],
       roomId: "!room:matrix.nangman.cloud",
       roomAlias: "#weekly-infra-sync:matrix.nangman.cloud",
       joinUrl: "/room/weekly-infra-sync",
@@ -125,6 +126,9 @@ describe("MeetingScheduler", () => {
             `${futureStartAt.date}T${futureStartAt.time}`,
           ).toISOString(),
         }),
+        expect.objectContaining({
+          userId: "@alice:matrix.nangman.cloud",
+        }),
       );
     });
     await waitFor(() => {
@@ -134,6 +138,50 @@ describe("MeetingScheduler", () => {
           joinUrl: "/room/weekly-infra-sync",
           title: "Weekly infra sync",
         }),
+      );
+    });
+  });
+
+  it("submits invite-only policy and allowed users", async () => {
+    render(
+      <MemoryRouter>
+        <MeetingScheduler client={mockClient} />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByLabelText("Meeting title"), {
+      target: { value: "Leadership sync" },
+    });
+    const futureStartAt = createLocalDateTimeParts(24 * 60 * 60 * 1000);
+    fireEvent.change(screen.getByLabelText("Date"), {
+      target: { value: futureStartAt.date },
+    });
+    fireEvent.change(screen.getByLabelText("Time"), {
+      target: { value: futureStartAt.time },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Invite only" }));
+    fireEvent.click(
+      screen.getByLabelText("Allow participants to join before the host"),
+    );
+    fireEvent.change(screen.getByLabelText("Allowed Matrix user IDs"), {
+      target: {
+        value: "@alice:matrix.nangman.cloud\n@bob:matrix.nangman.cloud",
+      },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Schedule meeting" }));
+
+    await waitFor(() => {
+      expect(MeetingsApi.createMeeting).toHaveBeenCalledWith(
+        expect.objectContaining({
+          accessPolicy: "invite_only",
+          allowJoinBeforeHost: true,
+          allowedUserIds: [
+            "@alice:matrix.nangman.cloud",
+            "@bob:matrix.nangman.cloud",
+          ],
+        }),
+        expect.anything(),
       );
     });
   });

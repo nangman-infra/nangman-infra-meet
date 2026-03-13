@@ -7,6 +7,10 @@ import { configureApp } from "../src/bootstrap/configure-app";
 
 describe("MeetingsController", () => {
   let app: INestApplication;
+  const futureMeetingStart = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+  const laterFutureMeetingStart = new Date(
+    Date.now() + 48 * 60 * 60 * 1000,
+  ).toISOString();
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -25,22 +29,26 @@ describe("MeetingsController", () => {
   it("creates, lists, starts, updates, and ends meetings", async () => {
     const createResponse = await request(app.getHttpServer())
       .post("/api/v1/meetings")
+      .set("x-trace-id", "trace_meeting_flow")
       .send({
         title: "Infra planning",
         description: "Discuss rollout plan",
         hostUserId: "@alice:matrix.nangman.cloud",
         roomId: "!room:matrix.nangman.cloud",
         joinUrl: "/room/#/infra-planning?roomId=!room:matrix.nangman.cloud",
-        startsAt: "2026-03-08T12:00:00.000Z",
+        startsAt: futureMeetingStart,
         allowJoinBeforeHost: false,
       });
 
     expect(createResponse.status).toBe(201);
+    expect(createResponse.headers["x-trace-id"]).toBe("trace_meeting_flow");
+    expect(createResponse.headers["x-request-id"]).toEqual(expect.any(String));
     expect(createResponse.body.success).toBe(true);
     expect(createResponse.body.data.title).toBe("Infra planning");
     expect(createResponse.body.data.status).toBe("scheduled");
 
     const meetingId = createResponse.body.data.id as string;
+    expect(createResponse.body.data.joinUrl).toContain(`meetingId=${meetingId}`);
 
     const listResponse = await request(app.getHttpServer()).get("/api/v1/meetings");
     expect(listResponse.status).toBe(200);
@@ -112,7 +120,7 @@ describe("MeetingsController", () => {
         hostUserId: "@alice:matrix.nangman.cloud",
         roomId: "!future:matrix.nangman.cloud",
         joinUrl: "/room/future",
-        startsAt: "2027-03-08T12:00:00.000Z",
+        startsAt: laterFutureMeetingStart,
       });
 
     const meetingId = createResponse.body.data.id as string;

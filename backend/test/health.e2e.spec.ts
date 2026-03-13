@@ -23,9 +23,13 @@ describe("HealthController", () => {
   });
 
   it("returns versioned health response", async () => {
-    const response = await request(app.getHttpServer()).get("/api/v1/health");
+    const response = await request(app.getHttpServer())
+      .get("/api/v1/health")
+      .set("x-trace-id", "trace_health_check");
 
     expect(response.status).toBe(200);
+    expect(response.headers["x-trace-id"]).toBe("trace_health_check");
+    expect(response.headers["x-request-id"]).toEqual(expect.any(String));
     expect(response.body).toEqual(
       expect.objectContaining({
         success: true,

@@ -5,11 +5,15 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { WinstonModule } from "nest-winston";
 import { HttpExceptionFilter } from "./common/filters/http-exception.filter";
 import { ApiResponseInterceptor } from "./common/interceptors/api-response.interceptor";
+import { LoggingModule } from "./common/logging/logging.module";
+import { RequestLoggingInterceptor } from "./common/logging/request-logging.interceptor";
 import { createWinstonLoggerOptions } from "./common/logging/winston.config";
 import { appConfig } from "./config/app.config";
 import { ENV_VALIDATION_SCHEMA } from "./config/env.validation";
+import { AttendanceModule } from "./modules/attendance/attendance.module";
 import { HealthModule } from "./modules/health/health.module";
 import { MeetingsModule } from "./modules/meetings/meetings.module";
+import { ModerationModule } from "./modules/moderation/moderation.module";
 
 @Module({
   imports: [
@@ -35,8 +39,11 @@ import { MeetingsModule } from "./modules/meetings/meetings.module";
       useFactory: (config: ConfigType<typeof appConfig>) =>
         createWinstonLoggerOptions(config.logLevel, config.nodeEnv),
     }),
+    LoggingModule,
+    AttendanceModule,
     HealthModule,
     MeetingsModule,
+    ModerationModule,
   ],
   providers: [
     {
@@ -50,6 +57,10 @@ import { MeetingsModule } from "./modules/meetings/meetings.module";
     {
       provide: APP_INTERCEPTOR,
       useClass: ApiResponseInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: RequestLoggingInterceptor,
     },
   ],
 })

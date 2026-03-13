@@ -1,0 +1,11 @@
+.gateActions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.gateMeta {
+  margin: 0;
+  color: var(--cpd-color-text-secondary);
+}

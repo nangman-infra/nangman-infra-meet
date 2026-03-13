@@ -194,6 +194,11 @@
     "description": "See live and upcoming meetings, start them, or copy join links.",
     "description_label": "Description",
     "description_placeholder": "Agenda or context",
+    "attendance": {
+      "none_present": "No one is in the room now",
+      "participant_count": "{{count}} joined so far",
+      "present_count": "{{count}} in the room now"
+    },
     "empty_description": "Scheduled meetings will appear here so you can start them or share the link.",
     "empty_title": "No meetings yet",
     "errors": {
@@ -212,6 +217,7 @@
     "live_count": "{{count}} live now",
     "live_hint": "Live meetings can be joined immediately.",
     "loading": "Loading meetings...",
+    "manage": "Manage",
     "modal_description": "Date and time are split intentionally so the browser picker stays predictable instead of hiding time selection behind a single unstable field.",
     "modal_eyebrow": "Schedule flow",
     "modal_heading": "Add the meeting details first, then return to the meetings list.",
@@ -240,6 +246,20 @@
     "back_to_home": "Back to home",
     "description": "Set the meeting title and start time, then share the join link when you are ready.",
     "eyebrow": "Schedule meeting",
+    "errors": {
+      "allowed_users_required": "Add at least one invited user before saving an invite-only meeting."
+    },
+    "form": {
+      "access_policy_label": "Access policy",
+      "allowed_user_ids_description": "Enter one Matrix user ID per line. The host is always allowed automatically.",
+      "allowed_user_ids_label": "Allowed Matrix user IDs",
+      "allowed_user_ids_placeholder": "@alice:matrix.nangman.cloud\n@bob:matrix.nangman.cloud"
+    },
+    "policy_help": {
+      "host_approval": "Anyone with the link can ask to join, but the host has to approve them first.",
+      "invite_only": "Only the people you list here can enter with the meeting link.",
+      "open": "Anyone with the meeting link can enter when the room is available."
+    },
     "success": {
       "back_to_meetings": "Back to home",
       "clipboard_unavailable": "Clipboard is not available in this browser.",
@@ -248,6 +268,7 @@
       "eyebrow": "Schedule complete",
       "link_hint": "Copy it now, or select it manually if clipboard access is blocked.",
       "link_label": "Join link",
+      "manage_meeting": "Manage meeting",
       "next_step": "Next: share the join link, then start the meeting when you are ready.",
       "schedule_another": "Schedule another meeting",
       "summary_label": "Meeting details",
@@ -256,6 +277,133 @@
     },
     "timezone_hint": "Times are shown in {{timezone}}.",
     "title": "Schedule a meeting"
+  },
+  "meeting_detail": {
+    "access_policy": {
+      "host_approval": "Host approval",
+      "invite_only": "Invite only",
+      "open": "Open"
+    },
+    "access_policy_label": "Access policy",
+    "allow_join_before_host_no": "Only after the host starts the meeting",
+    "allow_join_before_host_yes": "People can join before the host",
+    "attendance_description": "Track who is currently in the meeting and who has already joined.",
+    "attendance_empty": "No attendance records yet.",
+    "attendance_left": "Left",
+    "attendance_present": "In the meeting now",
+    "attendance_title": "Attendance",
+    "back_to_home": "Back to home",
+    "cancel": "Cancel meeting",
+    "description": "Update the meeting details, control the meeting lifecycle, and review attendance.",
+    "edit_description": "These settings stay deliberately lightweight so you can adjust the meeting without leaving the dashboard.",
+    "edit_title": "Edit meeting",
+    "end": "End meeting",
+    "ending": "Ending...",
+    "errors": {
+      "allowed_users_required": "Add at least one invited user before saving an invite-only meeting.",
+      "clipboard_unavailable": "Clipboard is not available in this browser.",
+      "copy_failed": "Failed to copy the meeting link.",
+      "end_failed": "Failed to end the meeting.",
+      "load_failed": "Failed to load the meeting.",
+      "load_requests_failed": "Failed to load pending access requests.",
+      "moderation_failed": "Failed to update the access request.",
+      "not_found": "Meeting not found.",
+      "save_failed": "Failed to save meeting changes.",
+      "start_failed": "Failed to start the meeting.",
+      "start_required": "Choose both a date and a time before saving the scheduled meeting.",
+      "title_required": "Enter a meeting title before saving."
+    },
+    "eyebrow": "Meeting workspace",
+    "form": {
+      "access_policy_label": "Access policy",
+      "allow_join_before_host": "Allow participants to join before the host",
+      "allowed_user_ids_description": "Enter one Matrix user ID per line. The host is always allowed automatically.",
+      "allowed_user_ids_label": "Allowed Matrix user IDs",
+      "allowed_user_ids_placeholder": "@alice:matrix.nangman.cloud\n@bob:matrix.nangman.cloud",
+      "date_label": "Date",
+      "description_label": "Description",
+      "time_label": "Time",
+      "title_label": "Meeting title"
+    },
+    "access_requests_label": "Pending approvals",
+    "allowed_users_count": "{{count}} invited users",
+    "allowed_users_empty": "No invited users configured yet",
+    "allowed_users_label": "Allowed users",
+    "allowed_users_not_required": "No fixed list for this policy",
+    "approve_request": "Approve",
+    "host_label": "Host",
+    "join": "Join meeting",
+    "join_before_host_label": "Joining before host",
+    "joined_at": "Joined {{date}}",
+    "left_at": "Left {{date}}",
+    "link_label": "Join link",
+    "moderation_description": "Approve or reject guests who asked to join this meeting.",
+    "moderation_empty": "No access requests yet.",
+    "moderation_title": "Access requests",
+    "no_start_time": "No start time",
+    "notices": {
+      "cancelled": "Meeting cancelled.",
+      "ended": "Meeting ended.",
+      "link_copied": "Meeting link copied.",
+      "request_approved": "{{userId}} can now join the meeting.",
+      "request_rejected": "{{userId}} was declined for this meeting.",
+      "saved": "Meeting changes saved.",
+      "started": "Meeting started."
+    },
+    "overview_title": "Overview",
+    "participant_count": "{{count}} participants total",
+    "pending_requests_count": "{{count}} waiting for approval",
+    "policy_help": {
+      "host_approval": "People with the link can request access and stay outside the room until you decide.",
+      "invite_only": "Only the Matrix user IDs listed below can enter this meeting.",
+      "open": "Anyone with the meeting link can enter, subject to the host start policy."
+    },
+    "processing": "Processing...",
+    "present_count": "{{count}} in the meeting now",
+    "reject_request": "Reject",
+    "request_status": {
+      "approved": "Approved",
+      "pending": "Pending approval",
+      "rejected": "Rejected"
+    },
+    "requested_at": "Requested {{date}}",
+    "responded_at": "Responded {{date}}",
+    "save": "Save changes",
+    "saving": "Saving...",
+    "start": "Start meeting",
+    "starting": "Starting...",
+    "title": "Meeting details"
+  },
+  "meeting_entry": {
+    "meeting_ended": {
+      "body": "\"{{title}}\" is already over and is no longer accepting new joins.",
+      "title": "This meeting has ended"
+    },
+    "not_invited": {
+      "body": "\"{{title}}\" is limited to specific invited Matrix users.",
+      "title": "You are not on the invited list"
+    },
+    "pending_approval": {
+      "body": "Your request for \"{{title}}\" was sent. You can join as soon as the host approves it.",
+      "title": "Waiting for host approval"
+    },
+    "policy": "Access policy: {{accessPolicy}}",
+    "refresh": "Refresh",
+    "request_access": {
+      "body": "\"{{title}}\" requires host approval. Send a request and wait for the host to review it.",
+      "title": "Ask to join this meeting"
+    },
+    "request_access_button": "Request access",
+    "request_again": "Request again",
+    "requesting": "Requesting...",
+    "rejected": {
+      "body": "Your earlier request for \"{{title}}\" was declined. You can send a new request if you still need access.",
+      "title": "Your request was declined"
+    },
+    "wait_for_host": {
+      "body": "\"{{title}}\" is scheduled, and the host has not opened entry yet.",
+      "title": "Waiting for the host to start"
+    }
   },
   "room_chat": {
     "title": "Room chat",

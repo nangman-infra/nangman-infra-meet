@@ -6,6 +6,7 @@ export interface MeetingPrimitives {
   readonly title: string;
   readonly description: string | null;
   readonly hostUserId: string;
+  readonly allowedUserIds: string[];
   readonly roomId: string;
   readonly roomAlias: string | null;
   readonly joinUrl: string;
@@ -23,6 +24,7 @@ export interface CreateMeetingProps {
   readonly title: string;
   readonly description: string | null;
   readonly hostUserId: string;
+  readonly allowedUserIds?: string[];
   readonly roomId: string;
   readonly roomAlias: string | null;
   readonly joinUrl: string;
@@ -37,6 +39,7 @@ export interface UpdateMeetingProps {
   readonly description?: string | null;
   readonly accessPolicy?: MeetingAccessPolicy;
   readonly allowJoinBeforeHost?: boolean;
+  readonly allowedUserIds?: string[];
   readonly startsAt?: Date | null;
 }
 
@@ -46,6 +49,7 @@ export class Meeting {
     private titleValue: string,
     private descriptionValue: string | null,
     private readonly hostUserIdValue: string,
+    private allowedUserIdsValue: string[],
     private readonly roomIdValue: string,
     private readonly roomAliasValue: string | null,
     private readonly joinUrlValue: string,
@@ -68,6 +72,7 @@ export class Meeting {
       props.title,
       props.description,
       props.hostUserId,
+      Meeting.normalizeAllowedUserIds(props.allowedUserIds),
       props.roomId,
       props.roomAlias,
       props.joinUrl,
@@ -87,6 +92,7 @@ export class Meeting {
       primitives.title,
       primitives.description,
       primitives.hostUserId,
+      Meeting.normalizeAllowedUserIds(primitives.allowedUserIds),
       primitives.roomId,
       primitives.roomAlias,
       primitives.joinUrl,
@@ -102,6 +108,14 @@ export class Meeting {
 
   get id(): string {
     return this.idValue;
+  }
+
+  get hostUserId(): string {
+    return this.hostUserIdValue;
+  }
+
+  includesAllowedUser(userId: string): boolean {
+    return this.allowedUserIdsValue.includes(userId.trim());
   }
 
   update(props: UpdateMeetingProps, now: Date): void {
@@ -123,6 +137,12 @@ export class Meeting {
 
     if (props.allowJoinBeforeHost !== undefined) {
       this.allowJoinBeforeHostValue = props.allowJoinBeforeHost;
+    }
+
+    if (props.allowedUserIds !== undefined) {
+      this.allowedUserIdsValue = Meeting.normalizeAllowedUserIds(
+        props.allowedUserIds,
+      );
     }
 
     if (props.startsAt !== undefined) {
@@ -163,6 +183,7 @@ export class Meeting {
       title: this.titleValue,
       description: this.descriptionValue,
       hostUserId: this.hostUserIdValue,
+      allowedUserIds: [...this.allowedUserIdsValue],
       roomId: this.roomIdValue,
       roomAlias: this.roomAliasValue,
       joinUrl: this.joinUrlValue,
@@ -174,5 +195,15 @@ export class Meeting {
       createdAt: this.createdAtValue.toISOString(),
       updatedAt: this.updatedAtValue.toISOString(),
     };
+  }
+
+  private static normalizeAllowedUserIds(allowedUserIds?: string[]): string[] {
+    return [
+      ...new Set(
+        (allowedUserIds ?? [])
+          .map((userId) => userId.trim())
+          .filter(Boolean),
+      ),
+    ];
   }
 }

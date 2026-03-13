@@ -4,19 +4,14 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
-  Inject,
-  type LoggerService,
 } from "@nestjs/common";
-import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 import type { Request, Response } from "express";
+import { AppLogger } from "../logging/app-logger.service";
 import { ApplicationError } from "../errors/application-error";
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
-  constructor(
-    @Inject(WINSTON_MODULE_NEST_PROVIDER)
-    private readonly logger: LoggerService,
-  ) {}
+  constructor(private readonly logger: AppLogger) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const context = host.switchToHttp();
@@ -33,12 +28,26 @@ export class HttpExceptionFilter implements ExceptionFilter {
       exception instanceof HttpException ? exception.getResponse() : null;
     const message = extractErrorMessage(exceptionResponse, exception);
 
+    const logFields = {
+      module: "http",
+      action: "http.request",
+      result: "failure",
+      method: request.method,
+      path: request.originalUrl,
+      statusCode: status,
+      errorCode:
+        exception instanceof ApplicationError
+          ? exception.name
+          : exception instanceof HttpException
+            ? exception.name
+            : "InternalServerError",
+      errorMessage: message,
+    };
+
     if (status >= HttpStatus.INTERNAL_SERVER_ERROR) {
-      this.logger.error(message, exception instanceof Error ? exception.stack : undefined);
+      this.logger.error("http.request.failed", logFields, exception);
     } else {
-      this.logger.warn(
-        `${request.method} ${request.originalUrl} -> ${status} ${message}`,
-      );
+      this.logger.warn("http.request.failed", logFields);
     }
 
     response.status(status).json({

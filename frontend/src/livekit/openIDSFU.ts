@@ -8,6 +8,10 @@ Please see LICENSE in the repository root for full details.
 import { type IOpenIDToken, type MatrixClient } from "matrix-js-sdk";
 import { logger } from "matrix-js-sdk/lib/logger";
 
+import {
+  buildTracedRequestInit,
+  resolveResponseTraceContext,
+} from "../utils/requestTracing";
 import { FailToGetOpenIdToken } from "../utils/errors";
 import { doNetworkOperationWithRetry } from "../utils/matrix";
 
@@ -19,7 +23,7 @@ export interface SFUConfig {
 // The bits we need from MatrixClient
 export type OpenIDClientParts = Pick<
   MatrixClient,
-  "getOpenIdToken" | "getDeviceId"
+  "getOpenIdToken" | "getDeviceId" | "getUserId"
 >;
 /**
  * Gets a bearer token from the homeserver and then use it to authenticate
@@ -66,23 +70,65 @@ async function getLiveKitJWT(
   roomName: string,
   openIDToken: IOpenIDToken,
 ): Promise<SFUConfig> {
+  let traceContext:
+    | ReturnType<typeof buildTracedRequestInit>["traceContext"]
+    | undefined;
   try {
-    const res = await fetch(livekitServiceURL + "/sfu/get", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const tracedRequest = buildTracedRequestInit(
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          room: roomName,
+          openid_token: openIDToken,
+          device_id: client.getDeviceId(),
+        }),
       },
-      body: JSON.stringify({
-        room: roomName,
-        openid_token: openIDToken,
-        device_id: client.getDeviceId(),
-      }),
+      {
+        namespace: "livekit_sfu",
+        userId: client.getUserId() ?? undefined,
+      },
+    );
+    traceContext = tracedRequest.traceContext;
+
+    logger.info("livekit_sfu_request_started", {
+      requestId: traceContext.requestId,
+      traceId: traceContext.traceId,
+      userId: traceContext.userId,
+      roomId: roomName,
+      serviceUrl: livekitServiceURL,
     });
+
+    const res = await fetch(
+      livekitServiceURL + "/sfu/get",
+      tracedRequest.requestInit,
+    );
+    const resolvedTraceContext = resolveResponseTraceContext(res, traceContext);
+
     if (!res.ok) {
       throw new Error("SFU Config fetch failed with status code " + res.status);
     }
+
+    logger.info("livekit_sfu_request_completed", {
+      requestId: resolvedTraceContext.requestId,
+      traceId: resolvedTraceContext.traceId,
+      userId: resolvedTraceContext.userId,
+      roomId: roomName,
+      serviceUrl: livekitServiceURL,
+      statusCode: res.status,
+    });
+
     return await res.json();
   } catch (e) {
+    logger.error("livekit_sfu_request_failed", {
+      requestId: traceContext?.requestId,
+      traceId: traceContext?.traceId,
+      userId: traceContext?.userId,
+      roomId: roomName,
+      serviceUrl: livekitServiceURL,
+    }, e);
     throw new Error("SFU Config fetch failed with exception " + e);
   }
 }

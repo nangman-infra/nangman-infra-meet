@@ -180,10 +180,10 @@ const MeetingScheduleView: FC<{ client: MatrixClient }> = ({ client }) => {
                     <Button
                       kind="secondary"
                       onClick={() => {
-                        void navigate("/");
+                        void navigate(`/meetings/${scheduledMeeting.id}`);
                       }}
                     >
-                      {t("meeting_scheduler.success.back_to_meetings")}
+                      {t("meeting_scheduler.success.manage_meeting")}
                     </Button>
                     <Button
                       kind="secondary"

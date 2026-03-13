@@ -3,16 +3,19 @@ import {
   MEETING_REPOSITORY,
   MeetingRepositoryPort,
 } from "../ports/meeting-repository.port";
+import { AppLogger } from "../../../../common/logging/app-logger.service";
 import { MeetingPrimitives } from "../../domain/meeting.entity";
 import { MeetingNotFoundError } from "../errors/meeting-not-found.error";
 import { UpdateMeetingDto } from "../../presentation/http/dto/update-meeting.dto";
 import { assertValidScheduledMeetingStart } from "../validation/assert-valid-scheduled-meeting-start";
+import { logMeetingActorMismatchIfNeeded } from "../validation/log-meeting-actor-mismatch";
 
 @Injectable()
 export class UpdateMeetingUseCase {
   constructor(
     @Inject(MEETING_REPOSITORY)
     private readonly repository: MeetingRepositoryPort,
+    private readonly logger: AppLogger,
   ) {}
 
   async execute(
@@ -41,13 +44,29 @@ export class UpdateMeetingUseCase {
           dto.description === undefined ? undefined : (dto.description ?? null),
         accessPolicy: dto.accessPolicy,
         allowJoinBeforeHost: dto.allowJoinBeforeHost,
+        allowedUserIds: dto.allowedUserIds,
         startsAt,
       },
       now,
     );
 
     await this.repository.save(meeting);
+    const primitives = meeting.toPrimitives();
+    logMeetingActorMismatchIfNeeded(this.logger, {
+      useCase: "UpdateMeeting",
+      action: "meeting.update",
+      meeting: primitives,
+    });
+    this.logger.info("meeting.updated", {
+      module: "meetings",
+      useCase: "UpdateMeeting",
+      action: "meeting.update",
+      result: "success",
+      meetingId: primitives.id,
+      roomId: primitives.roomId,
+      status: primitives.status,
+    });
 
-    return meeting.toPrimitives();
+    return primitives;
   }
 }

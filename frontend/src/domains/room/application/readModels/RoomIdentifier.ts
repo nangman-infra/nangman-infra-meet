@@ -14,6 +14,7 @@ import { ParamParser } from "../../../../shared/url/ParamParser.ts";
 export interface RoomIdentifier {
   roomAlias: string | null;
   roomId: string | null;
+  meetingId: string | null;
   viaServers: string[];
 }
 
@@ -63,9 +64,12 @@ export function getRoomIdentifierFromUrl(
     }
   }
 
+  const meetingId = parser.getParam("meetingId")?.trim() || null;
+
   return {
     roomAlias,
     roomId,
+    meetingId,
     viaServers: parser.getAllParams("viaServers"),
   };
 }

@@ -68,6 +68,7 @@ function setupTest(): void {
       expires_in: 3600,
     }),
     getDeviceId: vi.fn().mockReturnValue("ABCDEF"),
+    getUserId: vi.fn().mockReturnValue("@me:example.org"),
   } as unknown as OpenIDClientParts);
 
   localParticipantEventEmiter = new EventEmitter();

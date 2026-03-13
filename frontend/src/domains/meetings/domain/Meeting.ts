@@ -6,6 +6,7 @@ export interface Meeting {
   readonly title: string;
   readonly description: string | null;
   readonly hostUserId: string;
+  readonly allowedUserIds: string[];
   readonly roomId: string;
   readonly roomAlias: string | null;
   readonly joinUrl: string;

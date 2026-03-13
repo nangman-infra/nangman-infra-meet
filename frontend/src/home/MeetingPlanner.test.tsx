@@ -14,6 +14,7 @@ import { MeetingPlanner } from "./MeetingPlanner";
 describe("MeetingPlanner", () => {
   beforeEach(() => {
     vi.spyOn(MeetingsApi, "listMeetings").mockResolvedValue([]);
+    vi.spyOn(MeetingsApi, "listMeetingAttendanceSummaries").mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -45,6 +46,7 @@ describe("MeetingPlanner", () => {
         title: "Live room",
         description: "Running right now",
         hostUserId: "@alice:matrix.nangman.cloud",
+        allowedUserIds: [],
         roomId: "!live:matrix.nangman.cloud",
         roomAlias: "#live:matrix.nangman.cloud",
         joinUrl: "/room/live",
@@ -61,6 +63,7 @@ describe("MeetingPlanner", () => {
         title: "Planned room",
         description: "Starts later",
         hostUserId: "@alice:matrix.nangman.cloud",
+        allowedUserIds: [],
         roomId: "!planned:matrix.nangman.cloud",
         roomAlias: "#planned:matrix.nangman.cloud",
         joinUrl: "/room/planned",
@@ -71,6 +74,13 @@ describe("MeetingPlanner", () => {
         endsAt: null,
         createdAt: "2026-03-08T03:00:00.000Z",
         updatedAt: "2026-03-08T03:00:00.000Z",
+      },
+    ]);
+    vi.mocked(MeetingsApi.listMeetingAttendanceSummaries).mockResolvedValue([
+      {
+        meetingId: "meeting-live",
+        presentCount: 2,
+        participantCount: 3,
       },
     ]);
 
@@ -91,5 +101,9 @@ describe("MeetingPlanner", () => {
     expect(
       screen.getByRole("button", { name: "Start meeting" }),
     ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("button", { name: "Manage" }),
+    ).toHaveLength(2);
+    expect(screen.getByText("2 in the room now · 3 joined so far")).toBeInTheDocument();
   });
 });

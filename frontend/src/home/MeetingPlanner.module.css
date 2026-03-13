@@ -56,7 +56,8 @@
 .emptyState,
 .meetingDescription,
 .meetingTime,
-.actionHint {
+.actionHint,
+.attendanceSummary {
   color: var(--cpd-color-text-secondary);
 }
 
@@ -159,6 +160,10 @@
 .meetingTitle {
   line-height: 1.3;
   font-size: 1.04rem;
+}
+
+.attendanceSummary {
+  font-weight: 500;
 }
 
 .statusBadge {

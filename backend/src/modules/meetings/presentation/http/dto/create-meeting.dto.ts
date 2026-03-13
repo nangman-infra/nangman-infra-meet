@@ -1,7 +1,9 @@
 import {
+  ArrayMaxSize,
   IsBoolean,
   IsEnum,
   IsISO8601,
+  IsArray,
   IsOptional,
   IsString,
   MaxLength,
@@ -21,6 +23,13 @@ export class CreateMeetingDto {
   @IsString()
   @MaxLength(255)
   hostUserId!: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(64)
+  @IsString({ each: true })
+  @MaxLength(255, { each: true })
+  allowedUserIds?: string[];
 
   @IsString()
   @MaxLength(255)

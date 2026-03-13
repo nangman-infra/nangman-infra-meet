@@ -1,3 +1,9 @@
+/*
+Copyright 2026 Nangman Infra
+
+SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+*/
+
 import {
   useState,
   type FC,
@@ -11,13 +17,17 @@ import { Button } from "@vector-im/compound-web";
 import { Form } from "../form/Form";
 import { ErrorMessage, FieldRow, InputField } from "../input/Input";
 import {
+  formatAllowedUserIdsInput,
+  parseAllowedUserIdsInput,
+} from "../domains/meetings/application/meetingPolicy";
+import {
   createRoom,
   getRelativeRoomUrl,
   sanitiseRoomNameInput,
 } from "../utils/matrix";
 import { E2eeType } from "../e2ee/e2eeType";
 import { createMeeting } from "../domains/meetings/infrastructure/MeetingsApi";
-import { Meeting } from "../domains/meetings/domain/Meeting";
+import type { Meeting } from "../domains/meetings/domain/Meeting";
 import styles from "./MeetingScheduler.module.css";
 
 interface Props {
@@ -29,6 +39,12 @@ interface Props {
 interface ScheduleFormState {
   readonly date: string;
   readonly time: string;
+}
+
+interface MeetingPolicyFormState {
+  readonly accessPolicy: Meeting["accessPolicy"];
+  readonly allowJoinBeforeHost: boolean;
+  readonly allowedUserIdsText: string;
 }
 
 const FIFTEEN_MINUTES_IN_SECONDS = 900;
@@ -44,6 +60,11 @@ export const MeetingScheduler: FC<Props> = ({
   const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(() =>
     getDefaultScheduleValues(),
   );
+  const [policyForm, setPolicyForm] = useState<MeetingPolicyFormState>({
+    accessPolicy: "open",
+    allowJoinBeforeHost: false,
+    allowedUserIdsText: "",
+  });
 
   const minimumStartTime = getMinimumScheduleTimeForDate(scheduleForm.date);
 
@@ -64,6 +85,9 @@ export const MeetingScheduler: FC<Props> = ({
       typeof descriptionInput === "string" && descriptionInput.trim().length > 0
         ? descriptionInput.trim()
         : undefined;
+    const allowedUserIds = parseAllowedUserIdsInput(
+      policyForm.allowedUserIdsText,
+    );
 
     if (!title) {
       setFormError(new Error(t("meeting_planner.errors.title_required")));
@@ -79,6 +103,13 @@ export const MeetingScheduler: FC<Props> = ({
 
     if (!startsAt || !isFutureMeetingStartAt(startsAt, new Date())) {
       setFormError(new Error(t("meeting_planner.errors.future_start_required")));
+      return;
+    }
+
+    if (policyForm.accessPolicy === "invite_only" && allowedUserIds.length === 0) {
+      setFormError(
+        new Error(t("meeting_scheduler.errors.allowed_users_required")),
+      );
       return;
     }
 
@@ -104,19 +135,31 @@ export const MeetingScheduler: FC<Props> = ({
         title,
       );
 
-      const meeting = await createMeeting({
-        title,
-        description,
-        hostUserId: client.getUserId() ?? "unknown-user",
-        roomId: createRoomResult.roomId,
-        roomAlias: createRoomResult.alias,
-        joinUrl,
-        startsAt,
-        allowJoinBeforeHost: false,
-      });
+      const meeting = await createMeeting(
+        {
+          title,
+          description,
+          hostUserId: client.getUserId() ?? "unknown-user",
+          allowedUserIds,
+          roomId: createRoomResult.roomId,
+          roomAlias: createRoomResult.alias,
+          joinUrl,
+          startsAt,
+          accessPolicy: policyForm.accessPolicy,
+          allowJoinBeforeHost: policyForm.allowJoinBeforeHost,
+        },
+        {
+          userId: client.getUserId() ?? undefined,
+        },
+      );
 
       form.reset();
       setScheduleForm(getDefaultScheduleValues());
+      setPolicyForm({
+        accessPolicy: "open",
+        allowJoinBeforeHost: false,
+        allowedUserIdsText: formatAllowedUserIdsInput([]),
+      });
       await onScheduled?.(meeting);
     }
 
@@ -197,9 +240,74 @@ export const MeetingScheduler: FC<Props> = ({
           required
         />
       </FieldRow>
+      <FieldRow>
+        <div className={styles.optionGroup}>
+          <p className={styles.sectionLabel}>
+            {t("meeting_scheduler.form.access_policy_label")}
+          </p>
+          <div className={styles.optionButtons}>
+            {(["open", "host_approval", "invite_only"] as const).map((value) => (
+              <Button
+                key={value}
+                type="button"
+                kind={policyForm.accessPolicy === value ? "primary" : "secondary"}
+                size="sm"
+                onClick={() => {
+                  setFormError(undefined);
+                  setPolicyForm((current) => ({
+                    ...current,
+                    accessPolicy: value,
+                  }));
+                }}
+              >
+                {t(`meeting_detail.access_policy.${value}`)}
+              </Button>
+            ))}
+          </div>
+          <p className={styles.helpText}>
+            {t(`meeting_scheduler.policy_help.${policyForm.accessPolicy}`)}
+          </p>
+        </div>
+      </FieldRow>
+      <FieldRow>
+        <InputField
+          id="meetingAllowJoinBeforeHost"
+          name="meetingAllowJoinBeforeHost"
+          type="checkbox"
+          label={t("meeting_detail.form.allow_join_before_host")}
+          checked={policyForm.allowJoinBeforeHost}
+          onChange={(event) => {
+            setFormError(undefined);
+            setPolicyForm((current) => ({
+              ...current,
+              allowJoinBeforeHost: event.target.checked,
+            }));
+          }}
+        />
+      </FieldRow>
+      {policyForm.accessPolicy === "invite_only" && (
+        <FieldRow>
+          <InputField
+            id="meetingAllowedUserIds"
+            name="meetingAllowedUserIds"
+            label={t("meeting_scheduler.form.allowed_user_ids_label")}
+            description={t("meeting_scheduler.form.allowed_user_ids_description")}
+            placeholder={t("meeting_scheduler.form.allowed_user_ids_placeholder")}
+            type="textarea"
+            value={policyForm.allowedUserIdsText}
+            onChange={(event) => {
+              setFormError(undefined);
+              setPolicyForm((current) => ({
+                ...current,
+                allowedUserIdsText: event.target.value,
+              }));
+            }}
+          />
+        </FieldRow>
+      )}
       <p className={styles.timezoneHint}>
         {t("meeting_scheduler.timezone_hint", {
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          timezone: new Intl.DateTimeFormat().resolvedOptions().timeZone,
         })}
       </p>
       {formError && (

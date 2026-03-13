@@ -37,6 +37,7 @@ describe("LocalTransport", () => {
         // These won't be called in this error path but satisfy the type
         getOpenIdToken: vi.fn(),
         getDeviceId: vi.fn(),
+        getUserId: vi.fn(),
       },
     });
     await flushPromises();
@@ -73,6 +74,7 @@ describe("LocalTransport", () => {
         getDomain: () => "",
         getOpenIdToken: vi.fn(),
         getDeviceId: vi.fn(),
+        getUserId: vi.fn(),
       },
     });
     localTransport$.subscribe(
@@ -111,6 +113,7 @@ describe("LocalTransport", () => {
         getDomain: () => "",
         getOpenIdToken: vi.fn(),
         getDeviceId: vi.fn(),
+        getUserId: vi.fn(),
       },
     });
 
