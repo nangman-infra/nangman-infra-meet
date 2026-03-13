@@ -18,6 +18,13 @@ Please see LICENSE in the repository root for full details.
   position: relative;
 }
 
+.fieldContainer {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+}
+
 .fieldRow.rightAlign {
   justify-content: flex-end;
 }
@@ -205,8 +212,15 @@ Please see LICENSE in the repository root for full details.
   color: var(--cpd-color-text-secondary);
   margin-left: 26px;
   width: 100%; /* Ensure that it breaks onto the next row */
+  overflow-wrap: anywhere;
 }
 
 .description.noLabel {
   margin-top: -20px; /* Ensures that there is no weired spacing if the checkbox doesn't have a label */
+}
+
+.inputDescription {
+  color: var(--cpd-color-text-secondary);
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
 }

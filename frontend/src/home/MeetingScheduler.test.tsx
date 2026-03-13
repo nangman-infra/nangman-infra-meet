@@ -4,12 +4,7 @@ Copyright 2026 Nangman Infra
 SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 */
 
-import {
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { type MatrixClient } from "matrix-js-sdk";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -54,7 +49,7 @@ describe("MeetingScheduler", () => {
     vi.restoreAllMocks();
   });
 
-  it("keeps scheduling in a dedicated form without rendering the meetings list", () => {
+  it("renders only the scheduling form on the schedule page", () => {
     render(
       <MemoryRouter>
         <MeetingScheduler client={mockClient} />
@@ -62,7 +57,7 @@ describe("MeetingScheduler", () => {
     );
 
     expect(screen.getByLabelText("Meeting title")).toBeInTheDocument();
-    expect(screen.queryByText("No upcoming meetings yet")).not.toBeInTheDocument();
+    expect(screen.queryByText("No meetings yet")).not.toBeInTheDocument();
   });
 
   it("rejects past meeting times before creating a room", async () => {
@@ -109,7 +104,9 @@ describe("MeetingScheduler", () => {
     fireEvent.change(screen.getByLabelText("Description"), {
       target: { value: "Agenda or context" },
     });
-    const futureStartAt = createLocalDateTimeParts(24 * 60 * 60 * 1000 + 75 * 60 * 1000);
+    const futureStartAt = createLocalDateTimeParts(
+      24 * 60 * 60 * 1000 + 75 * 60 * 1000,
+    );
     fireEvent.change(screen.getByLabelText("Date"), {
       target: { value: futureStartAt.date },
     });
@@ -142,7 +139,10 @@ describe("MeetingScheduler", () => {
   });
 });
 
-function createLocalDateTimeParts(offsetMs: number): { date: string; time: string } {
+function createLocalDateTimeParts(offsetMs: number): {
+  date: string;
+  time: string;
+} {
   const value = new Date(Date.now() + offsetMs);
   return {
     date: formatDate(value),

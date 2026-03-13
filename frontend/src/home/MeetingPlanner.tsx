@@ -1,4 +1,10 @@
-import { useEffect, useState, type FC } from "react";
+/*
+Copyright 2026 Nangman Infra
+
+SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+*/
+
+import { useCallback, useEffect, useState, type FC } from "react";
 import { type TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { Button, Heading, Text } from "@vector-im/compound-web";
@@ -8,7 +14,7 @@ import {
   listMeetings,
   startMeeting,
 } from "../domains/meetings/infrastructure/MeetingsApi";
-import { Meeting } from "../domains/meetings/domain/Meeting";
+import { type Meeting } from "../domains/meetings/domain/Meeting";
 import { ErrorMessage } from "../input/Input";
 import styles from "./MeetingPlanner.module.css";
 
@@ -22,7 +28,7 @@ export const MeetingPlanner: FC = () => {
   const [copiedMeetingId, setCopiedMeetingId] = useState<string>();
   const [listError, setListError] = useState<Error>();
 
-  async function loadMeetings(): Promise<void> {
+  const loadMeetings = useCallback(async (): Promise<void> => {
     setLoadingMeetings(true);
     try {
       setListError(undefined);
@@ -36,11 +42,11 @@ export const MeetingPlanner: FC = () => {
     } finally {
       setLoadingMeetings(false);
     }
-  }
+  }, [t]);
 
   useEffect(() => {
     void loadMeetings();
-  }, []);
+  }, [loadMeetings]);
 
   useEffect(() => {
     if (!copiedMeetingId) return;
@@ -49,7 +55,7 @@ export const MeetingPlanner: FC = () => {
       setCopiedMeetingId(undefined);
     }, COPY_TOAST_TIMEOUT_MS);
 
-    return () => {
+    return (): void => {
       window.clearTimeout(timeoutId);
     };
   }, [copiedMeetingId]);
@@ -75,7 +81,10 @@ export const MeetingPlanner: FC = () => {
         throw new Error(t("meeting_planner.errors.clipboard_unavailable"));
       }
 
-      const joinUrl = new URL(meeting.joinUrl, window.location.origin).toString();
+      const joinUrl = new URL(
+        meeting.joinUrl,
+        window.location.origin,
+      ).toString();
       await navigator.clipboard.writeText(joinUrl);
       setCopiedMeetingId(meeting.id);
     } catch (nextError) {
@@ -135,15 +144,17 @@ export const MeetingPlanner: FC = () => {
               </span>
             )}
           </div>
-          <Button
-            size="lg"
-            kind="primary"
-            onClick={() => {
-              void navigate("/meetings/new");
-            }}
-          >
-            {t("meeting_planner.schedule")}
-          </Button>
+          {visibleMeetings.length > 0 && (
+            <Button
+              size="lg"
+              kind="primary"
+              onClick={() => {
+                void navigate("/meetings/new");
+              }}
+            >
+              {t("meeting_planner.schedule")}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -257,10 +268,7 @@ export const MeetingPlanner: FC = () => {
   );
 };
 
-function formatMeetingTime(
-  startsAt: string | null,
-  t: TFunction,
-): string {
+function formatMeetingTime(startsAt: string | null, t: TFunction): string {
   if (!startsAt) {
     return t("meeting_planner.no_start_time");
   }

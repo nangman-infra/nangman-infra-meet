@@ -20,7 +20,7 @@ import commonStyles from "./common.module.css";
 import registeredViewStyles from "./RegisteredView.module.css";
 import pageStyles from "./MeetingSchedulePage.module.css";
 import { MeetingScheduler } from "./MeetingScheduler";
-import { Meeting } from "../domains/meetings/domain/Meeting";
+import { type Meeting } from "../domains/meetings/domain/Meeting";
 import { ErrorMessage } from "../input/Input";
 
 export const MeetingSchedulePage: FC = () => {
@@ -48,11 +48,13 @@ const MeetingScheduleView: FC<{ client: MatrixClient }> = ({ client }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { header } = useUiUrlContext();
-  const [scheduledMeeting, setScheduledMeeting] = useState<Meeting | null>(null);
+  const [scheduledMeeting, setScheduledMeeting] = useState<Meeting | null>(
+    null,
+  );
   const [copied, setCopied] = useState(false);
   const [copyError, setCopyError] = useState<Error>();
 
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const timezone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
   const joinLink = scheduledMeeting
     ? new URL(scheduledMeeting.joinUrl, window.location.origin).toString()
     : "";
@@ -96,17 +98,19 @@ const MeetingScheduleView: FC<{ client: MatrixClient }> = ({ client }) => {
         <div className={pageStyles.shell}>
           <HeaderLogo className={registeredViewStyles.mobileLogo} />
 
-          <div className={pageStyles.backRow}>
-            <Button
-              kind="secondary"
-              size="sm"
-              onClick={() => {
-                void navigate("/");
-              }}
-            >
-              {t("meeting_scheduler.back_to_home")}
-            </Button>
-          </div>
+          {!scheduledMeeting && (
+            <div className={pageStyles.backRow}>
+              <Button
+                kind="secondary"
+                size="sm"
+                onClick={() => {
+                  void navigate("/");
+                }}
+              >
+                {t("meeting_scheduler.back_to_home")}
+              </Button>
+            </div>
+          )}
 
           <section className={pageStyles.pageCard}>
             {scheduledMeeting ? (
@@ -217,7 +221,7 @@ const MeetingScheduleView: FC<{ client: MatrixClient }> = ({ client }) => {
                   onCancel={() => {
                     void navigate("/");
                   }}
-                  onScheduled={async (meeting) => {
+                  onScheduled={(meeting) => {
                     setCopied(false);
                     setCopyError(undefined);
                     setScheduledMeeting(meeting);

@@ -35,11 +35,14 @@ describe("RegisteredView", () => {
     vi.restoreAllMocks();
   });
 
-  it("keeps the instant launcher separate from the scheduling route", async () => {
+  it("shows the main meeting actions on the home screen", async () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
-          <Route path="/" element={<RegisteredView client={{} as MatrixClient} />} />
+          <Route
+            path="/"
+            element={<RegisteredView client={{} as MatrixClient} />}
+          />
           <Route path="/meetings/new" element={<div>Schedule route</div>} />
           <Route path="/room/:roomName" element={<div>Join route</div>} />
         </Routes>
@@ -48,30 +51,33 @@ describe("RegisteredView", () => {
 
     expect(
       screen.getByText(
-        "Pick the fastest path for what you need to do right now: start immediately, jump into an existing room, or schedule something for later.",
+        "Start a new meeting right away, join an existing one, or schedule one for later.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("Instant call")).toBeInTheDocument();
-    expect(screen.getByText("Planned meetings")).toBeInTheDocument();
-    expect(screen.getByText("Join existing")).toBeInTheDocument();
+    expect(screen.getByText("Quick start")).toBeInTheDocument();
+    expect(screen.getByText("Live and upcoming meetings")).toBeInTheDocument();
+    expect(screen.getByText("Existing meeting")).toBeInTheDocument();
     expect(screen.queryByLabelText("Meeting title")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Open scheduler" }));
+    fireEvent.click(screen.getByRole("button", { name: "Plan meeting" }));
 
     expect(await screen.findByText("Schedule route")).toBeInTheDocument();
   });
 
-  it("supports a direct join flow from the home actions", async () => {
+  it("supports joining an existing meeting from the home screen", async () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
-          <Route path="/" element={<RegisteredView client={{} as MatrixClient} />} />
+          <Route
+            path="/"
+            element={<RegisteredView client={{} as MatrixClient} />}
+          />
           <Route path="/room/:roomName" element={<div>Join route</div>} />
         </Routes>
       </MemoryRouter>,
     );
 
-    fireEvent.change(screen.getByLabelText("Link or room"), {
+    fireEvent.change(screen.getByLabelText("Meeting link or room"), {
       target: { value: "weekly-sync" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Join meeting" }));

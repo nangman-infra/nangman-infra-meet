@@ -20,7 +20,7 @@ describe("MeetingPlanner", () => {
     vi.restoreAllMocks();
   });
 
-  it("routes scheduling into a separate page flow", async () => {
+  it("opens the scheduling page from the meetings section", async () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
@@ -30,15 +30,15 @@ describe("MeetingPlanner", () => {
       </MemoryRouter>,
     );
 
-    expect(await screen.findByText("No upcoming meetings yet")).toBeInTheDocument();
+    expect(await screen.findByText("No meetings yet")).toBeInTheDocument();
     expect(screen.queryByLabelText("Meeting title")).not.toBeInTheDocument();
 
-    await screen.getByRole("button", { name: "Schedule meeting" }).click();
+    screen.getByRole("button", { name: "Schedule meeting" }).click();
 
     expect(await screen.findByText("Schedule route")).toBeInTheDocument();
   });
 
-  it("keeps scheduled and live actions distinct inside the meetings workspace", async () => {
+  it("shows different actions for live and scheduled meetings", async () => {
     vi.mocked(MeetingsApi.listMeetings).mockResolvedValue([
       {
         id: "meeting-live",
@@ -85,7 +85,11 @@ describe("MeetingPlanner", () => {
       expect(screen.getByText("Planned room")).toBeInTheDocument();
     });
 
-    expect(screen.getByRole("button", { name: "Join meeting" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Start meeting" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Join meeting" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Start meeting" }),
+    ).toBeInTheDocument();
   });
 });

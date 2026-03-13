@@ -7,6 +7,7 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 import { Button, Heading, Text } from "@vector-im/compound-web";
 import { type Room as MatrixRoom } from "matrix-js-sdk";
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -22,6 +23,25 @@ import { Modal } from "../../../Modal";
 import { SidePanel } from "../../../room/SidePanel";
 import { useRoomChat } from "./useRoomChat";
 import styles from "./RoomChatPanel.module.css";
+
+const roomChatDrafts = new Map<string, string>();
+
+function readStoredDraft(roomId: string): string {
+  return roomChatDrafts.get(roomId) ?? "";
+}
+
+function writeStoredDraft(roomId: string, draft: string): void {
+  if (draft.length === 0) {
+    roomChatDrafts.delete(roomId);
+    return;
+  }
+
+  roomChatDrafts.set(roomId, draft);
+}
+
+export function clearStoredRoomChatDraftsForTest(): void {
+  roomChatDrafts.clear();
+}
 
 interface RoomChatPanelProps {
   matrixRoom: MatrixRoom;
@@ -46,38 +66,78 @@ export const RoomChatPanel: FC<RoomChatPanelProps> = ({
   const { t } = useTranslation();
   const { canSend, clearError, error, messages, sendMessage } =
     useRoomChat(matrixRoom);
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(() => readStoredDraft(matrixRoom.roomId));
   const [sending, setSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const timelineEndRef = useRef<HTMLDivElement | null>(null);
+  const restoreComposerFocusRef = useRef(false);
 
   const orderedMessages = useMemo(() => messages, [messages]);
 
   useEffect(() => {
-    if (!open) return;
+    setDraft(readStoredDraft(matrixRoom.roomId));
+  }, [matrixRoom.roomId]);
+
+  useEffect(() => {
+    if (!open || !canSend) return;
     textareaRef.current?.focus();
-  }, [open]);
+  }, [canSend, open]);
 
   useEffect(() => {
     if (!open) return;
     timelineEndRef.current?.scrollIntoView({ block: "end" });
   }, [open, orderedMessages.length]);
 
+  const updateDraft = (nextDraft: string): void => {
+    clearError();
+    setDraft(nextDraft);
+    writeStoredDraft(matrixRoom.roomId, nextDraft);
+  };
+
+  const restoreComposerFocus = useCallback((): void => {
+    if (!restoreComposerFocusRef.current || !open || !canSend) return;
+
+    restoreComposerFocusRef.current = false;
+    window.requestAnimationFrame(() => {
+      const composer = textareaRef.current;
+      if (!composer) return;
+
+      composer.focus();
+      const cursorPosition = composer.value.length;
+      composer.setSelectionRange(cursorPosition, cursorPosition);
+    });
+  }, [canSend, open]);
+
+  useEffect(() => {
+    if (sending || !restoreComposerFocusRef.current) return;
+    restoreComposerFocus();
+  }, [restoreComposerFocus, sending]);
+
   const submitDraft = async (): Promise<void> => {
     const nextDraft = draft.trim();
     if (!nextDraft || sending) return;
 
     try {
+      restoreComposerFocusRef.current = true;
       setSending(true);
       clearError();
       await sendMessage(nextDraft);
       setDraft("");
+      writeStoredDraft(matrixRoom.roomId, "");
+    } catch {
+      // useRoomChat normalizes the error state shown in the panel
     } finally {
       setSending(false);
     }
   };
 
-  const onComposerKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+  const onComposerKeyDown = (
+    event: KeyboardEvent<HTMLTextAreaElement>,
+  ): void => {
+    if (event.nativeEvent.isComposing || event.key === "Process") {
+      return;
+    }
+
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       void submitDraft();
@@ -163,9 +223,9 @@ export const RoomChatPanel: FC<RoomChatPanelProps> = ({
               placeholder={t("room_chat.message_placeholder")}
               value={draft}
               onChange={(event) => {
-                setDraft(event.target.value);
+                updateDraft(event.target.value);
               }}
-              disabled={sending}
+              readOnly={sending}
               required
               onKeyDown={onComposerKeyDown}
             />
@@ -177,7 +237,7 @@ export const RoomChatPanel: FC<RoomChatPanelProps> = ({
                 void submitDraft();
               }}
             >
-              {t("room_chat.send")}
+              {sending ? t("room_chat.sending") : t("room_chat.send")}
             </Button>
           </div>
           <Text as="div" size="sm" className={styles.composerHint}>

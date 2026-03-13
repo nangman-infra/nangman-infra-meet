@@ -65,6 +65,7 @@ interface InputFieldProps {
   className?: string;
   description?: string | ReactNode;
   disabled?: boolean;
+  readOnly?: boolean;
   required?: boolean;
   // this is a hack. Those variables should be part of `HTMLAttributes<HTMLInputElement> | HTMLAttributes<HTMLTextAreaElement>`
   // but extending from this union type does not work
@@ -93,71 +94,94 @@ export const InputField: FC<InputFieldProps> = ({
   suffix,
   description,
   disabled,
+  readOnly,
   min,
   step,
   ...rest
 }) => {
-  const fieldId = id ?? useId();
+  const generatedFieldId = useId();
+  const fieldId = id ?? generatedFieldId;
   const descriptionId = useId();
+  const ariaDescribedBy = description ? descriptionId : undefined;
+  const fieldClassName = classNames(
+    type === "checkbox" ? styles.checkboxField : styles.inputField,
+    {
+      [styles.prefix]: !!prefix,
+      [styles.disabled]: disabled,
+    },
+    className,
+  );
 
-  return (
-    <Field
-      className={classNames(
-        type === "checkbox" ? styles.checkboxField : styles.inputField,
-        {
-          [styles.prefix]: !!prefix,
-          [styles.disabled]: disabled,
-        },
-        className,
-      )}
+  const control =
+    type === "textarea" ? (
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      <textarea
+        id={fieldId}
+        ref={ref as ForwardedRef<HTMLTextAreaElement>}
+        disabled={disabled}
+        readOnly={readOnly}
+        aria-describedby={ariaDescribedBy}
+        {...rest}
+      />
+    ) : (
+      <input
+        id={fieldId}
+        ref={ref as ForwardedRef<HTMLInputElement>}
+        type={type}
+        checked={checked}
+        disabled={disabled}
+        readOnly={readOnly}
+        aria-describedby={ariaDescribedBy}
+        min={min}
+        step={step}
+        {...rest}
+      />
+    );
+
+  const checkboxDescriptionClassName = label
+    ? styles.description
+    : classNames(styles.description, styles.noLabel);
+  const descriptionNode = description ? (
+    <p
+      id={descriptionId}
+      className={
+        type === "checkbox"
+          ? checkboxDescriptionClassName
+          : styles.inputDescription
+      }
     >
-      {prefix && <span>{prefix}</span>}
-      {type === "textarea" ? (
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        <textarea
-          id={fieldId}
-          ref={ref as ForwardedRef<HTMLTextAreaElement>}
-          disabled={disabled}
-          aria-describedby={descriptionId}
-          {...rest}
-        />
-      ) : (
-        <input
-          id={fieldId}
-          ref={ref as ForwardedRef<HTMLInputElement>}
-          type={type}
-          checked={checked}
-          disabled={disabled}
-          aria-describedby={descriptionId}
-          min={min}
-          step={step}
-          {...rest}
-        />
-      )}
+      {description}
+    </p>
+  ) : null;
 
-      <label htmlFor={fieldId}>
-        {type === "checkbox" && (
+  if (type === "checkbox") {
+    return (
+      <Field className={fieldClassName}>
+        {prefix && <span>{prefix}</span>}
+        {control}
+        <label htmlFor={fieldId}>
           <div className={styles.checkbox}>
             <CheckIcon />
           </div>
-        )}
-        {label}
-      </label>
-      {suffix && <span>{suffix}</span>}
-      {description && (
-        <p
-          id={descriptionId}
-          className={
-            label
-              ? styles.description
-              : classNames(styles.description, styles.noLabel)
-          }
-        >
-          {description}
-        </p>
-      )}
-    </Field>
+          {label}
+        </label>
+        {suffix && <span>{suffix}</span>}
+        {descriptionNode}
+      </Field>
+    );
+  }
+
+  return (
+    <div className={styles.fieldContainer}>
+      <Field className={fieldClassName}>
+        {prefix && <span>{prefix}</span>}
+        {control}
+        <label htmlFor={fieldId}>{label}</label>
+        {suffix && <span>{suffix}</span>}
+      </Field>
+      {descriptionNode}
+    </div>
   );
 };
 

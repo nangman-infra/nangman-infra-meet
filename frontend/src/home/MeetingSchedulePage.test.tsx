@@ -5,6 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 */
 
 import { fireEvent, render, screen } from "@testing-library/react";
+import { type JSX } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -36,7 +37,7 @@ vi.mock("./MeetingScheduler", () => ({
     onScheduled,
   }: {
     onScheduled?: (meeting: Meeting) => void | Promise<void>;
-  }) => (
+  }): JSX.Element => (
     <button
       onClick={() => {
         void onScheduled?.(scheduledMeeting);
@@ -90,15 +91,15 @@ describe("MeetingSchedulePage", () => {
     fireEvent.click(screen.getByText("Finish scheduling"));
 
     expect(
-      await screen.findByText("The meeting is ready for the next step."),
+      await screen.findByText("Your meeting is ready"),
     ).toBeInTheDocument();
     expect(screen.getByText("Weekly infra sync")).toBeInTheDocument();
     expect(screen.getByText("Join link")).toBeInTheDocument();
+    expect(screen.getByTestId("meeting_schedule_link")).toHaveTextContent(
+      "/room/weekly-sync",
+    );
     expect(
-      screen.getByTestId("meeting_schedule_link"),
-    ).toHaveTextContent("/room/weekly-sync");
-    expect(
-      screen.getByRole("button", { name: "Back to upcoming meetings" }),
+      screen.getByRole("button", { name: "Back to home" }),
     ).toBeInTheDocument();
   });
 });
