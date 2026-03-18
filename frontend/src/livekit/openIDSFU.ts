@@ -9,7 +9,7 @@ import { type IOpenIDToken, type MatrixClient } from "matrix-js-sdk";
 import { logger } from "matrix-js-sdk/lib/logger";
 
 import {
-  buildTracedRequestInit,
+  createRequestTraceContext,
   resolveResponseTraceContext,
 } from "../utils/requestTracing";
 import { FailToGetOpenIdToken } from "../utils/errors";
@@ -70,11 +70,21 @@ async function getLiveKitJWT(
   roomName: string,
   openIDToken: IOpenIDToken,
 ): Promise<SFUConfig> {
-  let traceContext:
-    | ReturnType<typeof buildTracedRequestInit>["traceContext"]
-    | undefined;
+  const traceContext = createRequestTraceContext(
+    "livekit_sfu",
+    client.getUserId() ?? undefined,
+  );
   try {
-    const tracedRequest = buildTracedRequestInit(
+    logger.info("livekit_sfu_request_started", {
+      requestId: traceContext.requestId,
+      traceId: traceContext.traceId,
+      userId: traceContext.userId,
+      roomId: roomName,
+      serviceUrl: livekitServiceURL,
+    });
+
+    const res = await fetch(
+      livekitServiceURL + "/sfu/get",
       {
         method: "POST",
         headers: {
@@ -86,24 +96,6 @@ async function getLiveKitJWT(
           device_id: client.getDeviceId(),
         }),
       },
-      {
-        namespace: "livekit_sfu",
-        userId: client.getUserId() ?? undefined,
-      },
-    );
-    traceContext = tracedRequest.traceContext;
-
-    logger.info("livekit_sfu_request_started", {
-      requestId: traceContext.requestId,
-      traceId: traceContext.traceId,
-      userId: traceContext.userId,
-      roomId: roomName,
-      serviceUrl: livekitServiceURL,
-    });
-
-    const res = await fetch(
-      livekitServiceURL + "/sfu/get",
-      tracedRequest.requestInit,
     );
     const resolvedTraceContext = resolveResponseTraceContext(res, traceContext);
 

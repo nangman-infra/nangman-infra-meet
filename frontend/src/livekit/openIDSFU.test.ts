@@ -13,7 +13,7 @@ describe("getSFUConfigWithOpenID", () => {
     vi.restoreAllMocks();
   });
 
-  it("sends trace and matrix user headers when requesting SFU config", async () => {
+  it("keeps tracing local and sends only the SFU request body", async () => {
     const fetchSpy = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(
@@ -57,16 +57,20 @@ describe("getSFUConfigWithOpenID", () => {
       "https://matrix-rtc.example.org/livekit/jwt/sfu/get",
       expect.objectContaining({
         method: "POST",
-        headers: expect.any(Headers),
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+        }),
       }),
     );
 
     const headers = fetchSpy.mock.calls[0]?.[1]?.headers;
-    expect(headers).toBeInstanceOf(Headers);
-    expect((headers as Headers).get("x-request-id")).toMatch(/^livekit_sfu_req_/);
-    expect((headers as Headers).get("x-trace-id")).toMatch(/^livekit_sfu_trace_/);
-    expect((headers as Headers).get("x-matrix-user-id")).toBe(
-      "@alice:example.org",
+    expect(headers).toEqual(
+      expect.objectContaining({
+        "Content-Type": "application/json",
+      }),
     );
+    expect((headers as Record<string, string>)["x-request-id"]).toBeUndefined();
+    expect((headers as Record<string, string>)["x-trace-id"]).toBeUndefined();
+    expect((headers as Record<string, string>)["x-matrix-user-id"]).toBeUndefined();
   });
 });
