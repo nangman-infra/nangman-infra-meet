@@ -35,23 +35,9 @@ const meeting: Meeting = {
 
 describe("MeetingDetailPage", () => {
   beforeEach(() => {
-    vi.spyOn(ClientContext, "useClientState").mockReturnValue({
-      state: "valid",
-      disconnected: false,
-      authenticated: {
-        client: {
-          getUserId: () => "@alice:matrix.nangman.cloud",
-        } as never,
-        isPasswordlessUser: false,
-        changePassword: vi.fn(),
-        logout: vi.fn(),
-      },
-      supportedFeatures: {
-        reactions: true,
-        thumbnails: true,
-      },
-      setClient: vi.fn(),
-    });
+    vi.spyOn(ClientContext, "useClientState").mockReturnValue(
+      createAuthenticatedClientState("@alice:matrix.nangman.cloud"),
+    );
     vi.spyOn(UiUrlContext, "useUiUrlContext").mockReturnValue({
       lang: null,
       fonts: [],
@@ -74,6 +60,25 @@ describe("MeetingDetailPage", () => {
         updatedAt: "2026-03-18T01:05:00.000Z",
       },
     ]);
+    vi.spyOn(MeetingsApi, "getMeetingEntryAccess").mockResolvedValue({
+      kind: "allow",
+      meetingId: "meeting-1",
+      title: "Weekly infra sync",
+      hostUserId: "@alice:matrix.nangman.cloud",
+      status: "live",
+      accessPolicy: "open",
+      allowJoinBeforeHost: true,
+    });
+    vi.spyOn(MeetingsApi, "requestMeetingAccess").mockResolvedValue({
+      id: "request-1",
+      meetingId: "meeting-1",
+      userId: "@bob:matrix.nangman.cloud",
+      status: "pending",
+      requestedAt: "2026-03-18T01:02:00.000Z",
+      respondedAt: null,
+      createdAt: "2026-03-18T01:02:00.000Z",
+      updatedAt: "2026-03-18T01:02:00.000Z",
+    });
     vi.spyOn(MeetingsApi, "listMeetingAccessRequests").mockResolvedValue([]);
     vi.spyOn(MeetingsApi, "approveMeetingAccessRequest").mockResolvedValue({
       id: "request-1",
@@ -204,4 +209,156 @@ describe("MeetingDetailPage", () => {
       );
     });
   });
+
+  it("hides host-only sections for non-host viewers", async () => {
+    vi.mocked(ClientContext.useClientState).mockReturnValue(
+      createAuthenticatedClientState("@bob:matrix.nangman.cloud"),
+    );
+    vi.mocked(MeetingsApi.getMeetingEntryAccess).mockResolvedValue({
+      kind: "wait_for_host",
+      meetingId: "meeting-1",
+      title: "Weekly infra sync",
+      hostUserId: "@alice:matrix.nangman.cloud",
+      status: "scheduled",
+      accessPolicy: "open",
+      allowJoinBeforeHost: false,
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/meetings/meeting-1"]}>
+        <Routes>
+          <Route path="/meetings/:meetingId" element={<MeetingDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Weekly infra sync")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Waiting for the host to start"),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Attendance")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Start meeting" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Join meeting" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Save changes" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Join link")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Refresh" }),
+    ).toBeInTheDocument();
+    expect(MeetingsApi.listMeetingAttendance).not.toHaveBeenCalled();
+  });
+
+  it("shows request access instead of join actions for host-approval meetings", async () => {
+    vi.mocked(ClientContext.useClientState).mockReturnValue(
+      createAuthenticatedClientState("@bob:matrix.nangman.cloud"),
+    );
+    vi.mocked(MeetingsApi.getMeeting).mockResolvedValue({
+      ...meeting,
+      accessPolicy: "host_approval",
+      status: "live",
+    });
+    vi.mocked(MeetingsApi.getMeetingEntryAccess)
+      .mockResolvedValue({
+        kind: "pending_approval",
+        meetingId: "meeting-1",
+        title: "Weekly infra sync",
+        hostUserId: "@alice:matrix.nangman.cloud",
+        status: "live",
+        accessPolicy: "host_approval",
+        allowJoinBeforeHost: false,
+      })
+      .mockResolvedValueOnce({
+        kind: "request_access",
+        meetingId: "meeting-1",
+        title: "Weekly infra sync",
+        hostUserId: "@alice:matrix.nangman.cloud",
+        status: "live",
+        accessPolicy: "host_approval",
+        allowJoinBeforeHost: false,
+      });
+
+    render(
+      <MemoryRouter initialEntries={["/meetings/meeting-1"]}>
+        <Routes>
+          <Route path="/meetings/:meetingId" element={<MeetingDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Weekly infra sync")).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "Request access" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Join meeting" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Join link")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Request access" }));
+
+    await waitFor(() => {
+      expect(MeetingsApi.requestMeetingAccess).toHaveBeenCalledWith(
+        "meeting-1",
+        expect.objectContaining({
+          userId: "@bob:matrix.nangman.cloud",
+        }),
+      );
+    });
+    expect(
+      await screen.findByText("Waiting for host approval"),
+    ).toBeInTheDocument();
+  });
+
+  it("hides edit and join actions once a meeting has ended", async () => {
+    vi.mocked(MeetingsApi.getMeeting).mockResolvedValue({
+      ...meeting,
+      status: "ended",
+      endsAt: "2026-03-18T02:00:00.000Z",
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/meetings/meeting-1"]}>
+        <Routes>
+          <Route path="/meetings/:meetingId" element={<MeetingDetailPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Weekly infra sync")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Join meeting" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Save changes" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Cancel meeting" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "End meeting" }),
+    ).not.toBeInTheDocument();
+  });
 });
+
+function createAuthenticatedClientState(userId: string): ReturnType<typeof ClientContext.useClientState> {
+  return {
+    state: "valid",
+    disconnected: false,
+    authenticated: {
+      client: {
+        getUserId: () => userId,
+      } as never,
+      isPasswordlessUser: false,
+      changePassword: vi.fn(),
+      logout: vi.fn(),
+    },
+    supportedFeatures: {
+      reactions: true,
+      thumbnails: true,
+    },
+    setClient: vi.fn(),
+  };
+}

@@ -1,3 +1,9 @@
+/*
+Copyright 2026 Nangman Infra
+
+SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+*/
+
 export function resolveJoinTarget(input: string): string | null {
   const trimmedInput = input.trim();
   if (!trimmedInput) {

@@ -30,7 +30,7 @@ describe("useRoomNote", () => {
     expect(result.current.note).toBe("Agenda");
 
     setTopic("Updated agenda");
-    await act(async () => {
+    act(() => {
       roomState.emit(
         RoomStateEvent.Events,
         createRoomTopicEvent("Updated agenda"),
@@ -89,7 +89,8 @@ function createMatrixRoomEnvironment(
   };
 
   const setRoomTopic = vi.fn().mockImplementation(
-    async (_roomId: string, nextTopic: string) => {
+    async (_roomId: string, nextTopic: string): Promise<void> => {
+      await Promise.resolve();
       topic = nextTopic;
     },
   );

@@ -9,7 +9,7 @@ on:
       - opened
       - labeled
   push:
-    branches: [livekit]
+    branches: [main]
 
 jobs:
   versioning:
@@ -111,17 +111,17 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id || github.run_id }}
           name: build-output-embedded
-          path: embedded/web/dist
+          path: frontend/embedded/web/dist
 
       # n.b. We don't enable corepack here because we are using plain npm
       - name: Setup node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version-file: .node-version
+          node-version-file: frontend/.node-version
           registry-url: "https://registry.npmjs.org"
 
       - name: Publish npm
-        working-directory: embedded/web
+        working-directory: frontend/embedded/web
         run: |
           npm version ${{ needs.versioning.outputs.PREFIXED_VERSION }} --no-git-tag-version
           echo "ARTIFACT_VERSION=$(jq '.version' --raw-output package.json)" >> "$GITHUB_ENV"
@@ -150,7 +150,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id || github.run_id }}
           name: build-output-embedded
-          path: embedded/android/lib/src/main/assets/element-call
+          path: frontend/embedded/android/lib/src/main/assets/element-call
 
       - name: ☕️ Setup Java
         uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4
@@ -170,10 +170,10 @@ jobs:
           fi
 
       - name: Set version string
-        run: sed -i "s/0.0.0/${{ env.ARTIFACT_VERSION }}/g" embedded/android/lib/src/main/kotlin/io/element/android/call/embedded/Version.kt
+        run: sed -i "s/0.0.0/${{ env.ARTIFACT_VERSION }}/g" frontend/embedded/android/lib/src/main/kotlin/io/element/android/call/embedded/Version.kt
 
       - name: Publish AAR
-        working-directory: embedded/android
+        working-directory: frontend/embedded/android
         env:
           EC_VERSION: ${{ env.ARTIFACT_VERSION }}
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_RELEASE_USERNAME }}
@@ -207,7 +207,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id || github.run_id }}
           name: build-output-embedded
-          path: element-call/embedded/ios/Sources/dist
+          path: element-call/frontend/embedded/ios/Sources/dist
 
       - name: Checkout element-call-swift
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
@@ -217,7 +217,7 @@ jobs:
           token: ${{ secrets.SWIFT_RELEASE_TOKEN }}
 
       - name: Copy files
-        run: rsync -a --delete --exclude .git element-call/embedded/ios/ element-call-swift
+        run: rsync -a --delete --exclude .git element-call/frontend/embedded/ios/ element-call-swift
 
       - name: Get artifact version
         run: echo "ARTIFACT_VERSION=${{ needs.versioning.outputs.UNPREFIXED_VERSION }}" >> "$GITHUB_ENV"

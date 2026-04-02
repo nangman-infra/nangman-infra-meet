@@ -6,7 +6,7 @@ on:
       - opened
       - labeled
   push:
-    branches: [livekit, full-mesh]
+    branches: [main]
 jobs:
   build_full_element_call:
     # Use the full package vite build

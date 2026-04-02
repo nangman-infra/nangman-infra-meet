@@ -32,6 +32,8 @@ import {
   formatAllowedUserIdsInput,
   parseAllowedUserIdsInput,
 } from "../domains/meetings/application/meetingPolicy";
+import { useMeetingEntryAccess } from "../domains/meetings/presentation/useMeetingEntryAccess";
+import type { MeetingAccessDecision } from "../domains/meetings/domain/MeetingAccessDecision";
 import type { MeetingAccessRequest } from "../domains/meetings/domain/MeetingAccessRequest";
 import type { Meeting } from "../domains/meetings/domain/Meeting";
 import type { MeetingAttendance } from "../domains/meetings/domain/MeetingAttendance";
@@ -96,6 +98,12 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
   const [ending, setEnding] = useState(false);
   const [moderatingRequestId, setModeratingRequestId] = useState<string>();
   const matrixUserId = client.getUserId() ?? undefined;
+  const shouldCheckEntryAccess =
+    Boolean(meetingId && meeting && matrixUserId && matrixUserId !== meeting.hostUserId);
+  const meetingEntryAccess = useMeetingEntryAccess({
+    meetingId: shouldCheckEntryAccess ? meetingId ?? null : null,
+    userId: shouldCheckEntryAccess ? matrixUserId : undefined,
+  });
 
   const loadMeetingDetails = useCallback(async (): Promise<void> => {
     if (!meetingId) {
@@ -107,13 +115,18 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
     setLoading(true);
 
     try {
-      const [nextMeeting, nextAttendance] = await Promise.all([
-        getMeeting(meetingId, { userId: matrixUserId }),
-        listMeetingAttendance(meetingId, { userId: matrixUserId }),
-      ]);
+      const nextMeeting = await getMeeting(meetingId, { userId: matrixUserId });
+      let nextAttendance: MeetingAttendance[] = [];
+      const shouldLoadAttendance = nextMeeting.hostUserId === matrixUserId;
       const shouldLoadAccessRequests =
         nextMeeting.accessPolicy === "host_approval" &&
         nextMeeting.hostUserId === matrixUserId;
+
+      if (shouldLoadAttendance) {
+        nextAttendance = await listMeetingAttendance(meetingId, {
+          userId: matrixUserId,
+        });
+      }
 
       if (shouldLoadAccessRequests) {
         try {
@@ -364,9 +377,28 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
   ).length;
   const participantCount = new Set(attendance.map((entry) => entry.userId)).size;
   const isMeetingHost = matrixUserId === meeting.hostUserId;
+  const canEditMeeting = isMeetingHost && meeting.status !== "ended";
   const pendingAccessRequests = accessRequests.filter(
     (request) => request.status === "pending",
   );
+  const entryDecision = !isMeetingHost ? meetingEntryAccess.decision : null;
+  const canJoinMeeting =
+    meeting.status !== "ended" &&
+    (isMeetingHost || entryDecision?.kind === "allow");
+  const canCopyMeetingLink =
+    isMeetingHost || entryDecision?.kind === "allow";
+  const shouldShowAccessState =
+    !isMeetingHost && entryDecision !== null && entryDecision.kind !== "allow";
+  const canRequestMeetingAccess =
+    entryDecision?.kind === "request_access" ||
+    entryDecision?.kind === "rejected";
+  const canRefreshMeetingAccess =
+    entryDecision?.kind === "wait_for_host" ||
+    entryDecision?.kind === "pending_approval";
+  const entryStateCopy =
+    shouldShowAccessState && entryDecision
+      ? getMeetingEntryStateCopy(entryDecision.kind, meeting.title, t)
+      : null;
 
   return (
     <div className={commonStyles.container}>
@@ -413,14 +445,18 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                 <span className={pageStyles.statPill}>
                   {getMeetingStatusLabel(meeting.status, t)}
                 </span>
-                <span className={pageStyles.statPill}>
-                  {t("meeting_detail.present_count", { count: presentCount })}
-                </span>
-                <span className={pageStyles.statPill}>
-                  {t("meeting_detail.participant_count", {
-                    count: participantCount,
-                  })}
-                </span>
+                {isMeetingHost && (
+                  <span className={pageStyles.statPill}>
+                    {t("meeting_detail.present_count", { count: presentCount })}
+                  </span>
+                )}
+                {isMeetingHost && (
+                  <span className={pageStyles.statPill}>
+                    {t("meeting_detail.participant_count", {
+                      count: participantCount,
+                    })}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -486,18 +522,20 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                       </Text>
                     </div>
                   )}
-                  <div className={pageStyles.summaryItem}>
-                    <Text size="sm" className={pageStyles.summaryLabel}>
-                      {t("meeting_detail.link_label")}
-                    </Text>
-                    <Text size="sm" className={pageStyles.linkValue}>
-                      {joinLink}
-                    </Text>
-                  </div>
+                  {canCopyMeetingLink && (
+                    <div className={pageStyles.summaryItem}>
+                      <Text size="sm" className={pageStyles.summaryLabel}>
+                        {t("meeting_detail.link_label")}
+                      </Text>
+                      <Text size="sm" className={pageStyles.linkValue}>
+                        {joinLink}
+                      </Text>
+                    </div>
+                  )}
                 </div>
 
                 <div className={pageStyles.primaryActions}>
-                  {meeting.status === "scheduled" && (
+                  {meeting.status === "scheduled" && isMeetingHost && (
                     <Button
                       kind="primary"
                       onClick={() => {
@@ -510,7 +548,7 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                         : t("meeting_detail.start")}
                     </Button>
                   )}
-                  {meeting.status === "live" && (
+                  {canJoinMeeting && (
                     <Button
                       kind="primary"
                       onClick={() => {
@@ -520,7 +558,7 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                       {t("meeting_detail.join")}
                     </Button>
                   )}
-                  {meeting.status !== "ended" && (
+                  {meeting.status !== "ended" && isMeetingHost && (
                     <Button
                       kind="secondary"
                       onClick={() => {
@@ -537,35 +575,77 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                           )}
                     </Button>
                   )}
-                  <Button
-                    kind="secondary"
-                    onClick={() => {
-                      void onCopyLink();
-                    }}
-                  >
-                    {t("action.copy_link")}
-                  </Button>
+                  {!isMeetingHost && canRequestMeetingAccess && (
+                    <Button
+                      kind="primary"
+                      disabled={meetingEntryAccess.requesting}
+                      onClick={() => {
+                        void meetingEntryAccess.requestAccess();
+                      }}
+                    >
+                      {meetingEntryAccess.requesting
+                        ? t("meeting_entry.requesting")
+                        : t(
+                            entryDecision.kind === "rejected"
+                              ? "meeting_entry.request_again"
+                              : "meeting_entry.request_access_button",
+                          )}
+                    </Button>
+                  )}
+                  {!isMeetingHost && canRefreshMeetingAccess && (
+                    <Button
+                      kind="secondary"
+                      disabled={meetingEntryAccess.loading}
+                      onClick={meetingEntryAccess.refresh}
+                    >
+                      {t("meeting_entry.refresh")}
+                    </Button>
+                  )}
+                  {canCopyMeetingLink && (
+                    <Button
+                      kind="secondary"
+                      onClick={() => {
+                        void onCopyLink();
+                      }}
+                    >
+                      {t("action.copy_link")}
+                    </Button>
+                  )}
                 </div>
+                {!isMeetingHost && meetingEntryAccess.error && (
+                  <ErrorMessage error={meetingEntryAccess.error} />
+                )}
+                {entryStateCopy && (
+                  <>
+                    <Text size="sm" weight="semibold">
+                      {entryStateCopy.title}
+                    </Text>
+                    <Text size="sm" className={pageStyles.muted}>
+                      {entryStateCopy.body}
+                    </Text>
+                  </>
+                )}
               </section>
 
-              <section className={pageStyles.panel}>
-                <div className={pageStyles.panelHeader}>
-                  <Heading size="md" weight="semibold">
-                    {t("meeting_detail.edit_title")}
-                  </Heading>
-                  <Text size="sm" className={pageStyles.muted}>
-                    {t("meeting_detail.edit_description")}
-                  </Text>
-                </div>
+              {canEditMeeting && (
+                <section className={pageStyles.panel}>
+                  <div className={pageStyles.panelHeader}>
+                    <Heading size="md" weight="semibold">
+                      {t("meeting_detail.edit_title")}
+                    </Heading>
+                    <Text size="sm" className={pageStyles.muted}>
+                      {t("meeting_detail.edit_description")}
+                    </Text>
+                  </div>
 
-                <Form
-                  className={pageStyles.form}
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void onSave();
-                  }}
-                  noValidate
-                >
+                  <Form
+                    className={pageStyles.form}
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void onSave();
+                    }}
+                    noValidate
+                  >
                   <FieldRow>
                     <InputField
                       id="meetingDetailTitle"
@@ -735,15 +815,16 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                       <p className={pageStyles.notice}>{actionNotice}</p>
                     </FieldRow>
                   )}
-                  <FieldRow rightAlign className={pageStyles.actions}>
-                    <Button type="submit" kind="primary" disabled={saving}>
-                      {saving
-                        ? t("meeting_detail.saving")
-                        : t("meeting_detail.save")}
-                    </Button>
-                  </FieldRow>
-                </Form>
-              </section>
+                    <FieldRow rightAlign className={pageStyles.actions}>
+                      <Button type="submit" kind="primary" disabled={saving}>
+                        {saving
+                          ? t("meeting_detail.saving")
+                          : t("meeting_detail.save")}
+                      </Button>
+                    </FieldRow>
+                  </Form>
+                </section>
+              )}
             </div>
 
             {meeting.accessPolicy === "host_approval" && isMeetingHost && (
@@ -816,52 +897,54 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
               </section>
             )}
 
-            <section className={pageStyles.panel}>
-              <div className={pageStyles.panelHeader}>
-                <Heading size="md" weight="semibold">
-                  {t("meeting_detail.attendance_title")}
-                </Heading>
-                <Text size="sm" className={pageStyles.muted}>
-                  {t("meeting_detail.attendance_description")}
-                </Text>
-              </div>
-              {attendance.length === 0 ? (
-                <Text size="sm" className={pageStyles.muted}>
-                  {t("meeting_detail.attendance_empty")}
-                </Text>
-              ) : (
-                <div className={pageStyles.attendanceList}>
-                  {attendance.map((entry) => (
-                    <article key={entry.id} className={pageStyles.attendanceRow}>
-                      <div>
-                        <Text weight="semibold">{entry.userId}</Text>
-                        <Text size="sm" className={pageStyles.muted}>
-                          {t(
-                            entry.status === "present"
-                              ? "meeting_detail.attendance_present"
-                              : "meeting_detail.attendance_left",
-                          )}
-                        </Text>
-                      </div>
-                      <div className={pageStyles.attendanceMeta}>
-                        <Text size="sm" className={pageStyles.muted}>
-                          {t("meeting_detail.joined_at", {
-                            date: formatDateTime(entry.joinedAt),
-                          })}
-                        </Text>
-                        {entry.leftAt && (
+            {isMeetingHost && (
+              <section className={pageStyles.panel}>
+                <div className={pageStyles.panelHeader}>
+                  <Heading size="md" weight="semibold">
+                    {t("meeting_detail.attendance_title")}
+                  </Heading>
+                  <Text size="sm" className={pageStyles.muted}>
+                    {t("meeting_detail.attendance_description")}
+                  </Text>
+                </div>
+                {attendance.length === 0 ? (
+                  <Text size="sm" className={pageStyles.muted}>
+                    {t("meeting_detail.attendance_empty")}
+                  </Text>
+                ) : (
+                  <div className={pageStyles.attendanceList}>
+                    {attendance.map((entry) => (
+                      <article key={entry.id} className={pageStyles.attendanceRow}>
+                        <div>
+                          <Text weight="semibold">{entry.userId}</Text>
                           <Text size="sm" className={pageStyles.muted}>
-                            {t("meeting_detail.left_at", {
-                              date: formatDateTime(entry.leftAt),
+                            {t(
+                              entry.status === "present"
+                                ? "meeting_detail.attendance_present"
+                                : "meeting_detail.attendance_left",
+                            )}
+                          </Text>
+                        </div>
+                        <div className={pageStyles.attendanceMeta}>
+                          <Text size="sm" className={pageStyles.muted}>
+                            {t("meeting_detail.joined_at", {
+                              date: formatDateTime(entry.joinedAt),
                             })}
                           </Text>
-                        )}
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </section>
+                          {entry.leftAt && (
+                            <Text size="sm" className={pageStyles.muted}>
+                              {t("meeting_detail.left_at", {
+                                date: formatDateTime(entry.leftAt),
+                              })}
+                            </Text>
+                          )}
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
           </section>
         </div>
       </main>
@@ -930,5 +1013,49 @@ function getMeetingStatusLabel(
       return t("meeting_planner.status.ended");
     default:
       return t("meeting_planner.status.draft");
+  }
+}
+
+function getMeetingEntryStateCopy(
+  kind: Exclude<MeetingAccessDecision["kind"], "allow">,
+  title: string,
+  t: TFunction,
+): { title: string; body: string } {
+  switch (kind) {
+    case "wait_for_host":
+      return {
+        title: t("meeting_entry.wait_for_host.title"),
+        body: t("meeting_entry.wait_for_host.body", { title }),
+      };
+    case "request_access":
+      return {
+        title: t("meeting_entry.request_access.title"),
+        body: t("meeting_entry.request_access.body", { title }),
+      };
+    case "pending_approval":
+      return {
+        title: t("meeting_entry.pending_approval.title"),
+        body: t("meeting_entry.pending_approval.body", { title }),
+      };
+    case "rejected":
+      return {
+        title: t("meeting_entry.rejected.title"),
+        body: t("meeting_entry.rejected.body", { title }),
+      };
+    case "not_invited":
+      return {
+        title: t("meeting_entry.not_invited.title"),
+        body: t("meeting_entry.not_invited.body", { title }),
+      };
+    case "meeting_ended":
+      return {
+        title: t("meeting_entry.meeting_ended.title"),
+        body: t("meeting_entry.meeting_ended.body", { title }),
+      };
+    default:
+      return {
+        title: t("meeting_entry.request_access.title"),
+        body: t("meeting_entry.request_access.body", { title }),
+      };
   }
 }

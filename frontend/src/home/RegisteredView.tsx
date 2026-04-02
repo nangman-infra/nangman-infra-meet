@@ -128,7 +128,7 @@ export const RegisteredView: FC<Props> = ({ client }) => {
         return;
       }
 
-      navigate(resolvedTarget);
+      void navigate(resolvedTarget);
     },
     [joinTarget, navigate, t],
   );

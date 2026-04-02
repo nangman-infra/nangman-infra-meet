@@ -8,11 +8,18 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import * as ClientContext from "../ClientContext";
 import * as MeetingsApi from "../domains/meetings/infrastructure/MeetingsApi";
 import { MeetingPlanner } from "./MeetingPlanner";
 
 describe("MeetingPlanner", () => {
   beforeEach(() => {
+    vi.spyOn(ClientContext, "useClient").mockReturnValue({
+      client: {
+        getUserId: () => "@alice:matrix.nangman.cloud",
+      } as never,
+      setClient: undefined,
+    });
     vi.spyOn(MeetingsApi, "listMeetings").mockResolvedValue([]);
     vi.spyOn(MeetingsApi, "listMeetingAttendanceSummaries").mockResolvedValue([]);
   });
@@ -45,7 +52,7 @@ describe("MeetingPlanner", () => {
         id: "meeting-live",
         title: "Live room",
         description: "Running right now",
-        hostUserId: "@alice:matrix.nangman.cloud",
+        hostUserId: "@bob:matrix.nangman.cloud",
         allowedUserIds: [],
         roomId: "!live:matrix.nangman.cloud",
         roomAlias: "#live:matrix.nangman.cloud",
@@ -95,15 +102,48 @@ describe("MeetingPlanner", () => {
       expect(screen.getByText("Planned room")).toBeInTheDocument();
     });
 
-    expect(
-      screen.getByRole("button", { name: "Join meeting" }),
-    ).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Join meeting" })).toHaveLength(1);
     expect(
       screen.getByRole("button", { name: "Start meeting" }),
     ).toBeInTheDocument();
     expect(
       screen.getAllByRole("button", { name: "Manage" }),
-    ).toHaveLength(2);
+    ).toHaveLength(1);
     expect(screen.getByText("2 in the room now · 3 joined so far")).toBeInTheDocument();
+  });
+
+  it("shows join instead of management actions for scheduled meetings the user does not host", async () => {
+    vi.mocked(MeetingsApi.listMeetings).mockResolvedValue([
+      {
+        id: "meeting-guest",
+        title: "Another host room",
+        description: "Guest can view but not manage",
+        hostUserId: "@bob:matrix.nangman.cloud",
+        allowedUserIds: [],
+        roomId: "!guest:matrix.nangman.cloud",
+        roomAlias: "#guest:matrix.nangman.cloud",
+        joinUrl: "/room/guest",
+        accessPolicy: "open",
+        allowJoinBeforeHost: false,
+        status: "scheduled",
+        startsAt: "2026-03-10T01:00:00.000Z",
+        endsAt: null,
+        createdAt: "2026-03-08T03:00:00.000Z",
+        updatedAt: "2026-03-08T03:00:00.000Z",
+      },
+    ]);
+
+    render(
+      <MemoryRouter>
+        <MeetingPlanner />
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText("Another host room")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Join meeting" })).toHaveLength(1);
+    expect(
+      screen.queryByRole("button", { name: "Start meeting" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Manage" })).not.toBeInTheDocument();
   });
 });

@@ -66,7 +66,7 @@ describe("useRoomChatIndicator", () => {
     });
     events.push(nextEvent);
 
-    await act(async () => {
+    act(() => {
       room.emit(
         RoomEvent.Timeline,
         nextEvent,
@@ -106,7 +106,7 @@ describe("useRoomChatIndicator", () => {
       }),
     );
 
-    await act(async () => {
+    act(() => {
       room.emit(RoomEvent.TimelineReset, room, undefined, true);
     });
 
@@ -139,7 +139,7 @@ describe("useRoomChatIndicator", () => {
     });
     events.push(nextEvent);
 
-    await act(async () => {
+    act(() => {
       room.emit(
         RoomEvent.Timeline,
         nextEvent,

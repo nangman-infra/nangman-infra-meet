@@ -1,13 +1,21 @@
 # Nangman Infra Meet
 
-This repository is organized as a simple two-service layout.
+This repository is organized as a two-service application with separate package
+management and validation flows.
 
 ## Structure
 
-- `frontend/`: the existing Element Call based web client
+- `frontend/`: the Element Call based web client and embedded package sources
 - `backend/`: the internal Nest.js meeting-management API
 - `infra/`: development certificates and infrastructure assets
 - `docker-compose.yml`: root-level orchestration for the frontend and backend
+
+## Current Product Scope
+
+- meeting planning, scheduling, and host-managed lifecycle actions
+- moderated meeting access and entry approval flows
+- in-call attendance tracking and attendance summaries
+- Element Call based calling, chat, and shared notes in the frontend
 
 ## Run
 
@@ -16,6 +24,15 @@ Frontend runtime config remains env-driven and the backend stays internal-only.
 ```bash
 cp frontend/.env.deploy.example frontend/.env.deploy
 docker compose up --build -d
+```
+
+Frontend local development uses Yarn 4.
+
+```bash
+cd frontend
+corepack enable
+corepack yarn install --immutable
+corepack yarn dev
 ```
 
 Backend local development uses `pnpm`.
@@ -35,3 +52,17 @@ Services:
 - Backend: internal-only, reached through the frontend proxy at `/api/v1`
 
 Frontend-specific documentation now lives in [frontend/README.md](./frontend/README.md).
+
+## Validate
+
+```bash
+cd frontend
+corepack yarn lint
+corepack yarn test --run
+corepack yarn build:full:development
+
+cd ../backend
+pnpm lint:types
+pnpm test --runInBand
+pnpm build
+```

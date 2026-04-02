@@ -4,7 +4,7 @@ Copyright 2026 Nangman Infra
 SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 */
 
-import { render, waitFor } from "@testing-library/react";
+import { act, render, waitFor } from "@testing-library/react";
 import { type FC } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -27,6 +27,7 @@ const TestComponent: FC<{
 
 describe("useMeetingAttendanceTracker", () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -160,5 +161,37 @@ describe("useMeetingAttendanceTracker", () => {
         keepalive: true,
       });
     });
+  });
+
+  it("refreshes attendance while the meeting stays active", async () => {
+    vi.useFakeTimers();
+    const joinSpy = vi
+      .spyOn(MeetingsApi, "joinMeetingAttendance")
+      .mockResolvedValue(undefined);
+    vi.spyOn(MeetingsApi, "leaveMeetingAttendance").mockResolvedValue(undefined);
+
+    const { unmount } = render(
+      <TestComponent
+        joined
+        meetingId="meeting-123"
+        userId="@alice:matrix.nangman.cloud"
+      />,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(joinSpy).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000);
+    });
+
+    expect(joinSpy).toHaveBeenCalledTimes(2);
+    expect(joinSpy).toHaveBeenLastCalledWith("meeting-123", {
+      userId: "@alice:matrix.nangman.cloud",
+    });
+
+    unmount();
   });
 });

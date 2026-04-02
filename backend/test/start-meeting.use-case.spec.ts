@@ -5,7 +5,7 @@ import { InMemoryMeetingRepository } from "../src/modules/meetings/infrastructur
 import { StartMeetingUseCase } from "../src/modules/meetings/application/use-cases/start-meeting.use-case";
 
 describe("StartMeetingUseCase", () => {
-  it("logs a warning when the actor user differs from the meeting host", async () => {
+  it("rejects when the actor user differs from the meeting host", async () => {
     const repository = new InMemoryMeetingRepository();
     const mockLogger = {
       info: jest.fn(),
@@ -31,25 +31,21 @@ describe("StartMeetingUseCase", () => {
     });
     await repository.save(meeting);
 
-    await runWithRequestContext(
-      {
-        requestId: "req_test",
-        traceId: "trace_test",
-        userId: "@alice:matrix.nangman.cloud",
-      },
-      async () => {
-        await useCase.execute("meeting-1");
-      },
-    );
+    await expect(
+      runWithRequestContext(
+        {
+          requestId: "req_test",
+          traceId: "trace_test",
+          userId: "@alice:matrix.nangman.cloud",
+        },
+        async () => {
+          await useCase.execute("meeting-1");
+        },
+      ),
+    ).rejects.toMatchObject({
+      message: "Only the meeting host can manage this meeting.",
+    });
 
-    expect(mockLogger.warn).toHaveBeenCalledWith(
-      "meeting.host_user_mismatch",
-      expect.objectContaining({
-        actorUserId: "@alice:matrix.nangman.cloud",
-        hostUserId: "@bob:matrix.nangman.cloud",
-        meetingId: "meeting-1",
-        result: "soft_validation_failed",
-      }),
-    );
+    expect(mockLogger.warn).not.toHaveBeenCalled();
   });
 });

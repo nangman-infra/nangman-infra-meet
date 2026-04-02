@@ -21,13 +21,15 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           cache: "yarn"
-          node-version-file: ".node-version"
+          cache-dependency-path: frontend/yarn.lock
+          node-version-file: "frontend/.node-version"
 
       - name: Install Deps
-        run: "yarn install --immutable"
+        working-directory: frontend
+        run: "corepack yarn install --immutable"
 
       - name: Prune i18n
-        run: "rm -R locales"
+        run: "rm -R frontend/locales"
 
       - name: Download translation files
         uses: localazy/download@0a79880fb66150601e3b43606fab69c88123c087 # v1.1.0
@@ -38,7 +40,8 @@ jobs:
         run: "sudo chown runner:docker -R locales"
 
       - name: Prettier
-        run: yarn prettier:format
+        working-directory: frontend
+        run: corepack yarn prettier:format
 
       - name: Create Pull Request
         id: cpr

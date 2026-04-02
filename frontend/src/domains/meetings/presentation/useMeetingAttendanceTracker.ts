@@ -24,6 +24,7 @@ interface PendingLeave {
 }
 
 const attendanceLogger = logger.getChild("[MeetingAttendance]");
+const ATTENDANCE_REFRESH_INTERVAL_MS = 30_000;
 
 export function useMeetingAttendanceTracker({
   joined,
@@ -166,4 +167,32 @@ export function useMeetingAttendanceTracker({
       }
     };
   }, [flushPendingLeave]);
+
+  useEffect(() => {
+    if (!joined || !meetingId || !userId) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      if (
+        activeMeetingIdRef.current !== meetingId ||
+        joinInFlightMeetingIdRef.current === meetingId
+      ) {
+        return;
+      }
+
+      void joinMeetingAttendance(meetingId, { userId }).catch((error) => {
+        attendanceLogger.error("meeting_attendance_refresh_failed", {
+          meetingId,
+          userId,
+          error:
+            error instanceof Error ? error.message : "Unknown refresh error",
+        });
+      });
+    }, ATTENDANCE_REFRESH_INTERVAL_MS);
+
+    return (): void => {
+      window.clearInterval(intervalId);
+    };
+  }, [joined, meetingId, userId]);
 }

@@ -30,20 +30,24 @@ jobs:
   build:
     name: Build Element Call
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
     steps:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
       - name: Enable Corepack
         run: corepack enable
-      - name: Yarn cache
+      - name: Setup Node.js
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           cache: "yarn"
-          node-version-file: ".node-version"
+          cache-dependency-path: frontend/yarn.lock
+          node-version-file: "frontend/.node-version"
       - name: Install dependencies
-        run: "yarn install --immutable"
+        run: "corepack yarn install --immutable"
       - name: Build Element Call
-        run: ${{ format('yarn run build:{0}:{1}', inputs.package, inputs.build_mode) }}
+        run: ${{ format('corepack yarn build:{0}:{1}', inputs.package, inputs.build_mode) }}
         env:
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
@@ -56,6 +60,6 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: build-output-${{ inputs.package }}
-          path: dist
+          path: frontend/dist
           # We'll only use this in a triggered job, then we're done with it
           retention-days: 1

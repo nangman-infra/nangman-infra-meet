@@ -12,11 +12,10 @@ export default {
     config: ["vite.config.ts", "vite-embedded.config.ts"],
   },
   entry: ["src/main.tsx"],
-  ignoreBinaries: [
-    // This is deprecated, so Knip doesn't actually recognize it as a globally
-    // installed binary. TODO We should switch to Compose v2:
-    // https://docs.docker.com/compose/migrate/
-    "docker-compose",
+  ignore: [
+    // Yarn Berry keeps the active linker plugin here, but it is not imported
+    // from application code and should not fail unused-file analysis.
+    ".yarn/plugins/linker.cjs",
   ],
   ignoreDependencies: [
     // Used in CSS

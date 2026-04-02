@@ -76,6 +76,10 @@ export class Attendance {
     return this.statusValue === "present";
   }
 
+  get lastSeenAt(): Date {
+    return new Date(this.lastSeenAtValue);
+  }
+
   markPresent(now: Date): void {
     this.statusValue = "present";
     this.leftAtValue = null;
@@ -92,6 +96,24 @@ export class Attendance {
     this.leftAtValue = now;
     this.lastSeenAtValue = now;
     this.updatedAtValue = now;
+  }
+
+  expire(expiredAt: Date): void {
+    if (this.statusValue === "left") {
+      return;
+    }
+
+    this.statusValue = "left";
+    this.leftAtValue = expiredAt;
+    this.lastSeenAtValue = expiredAt;
+    this.updatedAtValue = expiredAt;
+  }
+
+  isStale(now: Date, staleAfterMs: number): boolean {
+    return (
+      this.statusValue === "present" &&
+      now.getTime() - this.lastSeenAtValue.getTime() > staleAfterMs
+    );
   }
 
   toPrimitives(): AttendancePrimitives {

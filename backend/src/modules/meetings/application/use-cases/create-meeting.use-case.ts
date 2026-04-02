@@ -10,6 +10,8 @@ import { CreateMeetingDto } from "../../presentation/http/dto/create-meeting.dto
 import { assertValidScheduledMeetingStart } from "../validation/assert-valid-scheduled-meeting-start";
 import { logMeetingActorMismatchIfNeeded } from "../validation/log-meeting-actor-mismatch";
 import { appendMeetingIdToJoinUrl } from "../support/append-meeting-id-to-join-url";
+import { resolveMeetingActorUserId } from "../support/resolve-meeting-actor-user-id";
+import { assertMeetingHostActor } from "../support/assert-meeting-host-actor";
 
 @Injectable()
 export class CreateMeetingUseCase {
@@ -20,10 +22,12 @@ export class CreateMeetingUseCase {
   ) {}
 
   async execute(dto: CreateMeetingDto): Promise<MeetingPrimitives> {
+    const actorUserId = resolveMeetingActorUserId();
     const now = new Date();
     const meetingId = randomUUID();
     const startsAt = dto.startsAt ? new Date(dto.startsAt) : null;
     assertValidScheduledMeetingStart(startsAt, now);
+    assertMeetingHostActor({ hostUserId: dto.hostUserId }, actorUserId);
 
     const meeting = Meeting.create({
       id: meetingId,

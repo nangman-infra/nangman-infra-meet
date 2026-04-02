@@ -29,6 +29,7 @@ export const MeetingPlanner: FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { client } = useClient();
+  const currentUserId = client?.getUserId() ?? undefined;
   const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [attendanceSummaries, setAttendanceSummaries] = useState<
     Record<string, MeetingAttendanceSummary>
@@ -42,7 +43,7 @@ export const MeetingPlanner: FC = () => {
     try {
       setListError(undefined);
       const nextMeetings = await listMeetings({
-        userId: client?.getUserId() ?? undefined,
+        userId: currentUserId,
       });
       setMeetings(nextMeetings);
 
@@ -59,7 +60,7 @@ export const MeetingPlanner: FC = () => {
         const summaries = await listMeetingAttendanceSummaries(
           summaryMeetingIds,
           {
-            userId: client?.getUserId() ?? undefined,
+            userId: currentUserId,
           },
         );
         setAttendanceSummaries(
@@ -87,7 +88,7 @@ export const MeetingPlanner: FC = () => {
     } finally {
       setLoadingMeetings(false);
     }
-  }, [client, t]);
+  }, [currentUserId, t]);
 
   useEffect(() => {
     void loadMeetings();
@@ -109,7 +110,7 @@ export const MeetingPlanner: FC = () => {
     setListError(undefined);
     try {
       await startMeeting(meeting.id, {
-        userId: client?.getUserId() ?? undefined,
+        userId: currentUserId,
       });
       await loadMeetings();
       await navigate(meeting.joinUrl);
@@ -237,9 +238,12 @@ export const MeetingPlanner: FC = () => {
             </Button>
           </div>
         ) : (
-          visibleMeetings.map((meeting) => (
-            <article key={meeting.id} className={styles.meetingCard}>
-              <div className={styles.meetingPrimary}>
+          visibleMeetings.map((meeting) => {
+            const isMeetingHost = meeting.hostUserId === currentUserId;
+
+            return (
+              <article key={meeting.id} className={styles.meetingCard}>
+                <div className={styles.meetingPrimary}>
                 <div className={styles.meetingTopRow}>
                   <Text weight="semibold" className={styles.meetingTitle}>
                     {meeting.title}
@@ -281,16 +285,18 @@ export const MeetingPlanner: FC = () => {
                     : t("meeting_planner.scheduled_hint")}
                 </Text>
                 <div className={styles.meetingActions}>
-                  <Button
-                    size="sm"
-                    kind="secondary"
-                    onClick={() => {
-                      void navigate(`/meetings/${meeting.id}`);
-                    }}
-                  >
-                    {t("meeting_planner.manage")}
-                  </Button>
-                  {meeting.status === "scheduled" ? (
+                  {isMeetingHost && (
+                    <Button
+                      size="sm"
+                      kind="secondary"
+                      onClick={() => {
+                        void navigate(`/meetings/${meeting.id}`);
+                      }}
+                    >
+                      {t("meeting_planner.manage")}
+                    </Button>
+                  )}
+                  {meeting.status === "scheduled" && isMeetingHost ? (
                     <Button
                       size="sm"
                       kind="primary"
@@ -324,8 +330,9 @@ export const MeetingPlanner: FC = () => {
                   </Button>
                 </div>
               </div>
-            </article>
-          ))
+              </article>
+            );
+          })
         )}
       </div>
     </section>

@@ -68,7 +68,8 @@ function createMatrixRoomEnvironment(
   let topic = initialTopic;
 
   const setRoomTopic = vi.fn().mockImplementation(
-    async (_roomId: string, nextTopic: string) => {
+    async (_roomId: string, nextTopic: string): Promise<void> => {
+      await Promise.resolve();
       topic = nextTopic;
       roomState.emit(RoomStateEvent.Events, createRoomTopicEvent(nextTopic));
     },

@@ -12,8 +12,10 @@ Nest.js based internal API for Nangman Infra Meet.
 ## Current Scope
 
 - Health endpoints
-- Backend foundation only
-- Meeting-related modules are scaffolds until product requirements are fixed
+- meeting creation, listing, start, update, and end flows
+- host authorization and visibility checks for managed meetings
+- attendance join/leave/detail flows and attendance summaries
+- moderated access-request domain support
 
 ## Run
 

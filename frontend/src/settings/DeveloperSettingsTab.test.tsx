@@ -6,7 +6,7 @@ Please see LICENSE in the repository root for full details.
 */
 
 import { describe, expect, it, vi } from "vitest";
-import { render, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 
 import type { MatrixClient } from "matrix-js-sdk";
 import type { Room as LivekitRoom } from "livekit-client";
@@ -52,7 +52,7 @@ function createMockMatrixClient(): MatrixClient {
 }
 
 describe("DeveloperSettingsTab", () => {
-  it("renders and matches snapshot", async () => {
+  it("renders the key developer controls after feature detection settles", async () => {
     const client = createMockMatrixClient();
 
     const livekitRooms: {
@@ -76,7 +76,7 @@ describe("DeveloperSettingsTab", () => {
       },
     ];
 
-    const { container } = render(
+    render(
       <DeveloperSettingsTab
         client={client}
         livekitRooms={livekitRooms}
@@ -90,6 +90,24 @@ describe("DeveloperSettingsTab", () => {
       expect(client.doesServerSupportUnstableFeature).toHaveBeenCalled(),
     );
 
-    expect(container).toMatchSnapshot();
+    expect(screen.getByText("Hostname: localhost")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Number of additional tile copies per participant"),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("Debug tile layout")).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Show connection statistics"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Mute all audio (participants, reactions, join sounds)"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Custom Livekit-url"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", {
+        name: "Matrix 2.0: sticky events & multi SFU",
+      }),
+    ).toBeEnabled();
   });
 });

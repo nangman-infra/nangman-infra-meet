@@ -6,6 +6,8 @@ import {
 import { AppLogger } from "../../../../common/logging/app-logger.service";
 import { MeetingPrimitives } from "../../domain/meeting.entity";
 import { MeetingNotFoundError } from "../errors/meeting-not-found.error";
+import { assertCanViewMeeting } from "../support/assert-meeting-visibility";
+import { resolveMeetingActorUserId } from "../support/resolve-meeting-actor-user-id";
 
 @Injectable()
 export class GetMeetingUseCase {
@@ -16,12 +18,14 @@ export class GetMeetingUseCase {
   ) {}
 
   async execute(meetingId: string): Promise<MeetingPrimitives> {
+    const actorUserId = resolveMeetingActorUserId();
     const meeting = await this.repository.findById(meetingId);
     if (!meeting) {
       throw new MeetingNotFoundError(meetingId);
     }
 
     const primitives = meeting.toPrimitives();
+    assertCanViewMeeting(primitives, actorUserId);
     this.logger.info("meeting.fetched", {
       module: "meetings",
       useCase: "GetMeeting",

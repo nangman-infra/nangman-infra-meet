@@ -1,1 +1,7 @@
-* @element-hq/element-call-reviewers
+# Default ownership for the current two-service layout.
+* @pandora0667
+
+/.github/ @pandora0667
+/backend/ @pandora0667
+/frontend/ @pandora0667
+/infra/ @pandora0667

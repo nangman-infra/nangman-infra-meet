@@ -63,7 +63,9 @@ export const RoomNotePanel: FC<RoomNotePanelProps> = ({
     }
   };
 
-  const onComposerKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+  const onComposerKeyDown = (
+    event: KeyboardEvent<HTMLTextAreaElement>,
+  ): void => {
     if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
       event.preventDefault();
       void submitNote();

@@ -49,7 +49,7 @@ describe("useRoomChat", () => {
       ts: Date.UTC(2026, 2, 8, 8, 1, 0),
     });
     messageEvents.push(nextEvent);
-    await act(async () => {
+    act(() => {
       room.emit(
         RoomEvent.Timeline,
         nextEvent,
@@ -101,7 +101,7 @@ describe("useRoomChat", () => {
 
     expect(result.current.messages).toHaveLength(1);
 
-    await act(async () => {
+    act(() => {
       client.emit(MatrixEventEvent.Decrypted, encryptedEvent);
     });
 

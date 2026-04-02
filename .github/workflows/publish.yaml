@@ -72,11 +72,11 @@ jobs:
         with:
           append_body: true
           body: |
-            ## Docker full package
-            Element Call is available as a Docker image from the [GitHub Container Registry](https://github.com/element-hq/element-call/pkgs/container/element-call).
+            ## Docker web client package
+            Nangman Infra Meet's web client is available as a Docker image from the [GitHub Container Registry](https://github.com/${{ github.repository }}/pkgs/container/${{ github.event.repository.name }}).
 
-            The image provides a full build of Element Call that can be used both in standalone and as a widget (on a remote URL).
+            This image publishes the frontend web client built from `frontend/Dockerfile`.
 
             ```
-            docker pull ghcr.io/element-hq/element-call:${{ env.VERSION }}
+            docker pull ghcr.io/${{ github.repository }}:${{ env.VERSION }}
             ```

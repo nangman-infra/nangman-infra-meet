@@ -29,7 +29,7 @@ export function useRoomNote(matrixRoom: MatrixRoom): UseRoomNoteResult {
   const [note, setNote] = useState(() => readMatrixRoomNote(matrixRoom));
   const [error, setError] = useState<Error>();
 
-  const refreshNote = useCallback(() => {
+  const refreshNote = useCallback((): void => {
     setNote(readMatrixRoomNote(matrixRoom));
   }, [matrixRoom]);
 
@@ -52,7 +52,7 @@ export function useRoomNote(matrixRoom: MatrixRoom): UseRoomNoteResult {
     };
 
     roomState.on(RoomStateEvent.Events, onRoomStateEvent);
-    return () => {
+    return (): void => {
       roomState.off(RoomStateEvent.Events, onRoomStateEvent);
     };
   }, [matrixRoom, refreshNote]);

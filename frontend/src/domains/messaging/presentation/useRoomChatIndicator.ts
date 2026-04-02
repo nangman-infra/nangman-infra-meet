@@ -12,9 +12,7 @@ import {
   type Room as MatrixRoom,
 } from "matrix-js-sdk";
 
-import {
-  readMatrixRoomChatMessages,
-} from "../infrastructure/MatrixRoomChat";
+import { readMatrixRoomChatMessages } from "../infrastructure/MatrixRoomChat";
 import { useLocalStorage } from "../../../useLocalStorage";
 
 interface UseRoomChatIndicatorResult {
@@ -37,7 +35,7 @@ export function useRoomChatIndicator(
     () => messages.at(-1)?.id ?? null,
   );
 
-  const refreshMessages = useCallback(() => {
+  const refreshMessages = useCallback((): void => {
     setMessages(readMatrixRoomChatMessages(matrixRoom));
   }, [matrixRoom]);
 
@@ -63,7 +61,7 @@ export function useRoomChatIndicator(
       matrixClient.on(MatrixEventEvent.Decrypted, onTimelineEvent);
     }
 
-    return () => {
+    return (): void => {
       matrixRoom.off(RoomEvent.Timeline, onTimelineEvent);
       matrixRoom.off(RoomEvent.LocalEchoUpdated, onTimelineEvent);
       matrixRoom.off(RoomEvent.Redaction, onTimelineEvent);

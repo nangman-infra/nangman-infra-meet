@@ -5,8 +5,11 @@ import {
 } from "../ports/meeting-repository.port";
 import { AppLogger } from "../../../../common/logging/app-logger.service";
 import { MeetingPrimitives } from "../../domain/meeting.entity";
+import { MeetingEndedError } from "../errors/meeting-ended.error";
 import { MeetingNotFoundError } from "../errors/meeting-not-found.error";
 import { UpdateMeetingDto } from "../../presentation/http/dto/update-meeting.dto";
+import { assertMeetingHostActor } from "../support/assert-meeting-host-actor";
+import { resolveMeetingActorUserId } from "../support/resolve-meeting-actor-user-id";
 import { assertValidScheduledMeetingStart } from "../validation/assert-valid-scheduled-meeting-start";
 import { logMeetingActorMismatchIfNeeded } from "../validation/log-meeting-actor-mismatch";
 
@@ -22,10 +25,17 @@ export class UpdateMeetingUseCase {
     meetingId: string,
     dto: UpdateMeetingDto,
   ): Promise<MeetingPrimitives> {
+    const actorUserId = resolveMeetingActorUserId();
     const now = new Date();
     const meeting = await this.repository.findById(meetingId);
     if (!meeting) {
       throw new MeetingNotFoundError(meetingId);
+    }
+
+    const currentMeeting = meeting.toPrimitives();
+    assertMeetingHostActor(currentMeeting, actorUserId);
+    if (currentMeeting.status === "ended") {
+      throw new MeetingEndedError();
     }
 
     const startsAt =

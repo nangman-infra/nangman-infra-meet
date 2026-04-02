@@ -1,3 +1,9 @@
+/*
+Copyright 2026 Nangman Infra
+
+SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
+*/
+
 export type MeetingAccessRequestStatus = "pending" | "approved" | "rejected";
 
 export interface MeetingAccessRequest {

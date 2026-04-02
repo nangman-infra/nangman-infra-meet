@@ -445,7 +445,7 @@ export const InCallView: FC<InCallViewProps> = ({
       ? CALL_SIDE_PANEL_WIDTH_PX + CALL_SIDE_PANEL_GAP_PX
       : 0;
 
-  useEffect(() => {
+  useEffect((): (() => void) | void => {
     if (!useInlineSidePanel || !activeSidePanel) return;
 
     const onKeyDown = (event: KeyboardEvent): void => {
@@ -456,7 +456,9 @@ export const InCallView: FC<InCallViewProps> = ({
     };
 
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+    return (): void => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
   }, [activeSidePanel, useInlineSidePanel]);
 
   const openProfile = useMemo(

@@ -13,12 +13,18 @@ import * as MeetingsApi from "../domains/meetings/infrastructure/MeetingsApi";
 import * as MatrixUtils from "../utils/matrix";
 import { MeetingScheduler } from "./MeetingScheduler";
 
+const leaveRoom = vi.fn();
+const forgetRoom = vi.fn();
 const mockClient = {
   getUserId: () => "@alice:matrix.nangman.cloud",
+  leave: leaveRoom,
+  forget: forgetRoom,
 } as unknown as MatrixClient;
 
 describe("MeetingScheduler", () => {
   beforeEach(() => {
+    leaveRoom.mockReset().mockResolvedValue(undefined);
+    forgetRoom.mockReset().mockResolvedValue(undefined);
     vi.spyOn(MeetingsApi, "createMeeting").mockResolvedValue({
       id: "meeting-1",
       title: "Weekly infra sync",
@@ -184,6 +190,39 @@ describe("MeetingScheduler", () => {
         expect.anything(),
       );
     });
+  });
+
+  it("cleans up the created room when meeting persistence fails", async () => {
+    vi.mocked(MeetingsApi.createMeeting).mockRejectedValue(
+      new Error("Persistence failed"),
+    );
+
+    render(
+      <MemoryRouter>
+        <MeetingScheduler client={mockClient} />
+      </MemoryRouter>,
+    );
+
+    fireEvent.change(screen.getByLabelText("Meeting title"), {
+      target: { value: "Cleanup room" },
+    });
+    const futureStartAt = createLocalDateTimeParts(24 * 60 * 60 * 1000);
+    fireEvent.change(screen.getByLabelText("Date"), {
+      target: { value: futureStartAt.date },
+    });
+    fireEvent.change(screen.getByLabelText("Time"), {
+      target: { value: futureStartAt.time },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Schedule meeting" }));
+
+    await waitFor(() => {
+      expect(leaveRoom).toHaveBeenCalledWith("!room:matrix.nangman.cloud");
+      expect(forgetRoom).toHaveBeenCalledWith("!room:matrix.nangman.cloud");
+    });
+    expect(
+      await screen.findByText("Persistence failed"),
+    ).toBeInTheDocument();
   });
 });
 

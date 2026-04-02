@@ -11,6 +11,7 @@ import {
   type FormEventHandler,
 } from "react";
 import { type MatrixClient } from "matrix-js-sdk";
+import { logger } from "matrix-js-sdk/lib/logger";
 import { useTranslation } from "react-i18next";
 import { Button } from "@vector-im/compound-web";
 
@@ -48,6 +49,7 @@ interface MeetingPolicyFormState {
 }
 
 const FIFTEEN_MINUTES_IN_SECONDS = 900;
+const meetingSchedulerLogger = logger.getChild("[MeetingScheduler]");
 
 export const MeetingScheduler: FC<Props> = ({
   client,
@@ -116,51 +118,62 @@ export const MeetingScheduler: FC<Props> = ({
     async function submitMeeting(): Promise<void> {
       setSubmitting(true);
 
-      const createRoomResult = await createRoom(
-        client,
-        title,
-        E2eeType.SHARED_KEY,
-      );
+      let createdRoomId: string | undefined;
 
-      if (!createRoomResult.password) {
-        throw new Error(t("meeting_planner.errors.joinable_room_failed"));
-      }
-
-      const joinUrl = getRelativeRoomUrl(
-        createRoomResult.roomId,
-        {
-          kind: E2eeType.SHARED_KEY,
-          secret: createRoomResult.password,
-        },
-        title,
-      );
-
-      const meeting = await createMeeting(
-        {
+      try {
+        const createRoomResult = await createRoom(
+          client,
           title,
-          description,
-          hostUserId: client.getUserId() ?? "unknown-user",
-          allowedUserIds,
-          roomId: createRoomResult.roomId,
-          roomAlias: createRoomResult.alias,
-          joinUrl,
-          startsAt,
-          accessPolicy: policyForm.accessPolicy,
-          allowJoinBeforeHost: policyForm.allowJoinBeforeHost,
-        },
-        {
-          userId: client.getUserId() ?? undefined,
-        },
-      );
+          E2eeType.SHARED_KEY,
+        );
+        createdRoomId = createRoomResult.roomId;
 
-      form.reset();
-      setScheduleForm(getDefaultScheduleValues());
-      setPolicyForm({
-        accessPolicy: "open",
-        allowJoinBeforeHost: false,
-        allowedUserIdsText: formatAllowedUserIdsInput([]),
-      });
-      await onScheduled?.(meeting);
+        if (!createRoomResult.password) {
+          throw new Error(t("meeting_planner.errors.joinable_room_failed"));
+        }
+
+        const joinUrl = getRelativeRoomUrl(
+          createRoomResult.roomId,
+          {
+            kind: E2eeType.SHARED_KEY,
+            secret: createRoomResult.password,
+          },
+          title,
+        );
+
+        const meeting = await createMeeting(
+          {
+            title,
+            description,
+            hostUserId: client.getUserId() ?? "unknown-user",
+            allowedUserIds,
+            roomId: createRoomResult.roomId,
+            roomAlias: createRoomResult.alias,
+            joinUrl,
+            startsAt,
+            accessPolicy: policyForm.accessPolicy,
+            allowJoinBeforeHost: policyForm.allowJoinBeforeHost,
+          },
+          {
+            userId: client.getUserId() ?? undefined,
+          },
+        );
+
+        form.reset();
+        setScheduleForm(getDefaultScheduleValues());
+        setPolicyForm({
+          accessPolicy: "open",
+          allowJoinBeforeHost: false,
+          allowedUserIdsText: formatAllowedUserIdsInput([]),
+        });
+        await onScheduled?.(meeting);
+      } catch (error) {
+        if (createdRoomId) {
+          await cleanupCreatedRoom(client, createdRoomId);
+        }
+
+        throw error;
+      }
     }
 
     void submitMeeting()
@@ -330,6 +343,29 @@ export const MeetingScheduler: FC<Props> = ({
     </Form>
   );
 };
+
+async function cleanupCreatedRoom(
+  client: MatrixClient,
+  roomId: string,
+): Promise<void> {
+  try {
+    await client.leave(roomId);
+  } catch (error) {
+    meetingSchedulerLogger.warn("meeting_schedule_room_leave_failed", {
+      roomId,
+      error: error instanceof Error ? error.message : "Unknown leave error",
+    });
+  }
+
+  try {
+    await client.forget(roomId);
+  } catch (error) {
+    meetingSchedulerLogger.warn("meeting_schedule_room_forget_failed", {
+      roomId,
+      error: error instanceof Error ? error.message : "Unknown forget error",
+    });
+  }
+}
 
 function combineMeetingStartAt(
   startDateInput: string,

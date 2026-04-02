@@ -32,7 +32,7 @@ export function useRoomChat(matrixRoom: MatrixRoom): UseRoomChatResult {
   );
   const [error, setError] = useState<Error>();
 
-  const refreshMessages = useCallback(() => {
+  const refreshMessages = useCallback((): void => {
     setMessages(readMatrixRoomChatMessages(matrixRoom));
   }, [matrixRoom]);
 
@@ -55,7 +55,7 @@ export function useRoomChat(matrixRoom: MatrixRoom): UseRoomChatResult {
       matrixClient.on(MatrixEventEvent.Decrypted, onTimelineEvent);
     }
 
-    return () => {
+    return (): void => {
       matrixRoom.off(RoomEvent.Timeline, onTimelineEvent);
       matrixRoom.off(RoomEvent.LocalEchoUpdated, onTimelineEvent);
       matrixRoom.off(RoomEvent.Redaction, onTimelineEvent);
@@ -96,7 +96,7 @@ export function useRoomChat(matrixRoom: MatrixRoom): UseRoomChatResult {
     [matrixRoom],
   );
 
-  const clearError = useCallback(() => {
+  const clearError = useCallback((): void => {
     setError(undefined);
   }, []);
 
