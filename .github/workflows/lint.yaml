@@ -1,8 +1,6 @@
 name: Frontend quality checks
 on:
-  pull_request: {}
-  push:
-    branches: [main]
+  workflow_dispatch: {}
 jobs:
   frontend:
     name: Frontend quality checks

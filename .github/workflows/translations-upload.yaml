@@ -1,10 +1,6 @@
 name: Upload translation files to Localazy
 on:
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - ".github/**"
+  workflow_dispatch: {}
 
 jobs:
   upload:

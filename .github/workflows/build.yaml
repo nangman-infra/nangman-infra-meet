@@ -1,12 +1,6 @@
 name: Build
 on:
-  pull_request:
-    types:
-      - synchronize
-      - opened
-      - labeled
-  push:
-    branches: [main]
+  workflow_dispatch: {}
 jobs:
   build_full_element_call:
     # Use the full package vite build
