@@ -33,6 +33,43 @@ export interface GroupCallRoom {
 }
 const tsCache: { [index: string]: number } = {};
 
+interface RestrictedAllowCondition {
+  room_id?: string;
+  type?: string;
+}
+
+function getRestrictedAllowConditions(room: Room): RestrictedAllowCondition[] {
+  const joinRuleEvent = room.currentState.getStateEvents(
+    EventType.RoomJoinRules,
+    "",
+  );
+
+  if (!joinRuleEvent || Array.isArray(joinRuleEvent)) {
+    return [];
+  }
+
+  const content = joinRuleEvent.getContent() as {
+    allow?: RestrictedAllowCondition[];
+  };
+  return content.allow ?? [];
+}
+
+function satisfiesRestrictedJoinRule(room: Room): boolean {
+  return getRestrictedAllowConditions(room).some((condition) => {
+    if (
+      condition.type !== "m.room_membership" ||
+      typeof condition.room_id !== "string"
+    ) {
+      return false;
+    }
+
+    return (
+      room.client.getRoom(condition.room_id)?.getMyMembership() ===
+      KnownMembership.Join
+    );
+  });
+}
+
 function getLastTs(client: MatrixClient, r: Room): number {
   if (tsCache[r.roomId]) {
     return tsCache[r.roomId];
@@ -88,9 +125,14 @@ const roomIsJoinable = (room: Room): boolean => {
     return false;
   }
   // otherwise we can always join rooms because we will automatically decide if we want to use perParticipant or password
-  switch (room.getJoinRule()) {
+  switch (room.getJoinRule() as string) {
     case JoinRule.Public:
       return true;
+    case JoinRule.Invite:
+      return (
+        room.getMyMembership() === KnownMembership.Join ||
+        room.getMyMembership() === KnownMembership.Invite
+      );
     case JoinRule.Knock:
       switch (room.getMyMembership()) {
         case KnownMembership.Join:
@@ -107,7 +149,16 @@ const roomIsJoinable = (room: Room): boolean => {
         default:
           return false;
       }
-    // TODO: check JoinRule.Restricted and return true if join condition is satisfied
+    case JoinRule.Restricted:
+    case "knock_restricted":
+      switch (room.getMyMembership()) {
+        case KnownMembership.Join:
+        case KnownMembership.Invite:
+        case KnownMembership.Knock:
+          return true;
+        default:
+          return satisfiesRestrictedJoinRule(room);
+      }
     default:
       return room.getMyMembership() === KnownMembership.Join;
   }
@@ -126,7 +177,7 @@ const roomHasCallMembershipEvents = (room: Room): boolean => {
   if (myMembership === KnownMembership.Knock) {
     // Assume that a room you've knocked on is able to hold calls
     return true;
-  } else if (myMembership !== KnownMembership.Join) {
+  } else if (myMembership !== KnownMembership.Join && !roomIsJoinable(room)) {
     // Otherwise, non-joined rooms should never show up.
     return false;
   }

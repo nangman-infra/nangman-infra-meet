@@ -18,9 +18,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockMatrixRoom } from "../../../utils/test";
 import { RoomNotePanel } from "./RoomNotePanel";
 
+const originalMatchMedia = window.matchMedia;
+
 describe("RoomNotePanel", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    window.matchMedia = originalMatchMedia;
   });
 
   it("renders the current note and saves updates", async () => {
@@ -54,6 +57,16 @@ describe("RoomNotePanel", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  it("renders only one visible title in desktop modal presentation", () => {
+    const { room } = createMatrixRoomEnvironment("Agenda");
+
+    render(<RoomNotePanel matrixRoom={room} open onDismiss={vi.fn()} />);
+
+    expect(
+      screen.getAllByRole("heading", { name: "Shared note" }),
+    ).toHaveLength(1);
   });
 });
 

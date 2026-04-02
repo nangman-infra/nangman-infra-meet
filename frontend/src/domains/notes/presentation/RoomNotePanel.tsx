@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import { ErrorMessage, InputField } from "../../../input/Input";
 import { Modal } from "../../../Modal";
 import { SidePanel } from "../../../room/SidePanel";
+import { useMediaQuery } from "../../../useMediaQuery";
 import { useRoomNote } from "./useRoomNote";
 import styles from "./RoomNotePanel.module.css";
 
@@ -39,15 +40,16 @@ export const RoomNotePanel: FC<RoomNotePanelProps> = ({
   const [draft, setDraft] = useState(note);
   const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const touchscreen = useMediaQuery("(hover: none) or (pointer: coarse)");
 
   useEffect(() => {
     setDraft(note);
   }, [note]);
 
   useEffect(() => {
-    if (!open || !canEdit) return;
+    if (!open || !canEdit || (presentation === "modal" && touchscreen)) return;
     textareaRef.current?.focus();
-  }, [canEdit, open]);
+  }, [canEdit, open, presentation, touchscreen]);
 
   const hasChanges = draft.trim() !== note.trim();
 
@@ -75,7 +77,7 @@ export const RoomNotePanel: FC<RoomNotePanelProps> = ({
   const content = (
     <div className={styles.panel}>
       <div>
-        {presentation === "modal" && (
+        {presentation === "modal" && touchscreen && (
           <Heading size="sm" weight="semibold">
             {t("room_note.heading")}
           </Heading>
@@ -172,6 +174,7 @@ export const RoomNotePanel: FC<RoomNotePanelProps> = ({
       onDismiss={onDismiss}
       title={t("room_note.title")}
       className={styles.modalRoot}
+      classNameBody={styles.modalBody}
       classNameModal={styles.modalDesktop}
       hideDesktopOverlay
     >

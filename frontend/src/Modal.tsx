@@ -34,6 +34,7 @@ export interface Props {
   hideHeader?: boolean;
   children: ReactNode;
   className?: string;
+  classNameBody?: string;
   /**
    * Class name to be used when in drawer mode (touchscreen).
    */
@@ -75,6 +76,7 @@ export const Modal: FC<Props> = ({
   hideHeader,
   children,
   className,
+  classNameBody,
   classNameDrawer,
   classNameModal,
   open,
@@ -125,7 +127,9 @@ export const Modal: FC<Props> = ({
                   <Drawer.Title>{title}</Drawer.Title>
                 </VisuallyHidden>
               </div>
-              <div className={styles.body}>{children}</div>
+              <div className={classNames(styles.body, classNameBody)}>
+                {children}
+              </div>
             </div>
           </Drawer.Content>
         </Drawer.Portal>
@@ -186,7 +190,9 @@ export const Modal: FC<Props> = ({
                 {hideHeader ? (
                   <VisuallyHidden asChild>{titleNode}</VisuallyHidden>
                 ) : null}
-                <div className={styles.body}>{children}</div>
+                <div className={classNames(styles.body, classNameBody)}>
+                  {children}
+                </div>
               </div>
             </Glass>
           </DialogContent>

@@ -13,6 +13,17 @@
   max-width: min(380px, calc(100vw - 32px));
 }
 
+.modalBody {
+  display: flex;
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.modalBody > * {
+  flex: 1 1 auto;
+  min-block-size: 0;
+}
+
 .panel {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
@@ -71,6 +82,13 @@
 
 .composerField {
   width: 100%;
+}
+
+.composer :global(textarea) {
+  min-height: 120px;
+  max-height: 208px;
+  overflow-y: auto;
+  resize: none;
 }
 
 .composerHint {

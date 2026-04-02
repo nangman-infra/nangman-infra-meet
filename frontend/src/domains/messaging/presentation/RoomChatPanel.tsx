@@ -21,6 +21,7 @@ import { Avatar, Size as AvatarSize } from "../../../Avatar";
 import { ErrorMessage, InputField } from "../../../input/Input";
 import { Modal } from "../../../Modal";
 import { SidePanel } from "../../../room/SidePanel";
+import { useMediaQuery } from "../../../useMediaQuery";
 import { useRoomChat } from "./useRoomChat";
 import styles from "./RoomChatPanel.module.css";
 
@@ -69,24 +70,56 @@ export const RoomChatPanel: FC<RoomChatPanelProps> = ({
   const [draft, setDraft] = useState(() => readStoredDraft(matrixRoom.roomId));
   const [sending, setSending] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const timelineEndRef = useRef<HTMLDivElement | null>(null);
+  const timelineRef = useRef<HTMLDivElement | null>(null);
   const restoreComposerFocusRef = useRef(false);
+  const stickToBottomRef = useRef(true);
+  const touchscreen = useMediaQuery("(hover: none) or (pointer: coarse)");
 
   const orderedMessages = useMemo(() => messages, [messages]);
 
   useEffect(() => {
     setDraft(readStoredDraft(matrixRoom.roomId));
+    stickToBottomRef.current = true;
   }, [matrixRoom.roomId]);
 
   useEffect(() => {
-    if (!open || !canSend) return;
+    if (!open || !canSend || (presentation === "modal" && touchscreen)) return;
     textareaRef.current?.focus();
-  }, [canSend, open]);
+  }, [canSend, open, presentation, touchscreen]);
+
+  const scrollTimelineToBottom = useCallback((): void => {
+    const timeline = timelineRef.current;
+    if (!timeline) return;
+
+    timeline.scrollTop = timeline.scrollHeight;
+    stickToBottomRef.current = true;
+  }, []);
+
+  const updateTimelineStickiness = useCallback((): void => {
+    const timeline = timelineRef.current;
+    if (!timeline) return;
+
+    const distanceFromBottom =
+      timeline.scrollHeight - timeline.scrollTop - timeline.clientHeight;
+    stickToBottomRef.current = distanceFromBottom <= 48;
+  }, []);
 
   useEffect(() => {
     if (!open) return;
-    timelineEndRef.current?.scrollIntoView({ block: "end" });
-  }, [open, orderedMessages.length]);
+    window.requestAnimationFrame(() => {
+      if (!open) return;
+      if (orderedMessages.length === 0 || stickToBottomRef.current) {
+        scrollTimelineToBottom();
+      } else {
+        updateTimelineStickiness();
+      }
+    });
+  }, [
+    open,
+    orderedMessages.length,
+    scrollTimelineToBottom,
+    updateTimelineStickiness,
+  ]);
 
   const updateDraft = (nextDraft: string): void => {
     clearError();
@@ -95,7 +128,14 @@ export const RoomChatPanel: FC<RoomChatPanelProps> = ({
   };
 
   const restoreComposerFocus = useCallback((): void => {
-    if (!restoreComposerFocusRef.current || !open || !canSend) return;
+    if (
+      !restoreComposerFocusRef.current ||
+      !open ||
+      !canSend ||
+      (presentation === "modal" && touchscreen)
+    ) {
+      return;
+    }
 
     restoreComposerFocusRef.current = false;
     window.requestAnimationFrame(() => {
@@ -106,7 +146,7 @@ export const RoomChatPanel: FC<RoomChatPanelProps> = ({
       const cursorPosition = composer.value.length;
       composer.setSelectionRange(cursorPosition, cursorPosition);
     });
-  }, [canSend, open]);
+  }, [canSend, open, presentation, touchscreen]);
 
   useEffect(() => {
     if (sending || !restoreComposerFocusRef.current) return;
@@ -147,7 +187,7 @@ export const RoomChatPanel: FC<RoomChatPanelProps> = ({
   const content = (
     <div className={styles.panel}>
       <div className={styles.headerBlock}>
-        {presentation === "modal" && (
+        {presentation === "modal" && touchscreen && (
           <Heading size="sm" weight="semibold">
             {t("room_chat.heading")}
           </Heading>
@@ -162,7 +202,11 @@ export const RoomChatPanel: FC<RoomChatPanelProps> = ({
         )}
       </div>
 
-      <div className={styles.timeline}>
+      <div
+        ref={timelineRef}
+        className={styles.timeline}
+        onScroll={updateTimelineStickiness}
+      >
         {orderedMessages.length === 0 ? (
           <div className={styles.emptyState}>
             <Text as="div" size="sm">
@@ -209,7 +253,6 @@ export const RoomChatPanel: FC<RoomChatPanelProps> = ({
             </article>
           ))
         )}
-        <div ref={timelineEndRef} />
       </div>
 
       {canSend ? (
@@ -268,6 +311,7 @@ export const RoomChatPanel: FC<RoomChatPanelProps> = ({
       onDismiss={onDismiss}
       title={t("room_chat.title")}
       className={styles.modalRoot}
+      classNameBody={styles.modalBody}
       classNameModal={styles.modalDesktop}
       hideDesktopOverlay
     >

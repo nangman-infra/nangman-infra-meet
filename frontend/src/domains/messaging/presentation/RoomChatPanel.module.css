@@ -21,6 +21,17 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
   block-size: auto;
 }
 
+.modalBody {
+  display: flex;
+  min-block-size: 0;
+  overflow: hidden;
+}
+
+.modalBody > * {
+  flex: 1 1 auto;
+  min-block-size: 0;
+}
+
 .modalDesktop[data-state="open"] {
   animation: chat-panel-in 160ms ease;
 }
@@ -177,7 +188,8 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 .composer :global(textarea) {
   min-height: 88px;
   max-height: 128px;
-  resize: vertical;
+  overflow-y: auto;
+  resize: none;
 }
 
 .composerHint {

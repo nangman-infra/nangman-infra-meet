@@ -27,10 +27,13 @@ import {
   RoomChatPanel,
 } from "./RoomChatPanel";
 
+const originalMatchMedia = window.matchMedia;
+
 describe("RoomChatPanel", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     clearStoredRoomChatDraftsForTest();
+    window.matchMedia = originalMatchMedia;
   });
 
   it("renders existing room messages and sends a new one", async () => {
@@ -158,6 +161,16 @@ describe("RoomChatPanel", () => {
     expect(
       screen.queryByText("Failed to send room message."),
     ).not.toBeInTheDocument();
+  });
+
+  it("renders only one visible title in desktop modal presentation", () => {
+    const { room } = createMatrixRoomEnvironment([]);
+
+    render(<RoomChatPanel matrixRoom={room} open onDismiss={vi.fn()} />);
+
+    expect(
+      screen.getAllByRole("heading", { name: "Room chat" }),
+    ).toHaveLength(1);
   });
 });
 
