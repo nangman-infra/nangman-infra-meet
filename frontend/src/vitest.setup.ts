@@ -19,6 +19,26 @@ import "@testing-library/jest-dom/vitest";
 
 import EN from "../locales/en/app.json";
 import { Config } from "./config/Config";
+import {
+  alwaysShowIphoneEarpiece,
+  audioInput,
+  audioOutput,
+  backgroundBlur,
+  customLivekitUrl,
+  debugTileLayout,
+  developerMode,
+  duplicateTiles,
+  matrixRTCMode,
+  muteAllAudio,
+  optInAnalytics,
+  playReactionsSound,
+  showConnectionStats,
+  showHandRaisedTimer,
+  showReactions,
+  soundEffectVolume,
+  videoInput,
+  alwaysShowSelf,
+} from "./settings/settings";
 
 // Bare-minimum i18n config
 i18n
@@ -69,7 +89,33 @@ beforeAll(() => {
   });
 });
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  localStorage.clear();
+  sessionStorage.clear();
+  [
+    optInAnalytics,
+    developerMode,
+    duplicateTiles,
+    debugTileLayout,
+    showConnectionStats,
+    audioInput,
+    audioOutput,
+    videoInput,
+    backgroundBlur,
+    showHandRaisedTimer,
+    showReactions,
+    playReactionsSound,
+    soundEffectVolume,
+    muteAllAudio,
+    alwaysShowSelf,
+    alwaysShowIphoneEarpiece,
+    matrixRTCMode,
+    customLivekitUrl,
+  ].forEach((setting) => {
+    setting.setValue(setting.defaultValue as never);
+  });
+});
 
 // Used by a lot of components
 window.matchMedia = global.matchMedia = (): MediaQueryList =>

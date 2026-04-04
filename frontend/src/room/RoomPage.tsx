@@ -323,21 +323,21 @@ const MeetingEntryGateView: FC<MeetingEntryGateViewProps> = ({
     decision.kind === "wait_for_host"
       ? "meeting_entry.wait_for_host"
       : decision.kind === "request_access"
-        ? "meeting_entry.request_access"
-        : decision.kind === "pending_approval"
-          ? "meeting_entry.pending_approval"
-          : decision.kind === "rejected"
-            ? "meeting_entry.rejected"
-            : decision.kind === "not_invited"
-              ? "meeting_entry.not_invited"
-              : "meeting_entry.meeting_ended";
+            ? "meeting_entry.request_access"
+            : decision.kind === "pending_approval"
+              ? "meeting_entry.pending_approval"
+              : decision.kind === "rejected"
+                ? "meeting_entry.rejected"
+                : decision.kind === "not_invited"
+                  ? "meeting_entry.not_invited"
+                  : "meeting_entry.meeting_closed";
 
   const Icon =
     decision.kind === "wait_for_host" || decision.kind === "pending_approval"
       ? CheckIcon
       : decision.kind === "request_access"
         ? AdminIcon
-        : decision.kind === "meeting_ended"
+        : decision.kind === "meeting_closed"
           ? EndCallIcon
           : CloseIcon;
 

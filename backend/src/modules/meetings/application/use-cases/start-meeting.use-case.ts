@@ -5,9 +5,9 @@ import {
 } from "../ports/meeting-repository.port";
 import { AppLogger } from "../../../../common/logging/app-logger.service";
 import { MeetingPrimitives } from "../../domain/meeting.entity";
-import { MeetingEndedError } from "../errors/meeting-ended.error";
 import { MeetingNotFoundError } from "../errors/meeting-not-found.error";
 import { assertMeetingHostActor } from "../support/assert-meeting-host-actor";
+import { assertMeetingOpen } from "../support/assert-meeting-open";
 import { resolveMeetingActorUserId } from "../support/resolve-meeting-actor-user-id";
 import { logMeetingActorMismatchIfNeeded } from "../validation/log-meeting-actor-mismatch";
 
@@ -28,9 +28,7 @@ export class StartMeetingUseCase {
 
     const currentMeeting = meeting.toPrimitives();
     assertMeetingHostActor(currentMeeting, actorUserId);
-    if (currentMeeting.status === "ended") {
-      throw new MeetingEndedError();
-    }
+    assertMeetingOpen(currentMeeting);
 
     meeting.start(new Date());
     await this.repository.save(meeting);

@@ -1,5 +1,5 @@
 import { MeetingAccessPolicy } from "./access-policy";
-import { MeetingStatus } from "./meeting-status";
+import { isClosedMeetingStatus, MeetingStatus } from "./meeting-status";
 
 export interface MeetingPrimitives {
   readonly id: string;
@@ -119,7 +119,7 @@ export class Meeting {
   }
 
   update(props: UpdateMeetingProps, now: Date): void {
-    if (this.statusValue === "ended") {
+    if (this.isClosed()) {
       return;
     }
 
@@ -159,7 +159,7 @@ export class Meeting {
   }
 
   start(now: Date): void {
-    if (this.statusValue === "ended") {
+    if (this.isClosed()) {
       return;
     }
 
@@ -168,11 +168,21 @@ export class Meeting {
   }
 
   end(now: Date): void {
-    if (this.statusValue === "ended") {
+    if (this.isClosed()) {
       return;
     }
 
     this.statusValue = "ended";
+    this.endsAtValue ??= now;
+    this.updatedAtValue = now;
+  }
+
+  cancel(now: Date): void {
+    if (this.isClosed()) {
+      return;
+    }
+
+    this.statusValue = "cancelled";
     this.endsAtValue ??= now;
     this.updatedAtValue = now;
   }
@@ -205,5 +215,9 @@ export class Meeting {
           .filter(Boolean),
       ),
     ];
+  }
+
+  private isClosed(): boolean {
+    return isClosedMeetingStatus(this.statusValue);
   }
 }

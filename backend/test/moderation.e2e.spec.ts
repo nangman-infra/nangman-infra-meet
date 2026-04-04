@@ -149,4 +149,40 @@ describe("ModerationController", () => {
 
     expect(afterStartDecision.body.data.kind).toBe("allow");
   });
+
+  it("marks cancelled meetings as closed and rejects new access requests", async () => {
+    const createMeetingResponse = await request(app.getHttpServer())
+      .post("/api/v1/meetings")
+      .set("x-matrix-user-id", "@host:matrix.nangman.cloud")
+      .send({
+        title: "Cancelled moderation",
+        hostUserId: "@host:matrix.nangman.cloud",
+        roomId: "!cancelled-moderation:matrix.nangman.cloud",
+        joinUrl: "/room/cancelled-moderation",
+        accessPolicy: "host_approval",
+        startsAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      });
+
+    const meetingId = createMeetingResponse.body.data.id as string;
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/meetings/${meetingId}/end`)
+      .set("x-matrix-user-id", "@host:matrix.nangman.cloud");
+
+    const decisionResponse = await request(app.getHttpServer())
+      .get(`/api/v1/meetings/${meetingId}/entry-access`)
+      .set("x-matrix-user-id", "@guest:matrix.nangman.cloud");
+
+    expect(decisionResponse.status).toBe(200);
+    expect(decisionResponse.body.data.kind).toBe("meeting_closed");
+
+    const requestResponse = await request(app.getHttpServer())
+      .post(`/api/v1/meetings/${meetingId}/access-requests`)
+      .set("x-matrix-user-id", "@guest:matrix.nangman.cloud");
+
+    expect(requestResponse.status).toBe(409);
+    expect(requestResponse.body.error.message).toBe(
+      "This meeting is already closed.",
+    );
+  });
 });

@@ -157,7 +157,7 @@ export const MeetingPlanner: FC = () => {
     return leftSortKey.localeCompare(rightSortKey);
   });
   const visibleMeetings = sortedMeetings.filter(
-    (meeting) => meeting.status !== "ended",
+    (meeting) => meeting.status !== "ended" && meeting.status !== "cancelled",
   );
   const liveMeetingsCount = visibleMeetings.filter(
     (meeting) => meeting.status === "live",
@@ -404,6 +404,8 @@ function getMeetingStatusLabel(
       return t("meeting_planner.status.live");
     case "ended":
       return t("meeting_planner.status.ended");
+    case "cancelled":
+      return t("meeting_planner.status.cancelled");
     default:
       return t("meeting_planner.status.draft");
   }
@@ -418,6 +420,7 @@ function getMeetingStatusRank(status: Meeting["status"]): number {
     case "draft":
       return 2;
     case "ended":
+    case "cancelled":
     default:
       return 3;
   }

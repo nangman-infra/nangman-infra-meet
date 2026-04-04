@@ -5,6 +5,7 @@ import {
   MeetingRepositoryPort,
 } from "../../../meetings/application/ports/meeting-repository.port";
 import { MeetingNotFoundError } from "../../../meetings/application/errors/meeting-not-found.error";
+import { assertMeetingOpen } from "../../../meetings/application/support/assert-meeting-open";
 import { MeetingAccessRequestPrimitives } from "../../domain/meeting-access-request.entity";
 import { MeetingAccessRequestNotFoundError } from "../errors/meeting-access-request-not-found.error";
 import {
@@ -34,7 +35,9 @@ export class ApproveMeetingAccessRequestUseCase {
       throw new MeetingNotFoundError(meetingId);
     }
 
+    const meetingPrimitives = meeting.toPrimitives();
     assertMeetingHostActor(meeting, actorUserId);
+    assertMeetingOpen(meetingPrimitives);
 
     const request = await this.accessRequestRepository.findById(requestId);
     if (!request || request.meetingId !== meetingId) {
@@ -43,7 +46,7 @@ export class ApproveMeetingAccessRequestUseCase {
 
     request.approve(new Date());
     await this.accessRequestRepository.save(request);
-    const primitives = request.toPrimitives();
+    const requestPrimitives = request.toPrimitives();
 
     this.logger.info("meeting.access_request_approved", {
       module: "moderation",
@@ -52,10 +55,10 @@ export class ApproveMeetingAccessRequestUseCase {
       result: "success",
       meetingId,
       actorUserId,
-      accessRequestId: primitives.id,
-      targetUserId: primitives.userId,
+      accessRequestId: requestPrimitives.id,
+      targetUserId: requestPrimitives.userId,
     });
 
-    return primitives;
+    return requestPrimitives;
   }
 }

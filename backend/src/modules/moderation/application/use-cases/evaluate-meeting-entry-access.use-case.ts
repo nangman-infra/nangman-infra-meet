@@ -42,8 +42,11 @@ export class EvaluateMeetingEntryAccessUseCase {
     const isHost = primitives.hostUserId === actorUserId;
     let kind: MeetingEntryAccessDecision["kind"] = "allow";
 
-    if (primitives.status === "ended") {
-      kind = "meeting_ended";
+    if (
+      primitives.status === "ended" ||
+      primitives.status === "cancelled"
+    ) {
+      kind = "meeting_closed";
     } else if (!isHost) {
       if (primitives.accessPolicy === "invite_only") {
         kind = primitives.allowedUserIds.includes(actorUserId)

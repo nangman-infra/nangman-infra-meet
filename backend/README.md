@@ -22,5 +22,26 @@ Nest.js based internal API for Nangman Infra Meet.
 ```bash
 corepack enable
 pnpm install
+cp .env.example .env
+# set Neon DATABASE_URL / DATABASE_URL_DIRECT in .env
+pnpm db:migrate
 pnpm start:dev
+```
+
+## Database
+
+Meeting persistence uses Drizzle with Neon Postgres.
+
+The backend now requires a real database connection unless
+`ALLOW_IN_MEMORY_PERSISTENCE=true` is set explicitly for tests.
+
+For local-only development without Neon, start the bundled Postgres service with:
+
+```bash
+docker compose --profile localdb up -d postgres
+```
+
+```bash
+pnpm db:generate
+pnpm db:migrate
 ```

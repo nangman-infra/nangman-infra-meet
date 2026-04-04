@@ -10,17 +10,16 @@ export class InMemoryAttendanceRepository implements AttendanceRepositoryPort {
     meetingId: string,
     userId: string,
   ): Promise<Attendance | null> {
-    for (const attendance of this.attendances.values()) {
-      if (
-        attendance.meetingId === meetingId &&
-        attendance.userId === userId &&
-        attendance.status === "present"
-      ) {
-        return Attendance.rehydrate(attendance);
-      }
-    }
+    const attendance = Array.from(this.attendances.values())
+      .filter(
+        (entry) =>
+          entry.meetingId === meetingId &&
+          entry.userId === userId &&
+          entry.status === "present",
+      )
+      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0];
 
-    return null;
+    return attendance ? Attendance.rehydrate(attendance) : null;
   }
 
   async listByMeeting(meetingId: string): Promise<Attendance[]> {

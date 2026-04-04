@@ -13,7 +13,7 @@ export type MeetingAccessDecisionKind =
   | "pending_approval"
   | "rejected"
   | "not_invited"
-  | "meeting_ended";
+  | "meeting_closed";
 
 export interface MeetingAccessDecision {
   readonly kind: MeetingAccessDecisionKind;

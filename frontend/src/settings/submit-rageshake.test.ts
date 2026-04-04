@@ -16,14 +16,16 @@ import {
 } from "vitest";
 
 import { getRageshakeSubmitUrl } from "./submit-rageshake";
-import { getUrlParams } from "../UrlParams";
+import { getTelemetryUrlContext } from "../shared/application/readModels/TelemetryUrlContext.ts";
 import { mockConfig } from "../utils/test";
 
-vi.mock("../UrlParams", () => ({ getUrlParams: vi.fn() }));
+vi.mock("../shared/application/readModels/TelemetryUrlContext.ts", () => ({
+  getTelemetryUrlContext: vi.fn(),
+}));
 
 describe("getRageshakeSubmitUrl", () => {
   beforeEach(() => {
-    (getUrlParams as Mock).mockReturnValue({});
+    (getTelemetryUrlContext as Mock).mockReturnValue({});
     mockConfig({});
   });
 
@@ -42,7 +44,7 @@ describe("getRageshakeSubmitUrl", () => {
     });
 
     it("returns rageshakeSubmitUrl URL param when set", () => {
-      (getUrlParams as Mock).mockReturnValue({
+      (getTelemetryUrlContext as Mock).mockReturnValue({
         rageshakeSubmitUrl: "https://url.example.com.localhost",
       });
       expect(getRageshakeSubmitUrl()).toBe("https://url.example.com.localhost");
@@ -67,7 +69,7 @@ describe("getRageshakeSubmitUrl", () => {
     });
 
     it("ignores rageshakeSubmitUrl URL param and returns undefined", () => {
-      (getUrlParams as Mock).mockReturnValue({
+      (getTelemetryUrlContext as Mock).mockReturnValue({
         rageshakeSubmitUrl: "https://url.example.com.localhost",
       });
       expect(getRageshakeSubmitUrl()).toBeUndefined();

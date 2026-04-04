@@ -377,13 +377,15 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
   ).length;
   const participantCount = new Set(attendance.map((entry) => entry.userId)).size;
   const isMeetingHost = matrixUserId === meeting.hostUserId;
-  const canEditMeeting = isMeetingHost && meeting.status !== "ended";
+  const isClosedMeeting =
+    meeting.status === "ended" || meeting.status === "cancelled";
+  const canEditMeeting = isMeetingHost && !isClosedMeeting;
   const pendingAccessRequests = accessRequests.filter(
     (request) => request.status === "pending",
   );
   const entryDecision = !isMeetingHost ? meetingEntryAccess.decision : null;
   const canJoinMeeting =
-    meeting.status !== "ended" &&
+    !isClosedMeeting &&
     (isMeetingHost || entryDecision?.kind === "allow");
   const canCopyMeetingLink =
     isMeetingHost || entryDecision?.kind === "allow";
@@ -558,7 +560,7 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                       {t("meeting_detail.join")}
                     </Button>
                   )}
-                  {meeting.status !== "ended" && isMeetingHost && (
+                  {!isClosedMeeting && isMeetingHost && (
                     <Button
                       kind="secondary"
                       onClick={() => {
@@ -1011,6 +1013,8 @@ function getMeetingStatusLabel(
       return t("meeting_planner.status.live");
     case "ended":
       return t("meeting_planner.status.ended");
+    case "cancelled":
+      return t("meeting_planner.status.cancelled");
     default:
       return t("meeting_planner.status.draft");
   }
@@ -1047,10 +1051,10 @@ function getMeetingEntryStateCopy(
         title: t("meeting_entry.not_invited.title"),
         body: t("meeting_entry.not_invited.body", { title }),
       };
-    case "meeting_ended":
+    case "meeting_closed":
       return {
-        title: t("meeting_entry.meeting_ended.title"),
-        body: t("meeting_entry.meeting_ended.body", { title }),
+        title: t("meeting_entry.meeting_closed.title"),
+        body: t("meeting_entry.meeting_closed.body", { title }),
       };
     default:
       return {

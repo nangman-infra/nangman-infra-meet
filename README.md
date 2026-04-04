@@ -23,6 +23,13 @@ Frontend runtime config remains env-driven and the backend stays internal-only.
 
 ```bash
 cp frontend/.env.deploy.example frontend/.env.deploy
+cp backend/.env.example backend/.env
+# set Neon DATABASE_URL / DATABASE_URL_DIRECT in backend/.env
+cd backend
+corepack enable
+pnpm install
+pnpm db:migrate
+cd ..
 docker compose up --build -d
 ```
 
@@ -40,8 +47,11 @@ Backend local development uses `pnpm`.
 ```bash
 cd backend
 cp .env.example .env
+# optional local Postgres instead of Neon
+docker compose --profile localdb up -d postgres
 corepack enable
 pnpm install
+pnpm db:migrate
 pnpm audit
 pnpm start:dev
 ```

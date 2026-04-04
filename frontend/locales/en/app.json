@@ -229,6 +229,7 @@
     "scheduling": "Scheduling...",
     "start": "Start meeting",
     "status": {
+      "cancelled": "Cancelled",
       "draft": "Draft",
       "ended": "Ended",
       "live": "Live",
@@ -375,9 +376,9 @@
     "title": "Meeting details"
   },
   "meeting_entry": {
-    "meeting_ended": {
-      "body": "\"{{title}}\" is already over and is no longer accepting new joins.",
-      "title": "This meeting has ended"
+    "meeting_closed": {
+      "body": "\"{{title}}\" is closed and is no longer accepting new joins.",
+      "title": "This meeting is closed"
     },
     "not_invited": {
       "body": "\"{{title}}\" is limited to specific invited Matrix users.",

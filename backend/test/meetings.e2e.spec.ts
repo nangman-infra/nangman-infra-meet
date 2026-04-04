@@ -152,6 +152,36 @@ describe("MeetingsController", () => {
     );
   });
 
+  it("marks a scheduled meeting as cancelled when the host ends it before start", async () => {
+    const createResponse = await request(app.getHttpServer())
+      .post("/api/v1/meetings")
+      .set("x-matrix-user-id", hostUserId)
+      .send({
+        title: "Cancelled meeting",
+        hostUserId,
+        roomId: "!cancelled:matrix.nangman.cloud",
+        joinUrl: "/room/cancelled",
+        startsAt: futureMeetingStart,
+      });
+
+    const meetingId = createResponse.body.data.id as string;
+
+    const endResponse = await request(app.getHttpServer())
+      .post(`/api/v1/meetings/${meetingId}/end`)
+      .set("x-matrix-user-id", hostUserId);
+
+    expect(endResponse.status).toBe(201);
+    expect(endResponse.body.data.status).toBe("cancelled");
+    expect(endResponse.body.data.endsAt).toEqual(expect.any(String));
+
+    const getResponse = await request(app.getHttpServer())
+      .get(`/api/v1/meetings/${meetingId}`)
+      .set("x-matrix-user-id", hostUserId);
+
+    expect(getResponse.status).toBe(200);
+    expect(getResponse.body.data.status).toBe("cancelled");
+  });
+
   it("rejects meeting creation when the actor and host do not match", async () => {
     const createResponse = await request(app.getHttpServer())
       .post("/api/v1/meetings")
@@ -271,7 +301,7 @@ describe("MeetingsController", () => {
       .send({ title: "Should not save" });
     expect(updateResponse.status).toBe(409);
     expect(updateResponse.body.error.message).toBe(
-      "This meeting has already ended.",
+      "This meeting is already closed.",
     );
 
     const restartResponse = await request(app.getHttpServer())
@@ -279,7 +309,45 @@ describe("MeetingsController", () => {
       .set("x-matrix-user-id", hostUserId);
     expect(restartResponse.status).toBe(409);
     expect(restartResponse.body.error.message).toBe(
-      "This meeting has already ended.",
+      "This meeting is already closed.",
+    );
+  });
+
+  it("rejects updates and starts after a meeting has been cancelled", async () => {
+    const createResponse = await request(app.getHttpServer())
+      .post("/api/v1/meetings")
+      .set("x-matrix-user-id", hostUserId)
+      .send({
+        title: "Already cancelled",
+        hostUserId,
+        roomId: "!cancelled-closed:matrix.nangman.cloud",
+        joinUrl: "/room/cancelled-closed",
+        startsAt: futureMeetingStart,
+      });
+
+    const meetingId = createResponse.body.data.id as string;
+
+    const cancelResponse = await request(app.getHttpServer())
+      .post(`/api/v1/meetings/${meetingId}/end`)
+      .set("x-matrix-user-id", hostUserId);
+    expect(cancelResponse.status).toBe(201);
+    expect(cancelResponse.body.data.status).toBe("cancelled");
+
+    const updateResponse = await request(app.getHttpServer())
+      .patch(`/api/v1/meetings/${meetingId}`)
+      .set("x-matrix-user-id", hostUserId)
+      .send({ title: "Should not save" });
+    expect(updateResponse.status).toBe(409);
+    expect(updateResponse.body.error.message).toBe(
+      "This meeting is already closed.",
+    );
+
+    const startResponse = await request(app.getHttpServer())
+      .post(`/api/v1/meetings/${meetingId}/start`)
+      .set("x-matrix-user-id", hostUserId);
+    expect(startResponse.status).toBe(409);
+    expect(startResponse.body.error.message).toBe(
+      "This meeting is already closed.",
     );
   });
 });

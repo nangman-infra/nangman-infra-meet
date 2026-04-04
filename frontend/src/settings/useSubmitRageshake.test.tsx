@@ -20,10 +20,12 @@ import { type MatrixClient } from "matrix-js-sdk/lib/client";
 
 import { useSubmitRageshake, getRageshakeSubmitUrl } from "./submit-rageshake";
 import { ClientContextProvider } from "../ClientContext";
-import { getUrlParams } from "../UrlParams";
+import { getTelemetryUrlContext } from "../shared/application/readModels/TelemetryUrlContext.ts";
 import { mockConfig } from "../utils/test";
 
-vi.mock("../UrlParams", () => ({ getUrlParams: vi.fn() }));
+vi.mock("../shared/application/readModels/TelemetryUrlContext.ts", () => ({
+  getTelemetryUrlContext: vi.fn(),
+}));
 
 const TestComponent = ({
   sendLogs,
@@ -100,7 +102,7 @@ function renderWithMockClient(
 describe("useSubmitRageshake", () => {
   describe("available", () => {
     beforeEach(() => {
-      (getUrlParams as Mock).mockReturnValue({});
+      (getTelemetryUrlContext as Mock).mockReturnValue({});
       mockConfig({});
     });
 
@@ -130,7 +132,7 @@ describe("useSubmitRageshake", () => {
       });
 
       it("returns true with rageshakeSubmitUrl URL param", () => {
-        (getUrlParams as Mock).mockReturnValue({
+        (getTelemetryUrlContext as Mock).mockReturnValue({
           rageshakeSubmitUrl: "https://url.example.com.localhost",
         });
         renderWithMockClient(getRageshakeSubmitUrl, false);
@@ -149,7 +151,7 @@ describe("useSubmitRageshake", () => {
       });
 
       it("ignores rageshakeSubmitUrl URL param and returns false with no config value", () => {
-        (getUrlParams as Mock).mockReturnValue({
+        (getTelemetryUrlContext as Mock).mockReturnValue({
           rageshakeSubmitUrl: "https://url.example.com.localhost",
         });
         renderWithMockClient(getRageshakeSubmitUrl, false);
