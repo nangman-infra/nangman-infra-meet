@@ -13,7 +13,7 @@ import {
 import { type MatrixClient } from "matrix-js-sdk";
 import { logger } from "matrix-js-sdk/lib/logger";
 import { useTranslation } from "react-i18next";
-import { Button } from "@vector-im/compound-web";
+import { Button, Heading, Text } from "@vector-im/compound-web";
 
 import { Form } from "../form/Form";
 import { ErrorMessage, FieldRow, InputField } from "../input/Input";
@@ -69,6 +69,17 @@ export const MeetingScheduler: FC<Props> = ({
   });
 
   const minimumStartTime = getMinimumScheduleTimeForDate(scheduleForm.date);
+  const timezone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const meetingStartSummary = combineMeetingStartAt(
+    scheduleForm.date,
+    scheduleForm.time,
+  );
+  const selectedAccessPolicyLabel = t(
+    `meeting_detail.access_policy.${policyForm.accessPolicy}`,
+  );
+  const selectedAccessPolicyHelp = t(
+    `meeting_scheduler.policy_help.${policyForm.accessPolicy}`,
+  );
 
   const onSubmit: FormEventHandler<HTMLFormElement> = (
     event: FormEvent<HTMLFormElement>,
@@ -191,6 +202,63 @@ export const MeetingScheduler: FC<Props> = ({
 
   return (
     <Form className={styles.form} onSubmit={onSubmit} noValidate>
+      <div className={styles.formOverview}>
+        <section className={styles.summaryCard}>
+          <Text size="sm" className={styles.sectionEyebrow}>
+            {t("meeting_scheduler.summary.eyebrow")}
+          </Text>
+          <Heading size="sm" weight="semibold">
+            {t("meeting_scheduler.summary.title")}
+          </Heading>
+          <div className={styles.summaryList}>
+            <div className={styles.summaryItem}>
+              <Text size="sm" className={styles.summaryLabel}>
+                {t("meeting_scheduler.summary.when")}
+              </Text>
+              <Text size="sm">
+                {meetingStartSummary
+                  ? formatMeetingStartSummary(meetingStartSummary, timezone)
+                  : t("meeting_scheduler.summary.when_pending")}
+              </Text>
+            </div>
+            <div className={styles.summaryItem}>
+              <Text size="sm" className={styles.summaryLabel}>
+                {t("meeting_scheduler.summary.access")}
+              </Text>
+              <Text size="sm">{selectedAccessPolicyLabel}</Text>
+            </div>
+            <div className={styles.summaryItem}>
+              <Text size="sm" className={styles.summaryLabel}>
+                {t("meeting_scheduler.summary.joining")}
+              </Text>
+              <Text size="sm">
+                {policyForm.allowJoinBeforeHost
+                  ? t("meeting_detail.allow_join_before_host_yes")
+                  : t("meeting_detail.allow_join_before_host_no")}
+              </Text>
+            </div>
+          </div>
+        </section>
+        <section className={styles.summaryCard}>
+          <Text size="sm" className={styles.sectionEyebrow}>
+            {t("meeting_scheduler.next_steps.eyebrow")}
+          </Text>
+          <Heading size="sm" weight="semibold">
+            {t("meeting_scheduler.next_steps.title")}
+          </Heading>
+          <div className={styles.nextStepList}>
+            <Text size="sm" className={styles.helpText}>
+              {t("meeting_scheduler.next_steps.one")}
+            </Text>
+            <Text size="sm" className={styles.helpText}>
+              {t("meeting_scheduler.next_steps.two")}
+            </Text>
+            <Text size="sm" className={styles.helpText}>
+              {selectedAccessPolicyHelp}
+            </Text>
+          </div>
+        </section>
+      </div>
       <FieldRow>
         <InputField
           id="meetingTitle"
@@ -416,6 +484,15 @@ function getMinimumScheduleTimeForDate(selectedDate: string): string | undefined
   }
 
   return undefined;
+}
+
+function formatMeetingStartSummary(startsAt: string, timezone: string): string {
+  const formatted = new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(startsAt));
+
+  return `${formatted} · ${timezone}`;
 }
 
 function normalizeScheduleTime(selectedDate: string, selectedTime: string): string {

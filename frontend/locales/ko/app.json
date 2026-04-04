@@ -124,10 +124,24 @@
       "allowed_user_ids_label": "허용할 Matrix 사용자 ID",
       "allowed_user_ids_placeholder": "@alice:matrix.nangman.cloud\n@bob:matrix.nangman.cloud"
     },
+    "next_steps": {
+      "eyebrow": "저장 전에 확인",
+      "one": "언제 열리는 회의인지 팀이 헷갈리지 않도록 시간을 먼저 확정하세요.",
+      "title": "저장 후 이어지는 흐름",
+      "two": "저장한 뒤에는 참가 링크를 공유하고, 팀이 준비되면 회의를 시작하면 됩니다."
+    },
     "policy_help": {
       "host_approval": "링크가 있는 사람은 입장 요청을 보낼 수 있지만, 호스트가 승인해야 실제로 들어올 수 있습니다.",
       "invite_only": "여기에 적은 사용자만 회의 링크로 들어올 수 있습니다.",
       "open": "회의 링크가 있으면 누구나, 방이 열렸을 때 바로 들어올 수 있습니다."
+    },
+    "summary": {
+      "access": "참여 정책",
+      "eyebrow": "현재 설정",
+      "joining": "입장 방식",
+      "title": "이 회의는 아래 규칙으로 생성됩니다",
+      "when": "열리는 시각",
+      "when_pending": "날짜와 시간을 선택하세요"
     },
     "success": {
       "back_to_meetings": "홈으로 돌아가기",
@@ -139,6 +153,7 @@
       "link_label": "참가 링크",
       "manage_meeting": "회의 관리",
       "next_step": "다음 단계: 참가 링크를 공유한 뒤, 준비되면 회의를 시작하세요.",
+      "next_step_title": "권장 다음 행동",
       "schedule_another": "다른 회의 예약하기",
       "summary_label": "회의 정보",
       "timezone_label": "로컬 시간대: {{timezone}}",

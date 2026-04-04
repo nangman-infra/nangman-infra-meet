@@ -96,6 +96,7 @@ describe("MeetingSchedulePage", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("Weekly infra sync")).toBeInTheDocument();
     expect(screen.getByText("Join link")).toBeInTheDocument();
+    expect(screen.getByText("Recommended next action")).toBeInTheDocument();
     expect(screen.getByTestId("meeting_schedule_link")).toHaveTextContent(
       "/room/weekly-sync",
     );

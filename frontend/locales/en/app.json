@@ -285,10 +285,24 @@
       "allowed_user_ids_label": "Allowed Matrix user IDs",
       "allowed_user_ids_placeholder": "@alice:matrix.nangman.cloud\n@bob:matrix.nangman.cloud"
     },
+    "next_steps": {
+      "eyebrow": "Before you save",
+      "one": "Choose a time first so everyone gets the right expectation about when this meeting opens.",
+      "title": "What happens next",
+      "two": "After saving, share the join link and start the meeting when the team is ready."
+    },
     "policy_help": {
       "host_approval": "Anyone with the link can ask to join, but the host has to approve them first.",
       "invite_only": "Only the people you list here can enter with the meeting link.",
       "open": "Anyone with the meeting link can enter when the room is available."
+    },
+    "summary": {
+      "access": "Access",
+      "eyebrow": "Current setup",
+      "joining": "Joining",
+      "title": "This meeting will be created with the following rules",
+      "when": "When",
+      "when_pending": "Choose a date and time"
     },
     "success": {
       "back_to_meetings": "Back to home",
@@ -300,6 +314,7 @@
       "link_label": "Join link",
       "manage_meeting": "Manage meeting",
       "next_step": "Next: share the join link, then start the meeting when you are ready.",
+      "next_step_title": "Recommended next action",
       "schedule_another": "Schedule another meeting",
       "summary_label": "Meeting details",
       "timezone_label": "Local timezone: {{timezone}}",

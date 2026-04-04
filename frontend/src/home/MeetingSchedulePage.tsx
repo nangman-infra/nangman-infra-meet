@@ -147,6 +147,9 @@ const MeetingScheduleView: FC<{ client: MatrixClient }> = ({ client }) => {
                     })}
                   </Text>
                   <Text size="sm" className={pageStyles.summaryDescription}>
+                    {t("meeting_scheduler.success.next_step_title")}
+                  </Text>
+                  <Text size="sm" className={pageStyles.summaryDescription}>
                     {t("meeting_scheduler.success.next_step")}
                   </Text>
                   <div className={pageStyles.linkGroup}>
