@@ -59,6 +59,10 @@ describe("LoginPage", () => {
         "Sign in with your internal organization account to continue to the meeting workspace.",
       ),
     ).toBeInTheDocument();
+    expect(screen.getByText("Nangman Infra Meetings")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Continue with SSO" }),
+    ).toBeInTheDocument();
   });
 
   it("shows the redirect target when the user was sent to login from another page", () => {

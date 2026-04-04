@@ -215,12 +215,15 @@
     "waiting_for_invite": "Request sent! Waiting for permission to join…"
   },
   "log_in": "Log In",
+  "login_eyebrow": "Nangman Infra Meetings",
   "login_context": "Sign in with your internal organization account to continue to the meeting workspace.",
   "login_redirect_context": "Sign in to continue to the page you were trying to open: {{target}}",
   "logging_in": "Logging in…",
   "login_auth_links": "<0>Create an account</0> Or <2>Access as a guest</2>",
   "login_auth_links_prompt": "Not registered yet?",
-  "login_subheading": "To continue to Element",
+  "login_sso_button": "Continue with SSO",
+  "login_sso_helper": "Use your organization account to continue. Guest access and account creation are disabled.",
+  "login_subheading": "Sign in to continue to the meeting workspace.",
   "login_title": "Login",
   "meeting_planner": {
     "date_label": "Date",

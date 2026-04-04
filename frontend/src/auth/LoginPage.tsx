@@ -102,6 +102,11 @@ export const LoginPage: FC = () => {
         <Logo className={styles.logo} />
 
         <div className={styles.header}>
+          <p className={styles.eyebrow}>
+            {t("login_eyebrow", {
+              defaultValue: "Nangman Infra Meetings",
+            })}
+          </p>
           <h2>{t("log_in")}</h2>
           <p className={styles.subheading}>{t("login_subheading")}</p>
           <p className={styles.contextText}>
@@ -130,7 +135,7 @@ export const LoginPage: FC = () => {
             {loading
               ? t("logging_in")
               : t("login_sso_button", {
-                  defaultValue: "Sign in with SSO",
+                  defaultValue: "Continue with SSO",
                 })}
           </Button>
           <p className={styles.helperText}>
