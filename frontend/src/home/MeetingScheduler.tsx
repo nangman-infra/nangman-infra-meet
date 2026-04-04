@@ -207,7 +207,11 @@ export const MeetingScheduler: FC<Props> = ({
           <Text size="sm" className={styles.sectionEyebrow}>
             {t("meeting_scheduler.summary.eyebrow")}
           </Text>
-          <Heading size="sm" weight="semibold">
+          <Heading
+            size="sm"
+            weight="semibold"
+            className={styles.sectionTitle}
+          >
             {t("meeting_scheduler.summary.title")}
           </Heading>
           <div className={styles.summaryList}>
@@ -215,7 +219,7 @@ export const MeetingScheduler: FC<Props> = ({
               <Text size="sm" className={styles.summaryLabel}>
                 {t("meeting_scheduler.summary.when")}
               </Text>
-              <Text size="sm">
+              <Text size="sm" className={styles.summaryValue}>
                 {meetingStartSummary
                   ? formatMeetingStartSummary(meetingStartSummary, timezone)
                   : t("meeting_scheduler.summary.when_pending")}
@@ -225,13 +229,15 @@ export const MeetingScheduler: FC<Props> = ({
               <Text size="sm" className={styles.summaryLabel}>
                 {t("meeting_scheduler.summary.access")}
               </Text>
-              <Text size="sm">{selectedAccessPolicyLabel}</Text>
+              <Text size="sm" className={styles.summaryValue}>
+                {selectedAccessPolicyLabel}
+              </Text>
             </div>
             <div className={styles.summaryItem}>
               <Text size="sm" className={styles.summaryLabel}>
                 {t("meeting_scheduler.summary.joining")}
               </Text>
-              <Text size="sm">
+              <Text size="sm" className={styles.summaryValue}>
                 {policyForm.allowJoinBeforeHost
                   ? t("meeting_detail.allow_join_before_host_yes")
                   : t("meeting_detail.allow_join_before_host_no")}
@@ -243,7 +249,11 @@ export const MeetingScheduler: FC<Props> = ({
           <Text size="sm" className={styles.sectionEyebrow}>
             {t("meeting_scheduler.next_steps.eyebrow")}
           </Text>
-          <Heading size="sm" weight="semibold">
+          <Heading
+            size="sm"
+            weight="semibold"
+            className={styles.sectionTitle}
+          >
             {t("meeting_scheduler.next_steps.title")}
           </Heading>
           <div className={styles.nextStepList}>

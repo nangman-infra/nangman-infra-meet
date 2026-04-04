@@ -24,6 +24,8 @@
 
 .sectionEyebrow,
 .summaryLabel,
+.summaryValue,
+.sectionTitle,
 .sectionLabel,
 .helpText,
 .timezoneHint {
@@ -42,6 +44,21 @@
 .optionGroup {
   display: grid;
   gap: 10px;
+}
+
+.sectionTitle,
+.summaryValue,
+.helpText {
+  word-break: keep-all;
+}
+
+.sectionTitle {
+  text-wrap: balance;
+}
+
+.summaryValue,
+.helpText {
+  text-wrap: pretty;
 }
 
 .summaryItem {
