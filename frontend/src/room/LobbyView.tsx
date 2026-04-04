@@ -176,6 +176,19 @@ export const LobbyView: FC<Props> = ({
 
   useTrackProcessorSync(videoTrack);
 
+  const lobbySummaryTitle = waitingForInvite
+    ? t("lobby.status.waiting_title")
+    : t("lobby.status.ready_title");
+  const lobbySummaryBody = waitingForInvite
+    ? t("lobby.status.waiting_body")
+    : t("lobby.status.ready_body");
+  const participantSummary =
+    participantCount === null
+      ? null
+      : participantCount > 0
+        ? t("lobby.status.participants_present", { count: participantCount })
+        : t("lobby.status.participants_empty");
+
   // TODO: Unify this component with InCallView, so we can get slick joining
   // animations and don't have to feel bad about reusing its CSS
   return (
@@ -217,6 +230,25 @@ export const LobbyView: FC<Props> = ({
               {enterLabel ?? t("lobby.join_button")}
             </Button>
           </VideoPreview>
+          <section className={styles.summary} aria-live="polite">
+            <p className={styles.summaryLabel}>{t("lobby.status.label")}</p>
+            <h2 className={styles.summaryTitle}>{lobbySummaryTitle}</h2>
+            <p className={styles.summaryBody}>{lobbySummaryBody}</p>
+            <ul className={styles.summaryList}>
+              <li>
+                {audioEnabled
+                  ? t("lobby.status.audio_on")
+                  : t("lobby.status.audio_off")}
+              </li>
+              <li>
+                {videoEnabled
+                  ? t("lobby.status.video_on")
+                  : t("lobby.status.video_off")}
+              </li>
+              <li>{t("lobby.status.settings_hint")}</li>
+              {participantSummary && <li>{participantSummary}</li>}
+            </ul>
+          </section>
           {!recentsButtonInFooter && recentsButton}
         </div>
         <div className={inCallStyles.footer}>

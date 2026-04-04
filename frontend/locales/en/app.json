@@ -198,6 +198,20 @@
     "join_as_guest": "Join as guest",
     "join_button": "Join call",
     "leave_button": "Back to recents",
+    "status": {
+      "label": "Before you continue",
+      "ready_title": "Ready to join",
+      "ready_body": "Check your camera and microphone before you enter. You can change devices or permissions from settings without leaving this page.",
+      "waiting_title": "Waiting for host approval",
+      "waiting_body": "Keep this page open while the host reviews your request. Your microphone and camera settings will stay ready for when you are allowed in.",
+      "audio_on": "Microphone is ready.",
+      "audio_off": "Microphone is off. Turn it on now if you want to speak when you join.",
+      "video_on": "Camera preview is on.",
+      "video_off": "Camera is off. Turn it on now if you want to join with video.",
+      "settings_hint": "Use Settings if you need to switch devices or review permissions.",
+      "participants_present": "{{count}} people are already in the call.",
+      "participants_empty": "No one is in the call yet."
+    },
     "waiting_for_invite": "Request sent! Waiting for permission to join…"
   },
   "log_in": "Log In",
