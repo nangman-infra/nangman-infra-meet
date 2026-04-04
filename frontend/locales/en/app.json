@@ -367,6 +367,7 @@
     "joined_at": "Joined {{date}}",
     "left_at": "Left {{date}}",
     "link_label": "Join link",
+    "my_role_label": "My role",
     "moderation_description": "Approve or reject guests who asked to join this meeting.",
     "moderation_empty": "No access requests yet.",
     "moderation_title": "Access requests",
@@ -383,6 +384,7 @@
     "overview_title": "Overview",
     "participant_count": "{{count}} participants total",
     "pending_requests_count": "{{count}} waiting for approval",
+    "next_action_title": "What you can do now",
     "policy_help": {
       "host_approval": "People with the link can request access and stay outside the room until you decide.",
       "invite_only": "Only the Matrix user IDs listed below can enter this meeting.",
@@ -398,10 +400,34 @@
     },
     "requested_at": "Requested {{date}}",
     "responded_at": "Responded {{date}}",
+    "role": {
+      "host": "Host",
+      "participant": "Participant"
+    },
+    "role_summary": "My role: {{role}}",
     "save": "Save changes",
     "saving": "Saving...",
     "start": "Start meeting",
     "starting": "Starting...",
+    "state_summary_title": "Current meeting status",
+    "status_summary": {
+      "cancelled": "This meeting was cancelled before it opened, so no one else can enter now.",
+      "ended": "This meeting has already ended, so its settings are now read-only.",
+      "live_host": "The meeting is live and participants can enter according to the current access policy.",
+      "live_participant": "The meeting is live. Whether you can enter depends on the current access policy and host controls.",
+      "scheduled_host": "This meeting is ready but has not started yet. Participants may still be waiting for you to open it.",
+      "scheduled_participant": "This meeting has not started yet. What happens next depends on whether the host opens it or your access needs approval."
+    },
+    "action_summary": {
+      "can_join": "You can enter this meeting now.",
+      "closed": "No further action is needed here because the meeting is already closed.",
+      "live_host": "You can join the meeting now, share the link, or end it when it is finished.",
+      "pending_approval": "Refresh this page after the host responds to your access request.",
+      "request_access": "Send an access request if you still need to join this meeting.",
+      "review_details": "Review the meeting details before taking the next step.",
+      "scheduled_host": "Start the meeting when the team is ready, or update its details before it begins.",
+      "wait_for_host": "Wait for the host to start the meeting, then refresh if this page does not update yet."
+    },
     "title": "Meeting details"
   },
   "meeting_entry": {

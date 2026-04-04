@@ -206,6 +206,7 @@
     "joined_at": "{{date}} 참여",
     "left_at": "{{date}} 퇴장",
     "link_label": "참가 링크",
+    "my_role_label": "내 역할",
     "moderation_description": "회의 입장을 요청한 사용자를 승인하거나 거절하세요.",
     "moderation_empty": "아직 입장 요청이 없습니다.",
     "moderation_title": "입장 요청",
@@ -222,6 +223,7 @@
     "overview_title": "개요",
     "participant_count": "누적 {{count}}명 참여",
     "pending_requests_count": "{{count}}명 승인 대기 중",
+    "next_action_title": "지금 할 수 있는 일",
     "policy_help": {
       "host_approval": "링크가 있는 사용자는 입장 요청만 보낼 수 있고, 호스트가 승인하기 전에는 회의에 들어오지 못합니다.",
       "invite_only": "아래에 입력한 Matrix 사용자 ID만 이 회의에 들어올 수 있습니다.",
@@ -237,10 +239,34 @@
     },
     "requested_at": "{{date}} 요청",
     "responded_at": "{{date}} 처리",
+    "role": {
+      "host": "호스트",
+      "participant": "참가자"
+    },
+    "role_summary": "내 역할: {{role}}",
     "save": "변경 저장",
     "saving": "저장 중...",
     "start": "회의 시작",
     "starting": "시작 중...",
+    "state_summary_title": "현재 회의 상태",
+    "status_summary": {
+      "cancelled": "이 회의는 열리기 전에 취소되어 지금은 더 이상 다른 사용자가 들어올 수 없습니다.",
+      "ended": "이 회의는 이미 종료되어 현재는 읽기 전용으로만 확인할 수 있습니다.",
+      "live_host": "회의가 현재 진행 중이며, 참여 정책에 따라 참가자들이 입장할 수 있습니다.",
+      "live_participant": "회의가 현재 진행 중입니다. 실제 입장 가능 여부는 참여 정책과 호스트 제어 상태에 따라 달라집니다.",
+      "scheduled_host": "회의는 준비됐지만 아직 시작되지 않았습니다. 참가자들이 입장을 기다리고 있을 수 있습니다.",
+      "scheduled_participant": "회의는 아직 시작되지 않았습니다. 다음 단계는 호스트가 회의를 열거나, 현재 정책상 승인이 필요한지에 따라 달라집니다."
+    },
+    "action_summary": {
+      "can_join": "지금 바로 이 회의에 입장할 수 있습니다.",
+      "closed": "회의가 이미 닫혀 있으므로 여기서 추가로 할 일은 없습니다.",
+      "live_host": "지금 회의에 입장하거나, 링크를 공유하거나, 끝나면 회의를 종료할 수 있습니다.",
+      "pending_approval": "호스트가 입장 요청에 응답한 뒤 이 페이지를 새로고침해 보세요.",
+      "request_access": "여전히 이 회의에 들어가야 한다면 입장 요청을 보내세요.",
+      "review_details": "다음 행동을 하기 전에 회의 정보를 먼저 확인하세요.",
+      "scheduled_host": "팀이 준비되면 회의를 시작하거나, 시작 전까지 회의 정보를 수정할 수 있습니다.",
+      "wait_for_host": "호스트가 회의를 시작할 때까지 기다렸다가, 페이지가 바로 갱신되지 않으면 새로고침하세요."
+    },
     "title": "회의 상세"
   },
   "meeting_entry": {

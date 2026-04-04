@@ -121,6 +121,9 @@ describe("MeetingDetailPage", () => {
 
     expect(await screen.findByText("Weekly infra sync")).toBeInTheDocument();
     expect(screen.getByText("Attendance")).toBeInTheDocument();
+    expect(screen.getByText("My role")).toBeInTheDocument();
+    expect(screen.getByText("Current meeting status")).toBeInTheDocument();
+    expect(screen.getByText("What you can do now")).toBeInTheDocument();
     expect(
       screen.getAllByText("@alice:matrix.nangman.cloud").length,
     ).toBeGreaterThan(0);
@@ -235,6 +238,11 @@ describe("MeetingDetailPage", () => {
     expect(await screen.findByText("Weekly infra sync")).toBeInTheDocument();
     expect(
       await screen.findByText("Waiting for the host to start"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Wait for the host to start the meeting, then refresh if this page does not update yet.",
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByText("Attendance")).not.toBeInTheDocument();
     expect(

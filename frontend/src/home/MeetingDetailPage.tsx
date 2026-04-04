@@ -401,6 +401,20 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
     shouldShowAccessState && entryDecision
       ? getMeetingEntryStateCopy(entryDecision.kind, meeting.title, t)
       : null;
+  const roleLabel = isMeetingHost
+    ? t("meeting_detail.role.host")
+    : t("meeting_detail.role.participant");
+  const statusSummary = getMeetingStatusSummary(meeting, isMeetingHost, t);
+  const actionSummary = getMeetingActionSummary({
+    canJoinMeeting,
+    canRefreshMeetingAccess,
+    canRequestMeetingAccess,
+    entryDecision,
+    isClosedMeeting,
+    isMeetingHost,
+    meeting,
+    t,
+  });
 
   return (
     <div className={commonStyles.container}>
@@ -447,6 +461,9 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                 <span className={pageStyles.statPill}>
                   {getMeetingStatusLabel(meeting.status, t)}
                 </span>
+                <span className={pageStyles.statPill}>
+                  {t("meeting_detail.role_summary", { role: roleLabel })}
+                </span>
                 {isMeetingHost && (
                   <span className={pageStyles.statPill}>
                     {t("meeting_detail.present_count", { count: presentCount })}
@@ -474,6 +491,12 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                 </div>
 
                 <div className={pageStyles.summaryList}>
+                  <div className={pageStyles.summaryItem}>
+                    <Text size="sm" className={pageStyles.summaryLabel}>
+                      {t("meeting_detail.my_role_label")}
+                    </Text>
+                    <Text size="sm">{roleLabel}</Text>
+                  </div>
                   <div className={pageStyles.summaryItem}>
                     <Text size="sm" className={pageStyles.summaryLabel}>
                       {t("meeting_detail.host_label")}
@@ -534,6 +557,21 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                       </Text>
                     </div>
                   )}
+                </div>
+
+                <div className={pageStyles.stateCallout}>
+                  <Text size="sm" weight="semibold">
+                    {t("meeting_detail.state_summary_title")}
+                  </Text>
+                  <Text size="sm" className={pageStyles.muted}>
+                    {statusSummary}
+                  </Text>
+                  <Text size="sm" weight="semibold">
+                    {t("meeting_detail.next_action_title")}
+                  </Text>
+                  <Text size="sm" className={pageStyles.muted}>
+                    {actionSummary}
+                  </Text>
                 </div>
 
                 <div className={pageStyles.primaryActions}>
@@ -814,7 +852,9 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                   )}
                   {actionNotice && (
                     <FieldRow>
-                      <p className={pageStyles.notice}>{actionNotice}</p>
+                      <p className={pageStyles.notice} role="status" aria-live="polite">
+                        {actionNotice}
+                      </p>
                     </FieldRow>
                   )}
                     <FieldRow rightAlign className={pageStyles.actions}>
@@ -1062,4 +1102,78 @@ function getMeetingEntryStateCopy(
         body: t("meeting_entry.request_access.body", { title }),
       };
   }
+}
+
+function getMeetingStatusSummary(
+  meeting: Meeting,
+  isMeetingHost: boolean,
+  t: TFunction,
+): string {
+  if (meeting.status === "live") {
+    return isMeetingHost
+      ? t("meeting_detail.status_summary.live_host")
+      : t("meeting_detail.status_summary.live_participant");
+  }
+
+  if (meeting.status === "scheduled") {
+    return isMeetingHost
+      ? t("meeting_detail.status_summary.scheduled_host")
+      : t("meeting_detail.status_summary.scheduled_participant");
+  }
+
+  if (meeting.status === "cancelled") {
+    return t("meeting_detail.status_summary.cancelled");
+  }
+
+  return t("meeting_detail.status_summary.ended");
+}
+
+function getMeetingActionSummary({
+  canJoinMeeting,
+  canRefreshMeetingAccess,
+  canRequestMeetingAccess,
+  entryDecision,
+  isClosedMeeting,
+  isMeetingHost,
+  meeting,
+  t,
+}: {
+  canJoinMeeting: boolean;
+  canRefreshMeetingAccess: boolean;
+  canRequestMeetingAccess: boolean;
+  entryDecision: MeetingAccessDecision | null;
+  isClosedMeeting: boolean;
+  isMeetingHost: boolean;
+  meeting: Meeting;
+  t: TFunction;
+}): string {
+  if (isClosedMeeting) {
+    return t("meeting_detail.action_summary.closed");
+  }
+
+  if (meeting.status === "scheduled" && isMeetingHost) {
+    return t("meeting_detail.action_summary.scheduled_host");
+  }
+
+  if (meeting.status === "live" && isMeetingHost) {
+    return t("meeting_detail.action_summary.live_host");
+  }
+
+  if (canJoinMeeting) {
+    return t("meeting_detail.action_summary.can_join");
+  }
+
+  if (canRequestMeetingAccess) {
+    return t("meeting_detail.action_summary.request_access");
+  }
+
+  if (canRefreshMeetingAccess && entryDecision?.kind === "wait_for_host") {
+    return t("meeting_detail.action_summary.wait_for_host");
+  }
+
+  if (canRefreshMeetingAccess && entryDecision?.kind === "pending_approval") {
+    return t("meeting_detail.action_summary.pending_approval");
+  }
+
+  return t("meeting_detail.action_summary.review_details");
 }
