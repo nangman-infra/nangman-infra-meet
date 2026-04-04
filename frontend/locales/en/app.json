@@ -163,7 +163,24 @@
     "schedule_card_description": "Set the title and time now so you can start it or share the link later.",
     "schedule_card_eyebrow": "Schedule",
     "schedule_card_title": "Plan a meeting",
-    "title": "Start, join, or schedule a meeting."
+    "title": "Start, join, or schedule a meeting.",
+    "workflow": {
+      "join": {
+        "description": "If you already have a link or room reference, go straight to the existing meeting.",
+        "step": "If the meeting already exists",
+        "title": "Join from a link"
+      },
+      "schedule": {
+        "description": "If the meeting happens later, create it now and start it when the team is ready.",
+        "step": "If the meeting happens later",
+        "title": "Schedule ahead"
+      },
+      "start": {
+        "description": "If the meeting starts now, create the room and enter immediately.",
+        "step": "If the meeting starts now",
+        "title": "Start immediately"
+      }
+    }
   },
   "invite_modal": {
     "link_copied_toast": "Link copied to clipboard",
@@ -213,8 +230,11 @@
       "title_required": "Enter a title before scheduling the meeting."
     },
     "eyebrow": "Meetings",
+    "guidance": "You have {{liveCount}} live meetings and {{scheduledCount}} scheduled meetings in one place. Use this list to separate what needs attention now from what still needs the host to start.",
     "join": "Join meeting",
     "live_count": "{{count}} live now",
+    "live_guest_hint": "This meeting is already live, so you can enter right away.",
+    "live_host_hint": "This meeting is already live. Join it now or open details to manage it.",
     "live_hint": "Live meetings can be joined immediately.",
     "loading": "Loading meetings...",
     "manage": "Manage",
@@ -225,9 +245,12 @@
     "no_start_time": "No start time",
     "open_schedule_flow": "Schedule meeting",
     "schedule": "Schedule meeting",
+    "scheduled_guest_hint": "This meeting has not started yet. Open the details and wait for the host to start it.",
     "scheduled_hint": "Scheduled meetings can be started when you are ready.",
+    "scheduled_host_hint": "Start this meeting when the team is ready so participants can enter smoothly.",
     "scheduling": "Scheduling...",
     "start": "Start meeting",
+    "access_summary": "Access: {{access}}",
     "status": {
       "cancelled": "Cancelled",
       "draft": "Draft",
@@ -241,7 +264,13 @@
     "title_placeholder": "Weekly infra sync",
     "today_time": "Today · {{time}}",
     "tomorrow_time": "Tomorrow · {{time}}",
-    "upcoming_count": "{{count}} total"
+    "upcoming_count": "{{count}} total",
+    "role": {
+      "host": "Host",
+      "participant": "Participant"
+    },
+    "role_summary": "My role: {{role}}",
+    "view_details": "View details"
   },
   "meeting_scheduler": {
     "back_to_home": "Back to home",

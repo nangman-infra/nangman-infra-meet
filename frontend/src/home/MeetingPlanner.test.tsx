@@ -157,16 +157,28 @@ describe("MeetingPlanner", () => {
     ]);
 
     render(
-      <MemoryRouter>
-        <MeetingPlanner />
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<MeetingPlanner />} />
+          <Route
+            path="/meetings/:meetingId"
+            element={<div>Meeting detail route</div>}
+          />
+        </Routes>
       </MemoryRouter>,
     );
 
     expect(await screen.findByText("Another host room")).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Join meeting" })).toHaveLength(1);
+    expect(
+      screen.getByRole("button", { name: "View details" }),
+    ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Start meeting" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Manage" })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "View details" }));
+
+    expect(await screen.findByText("Meeting detail route")).toBeInTheDocument();
   });
 });

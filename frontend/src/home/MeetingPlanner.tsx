@@ -168,6 +168,9 @@ export const MeetingPlanner: FC = () => {
   const liveMeetingsCount = visibleMeetings.filter(
     (meeting) => meeting.status === "live",
   ).length;
+  const scheduledMeetingsCount = visibleMeetings.filter(
+    (meeting) => meeting.status === "scheduled",
+  ).length;
 
   return (
     <section className={styles.section}>
@@ -181,6 +184,12 @@ export const MeetingPlanner: FC = () => {
           </Heading>
           <Text size="sm" className={styles.sectionDescription}>
             {t("meeting_planner.description")}
+          </Text>
+          <Text size="sm" className={styles.sectionGuidance}>
+            {t("meeting_planner.guidance", {
+              liveCount: liveMeetingsCount,
+              scheduledCount: scheduledMeetingsCount,
+            })}
           </Text>
         </div>
         <div className={styles.sectionActions}>
@@ -242,96 +251,114 @@ export const MeetingPlanner: FC = () => {
         ) : (
           visibleMeetings.map((meeting) => {
             const isMeetingHost = meeting.hostUserId === currentUserId;
+            const primaryActionLabel =
+              meeting.status === "scheduled" && !isMeetingHost
+                ? t("meeting_planner.view_details")
+                : meeting.status === "scheduled" && isMeetingHost
+                  ? t("meeting_planner.start")
+                  : t("meeting_planner.join");
 
             return (
               <article key={meeting.id} className={styles.meetingCard}>
                 <div className={styles.meetingPrimary}>
-                <div className={styles.meetingTopRow}>
-                  <Text weight="semibold" className={styles.meetingTitle}>
-                    {meeting.title}
+                  <div className={styles.meetingTopRow}>
+                    <Text weight="semibold" className={styles.meetingTitle}>
+                      {meeting.title}
+                    </Text>
+                    <span
+                      className={[
+                        styles.statusBadge,
+                        meeting.status === "scheduled"
+                          ? styles.scheduled
+                          : meeting.status === "live"
+                            ? styles.live
+                            : styles.ended,
+                      ].join(" ")}
+                    >
+                      {getMeetingStatusLabel(meeting.status, t)}
+                    </span>
+                  </div>
+                  <div className={styles.metaPills}>
+                    <span className={styles.metaPill}>
+                      {t("meeting_planner.role_summary", {
+                        role: isMeetingHost
+                          ? t("meeting_planner.role.host")
+                          : t("meeting_planner.role.participant"),
+                      })}
+                    </span>
+                    <span className={styles.metaPill}>
+                      {t("meeting_planner.access_summary", {
+                        access: t(
+                          `meeting_detail.access_policy.${meeting.accessPolicy}`,
+                        ),
+                      })}
+                    </span>
+                  </div>
+                  <Text size="sm" className={styles.meetingTime}>
+                    {formatMeetingTime(meeting.startsAt, t)}
                   </Text>
-                  <span
-                    className={[
-                      styles.statusBadge,
-                      meeting.status === "scheduled"
-                        ? styles.scheduled
-                        : meeting.status === "live"
-                          ? styles.live
-                          : styles.ended,
-                    ].join(" ")}
-                  >
-                    {getMeetingStatusLabel(meeting.status, t)}
-                  </span>
+                  {meeting.status === "live" && (
+                    <Text size="sm" className={styles.attendanceSummary}>
+                      {formatMeetingAttendanceSummary(
+                        attendanceSummaries[meeting.id],
+                        t,
+                      )}
+                    </Text>
+                  )}
+                  {meeting.description && (
+                    <Text size="sm" className={styles.meetingDescription}>
+                      {meeting.description}
+                    </Text>
+                  )}
                 </div>
-                <Text size="sm" className={styles.meetingTime}>
-                  {formatMeetingTime(meeting.startsAt, t)}
-                </Text>
-                {meeting.status === "live" && (
-                  <Text size="sm" className={styles.attendanceSummary}>
-                    {formatMeetingAttendanceSummary(
-                      attendanceSummaries[meeting.id],
-                      t,
+                <div className={styles.meetingSecondary}>
+                  <Text size="sm" className={styles.actionHint}>
+                    {getMeetingNextActionHint(meeting.status, isMeetingHost, t)}
+                  </Text>
+                  <div className={styles.meetingActions}>
+                    {isMeetingHost && (
+                      <Button
+                        size="sm"
+                        kind="secondary"
+                        onClick={() => {
+                          void navigate(`/meetings/${meeting.id}`);
+                        }}
+                      >
+                        {t("meeting_planner.manage")}
+                      </Button>
                     )}
-                  </Text>
-                )}
-                {meeting.description && (
-                  <Text size="sm" className={styles.meetingDescription}>
-                    {meeting.description}
-                  </Text>
-                )}
-              </div>
-              <div className={styles.meetingSecondary}>
-                <Text size="sm" className={styles.actionHint}>
-                  {meeting.status === "live"
-                    ? t("meeting_planner.live_hint")
-                    : t("meeting_planner.scheduled_hint")}
-                </Text>
-                <div className={styles.meetingActions}>
-                  {isMeetingHost && (
+                    <Button
+                      size="sm"
+                      kind="primary"
+                      onClick={() => {
+                        if (meeting.status === "scheduled" && isMeetingHost) {
+                          void onStartMeeting(meeting);
+                          return;
+                        }
+
+                        if (meeting.status === "scheduled" && !isMeetingHost) {
+                          void navigate(`/meetings/${meeting.id}`);
+                          return;
+                        }
+
+                        void navigate(meeting.joinUrl);
+                      }}
+                    >
+                      {primaryActionLabel}
+                    </Button>
                     <Button
                       size="sm"
                       kind="secondary"
                       onClick={() => {
-                        void navigate(`/meetings/${meeting.id}`);
+                        void onCopyMeetingLink(meeting);
                       }}
                     >
-                      {t("meeting_planner.manage")}
+                      {copiedMeetingId === meeting.id
+                        ? t("action.copied")
+                        : t("action.copy_link")}
                     </Button>
-                  )}
-                  {meeting.status === "scheduled" && isMeetingHost ? (
-                    <Button
-                      size="sm"
-                      kind="primary"
-                      onClick={() => {
-                        void onStartMeeting(meeting);
-                      }}
-                    >
-                      {t("meeting_planner.start")}
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      kind="primary"
-                      onClick={() => {
-                        void navigate(meeting.joinUrl);
-                      }}
-                    >
-                      {t("meeting_planner.join")}
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    kind="secondary"
-                    onClick={() => {
-                      void onCopyMeetingLink(meeting);
-                    }}
-                  >
-                    {copiedMeetingId === meeting.id
-                      ? t("action.copied")
-                      : t("action.copy_link")}
-                  </Button>
+                  </div>
                 </div>
-              </div>
               </article>
             );
           })
@@ -368,6 +395,20 @@ function MeetingPlannerSkeleton(): ReactElement {
                 className={[
                   styles.skeletonBlock,
                   styles.skeletonBadge,
+                ].join(" ")}
+              />
+            </div>
+            <div className={styles.metaPills}>
+              <span
+                className={[
+                  styles.skeletonBlock,
+                  styles.skeletonMetaPill,
+                ].join(" ")}
+              />
+              <span
+                className={[
+                  styles.skeletonBlock,
+                  styles.skeletonMetaPill,
                 ].join(" ")}
               />
             </div>
@@ -473,6 +514,22 @@ function getMeetingStatusLabel(
     default:
       return t("meeting_planner.status.draft");
   }
+}
+
+function getMeetingNextActionHint(
+  status: Meeting["status"],
+  isMeetingHost: boolean,
+  t: TFunction,
+): string {
+  if (status === "live") {
+    return isMeetingHost
+      ? t("meeting_planner.live_host_hint")
+      : t("meeting_planner.live_guest_hint");
+  }
+
+  return isMeetingHost
+    ? t("meeting_planner.scheduled_host_hint")
+    : t("meeting_planner.scheduled_guest_hint");
 }
 
 function getMeetingStatusRank(status: Meeting["status"]): number {

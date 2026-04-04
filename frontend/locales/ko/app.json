@@ -24,7 +24,24 @@
     "schedule_card_description": "회의 제목과 시간을 정해 두고, 준비되면 시작하거나 링크를 공유할 수 있습니다.",
     "schedule_card_eyebrow": "예약",
     "schedule_card_title": "회의 예약하기",
-    "title": "회의를 시작하거나, 참여하거나, 예약하세요."
+    "title": "회의를 시작하거나, 참여하거나, 예약하세요.",
+    "workflow": {
+      "join": {
+        "description": "받은 링크나 룸 정보가 있다면 기존 회의로 바로 이동합니다.",
+        "step": "이미 회의가 있다면",
+        "title": "링크로 참여"
+      },
+      "schedule": {
+        "description": "정해진 시간에 열 회의라면 미리 예약해 두고 나중에 시작합니다.",
+        "step": "나중에 열 회의라면",
+        "title": "미리 예약"
+      },
+      "start": {
+        "description": "지금 바로 시작해야 하는 회의라면 새 룸을 만들고 즉시 입장합니다.",
+        "step": "지금 바로 열 회의라면",
+        "title": "즉시 시작"
+      }
+    }
   },
   "start_new_call": "새 통화 시작",
   "call_name": "통화 이름",
@@ -52,8 +69,11 @@
       "title_required": "회의를 예약하기 전에 제목을 입력하세요."
     },
     "eyebrow": "회의",
+    "guidance": "진행 중인 회의 {{liveCount}}개와 예정된 회의 {{scheduledCount}}개를 한곳에서 확인할 수 있습니다. 지금 참여해야 할 회의와, 호스트가 시작해야 하는 회의를 구분해서 보세요.",
     "join": "회의 참여",
     "live_count": "지금 진행 중 {{count}}개",
+    "live_guest_hint": "이미 시작된 회의입니다. 바로 참여할 수 있습니다.",
+    "live_host_hint": "진행 중인 회의입니다. 참여하거나 상세 설정을 확인하세요.",
     "live_hint": "진행 중인 회의는 바로 참여할 수 있습니다.",
     "loading": "회의를 불러오는 중...",
     "manage": "관리",
@@ -64,9 +84,12 @@
     "no_start_time": "시작 시각 없음",
     "open_schedule_flow": "회의 예약",
     "schedule": "회의 예약",
+    "scheduled_guest_hint": "아직 시작 전입니다. 상세 정보를 확인하고 시작을 기다리세요.",
     "scheduled_hint": "예약된 회의는 시작한 뒤에 참여할 수 있습니다.",
+    "scheduled_host_hint": "호스트가 회의를 시작해야 참가가 원활합니다.",
     "scheduling": "예약 중...",
     "start": "회의 시작",
+    "access_summary": "참여 정책: {{access}}",
     "status": {
       "cancelled": "취소됨",
       "draft": "초안",
@@ -80,7 +103,13 @@
     "title_placeholder": "주간 인프라 싱크",
     "today_time": "오늘 · {{time}}",
     "tomorrow_time": "내일 · {{time}}",
-    "upcoming_count": "전체 {{count}}개"
+    "upcoming_count": "전체 {{count}}개",
+    "role": {
+      "host": "호스트",
+      "participant": "참가자"
+    },
+    "role_summary": "내 역할: {{role}}",
+    "view_details": "상세 보기"
   },
   "meeting_scheduler": {
     "back_to_home": "홈으로 돌아가기",

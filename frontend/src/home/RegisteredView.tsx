@@ -162,6 +162,42 @@ export const RegisteredView: FC<Props> = ({ client }) => {
               </Text>
             </section>
 
+            <section className={styles.workflowStrip}>
+              <article className={styles.workflowCard}>
+                <Text size="sm" className={styles.workflowStep}>
+                  {t("home_dashboard.workflow.start.step")}
+                </Text>
+                <Text weight="semibold" className={styles.workflowTitle}>
+                  {t("home_dashboard.workflow.start.title")}
+                </Text>
+                <Text size="sm" className={styles.workflowDescription}>
+                  {t("home_dashboard.workflow.start.description")}
+                </Text>
+              </article>
+              <article className={styles.workflowCard}>
+                <Text size="sm" className={styles.workflowStep}>
+                  {t("home_dashboard.workflow.join.step")}
+                </Text>
+                <Text weight="semibold" className={styles.workflowTitle}>
+                  {t("home_dashboard.workflow.join.title")}
+                </Text>
+                <Text size="sm" className={styles.workflowDescription}>
+                  {t("home_dashboard.workflow.join.description")}
+                </Text>
+              </article>
+              <article className={styles.workflowCard}>
+                <Text size="sm" className={styles.workflowStep}>
+                  {t("home_dashboard.workflow.schedule.step")}
+                </Text>
+                <Text weight="semibold" className={styles.workflowTitle}>
+                  {t("home_dashboard.workflow.schedule.title")}
+                </Text>
+                <Text size="sm" className={styles.workflowDescription}>
+                  {t("home_dashboard.workflow.schedule.description")}
+                </Text>
+              </article>
+            </section>
+
             <section className={styles.actionGrid}>
               <section className={styles.instantCard}>
                 <div className={styles.cardHeader}>

@@ -53,6 +53,7 @@
 }
 
 .sectionDescription,
+.sectionGuidance,
 .emptyState,
 .meetingDescription,
 .meetingTime,
@@ -66,6 +67,10 @@
   gap: 12px;
   justify-items: end;
   align-content: start;
+}
+
+.sectionGuidance {
+  max-width: 48rem;
 }
 
 .sectionStats {
@@ -173,6 +178,24 @@
   font-size: 1.04rem;
 }
 
+.metaPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.metaPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(10, 22, 38, 0.76);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--cpd-color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .attendanceSummary {
   font-weight: 500;
 }
@@ -230,6 +253,11 @@
 .skeletonBadge {
   width: 84px;
   height: 24px;
+}
+
+.skeletonMetaPill {
+  width: 116px;
+  height: 28px;
 }
 
 .skeletonTime {
