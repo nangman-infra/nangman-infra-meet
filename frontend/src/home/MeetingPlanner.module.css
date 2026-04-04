@@ -157,11 +157,14 @@
 .meetingTopRow {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
 }
 
 .meetingTitle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
   line-height: 1.3;
   font-size: 1.04rem;
   word-break: keep-all;
