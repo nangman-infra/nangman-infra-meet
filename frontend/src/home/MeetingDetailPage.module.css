@@ -25,16 +25,13 @@
 }
 
 .hero {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  flex-wrap: wrap;
+  display: grid;
+  gap: 14px;
 }
 
 .heroText,
-.heroStats,
 .panel,
-.stateCallout,
+.inlineNotice,
 .summaryList,
 .summaryItem,
 .form,
@@ -68,8 +65,13 @@
 }
 
 .heroStats {
-  align-content: start;
-  justify-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.heroMeta {
+  color: var(--cpd-color-text-secondary);
 }
 
 .statPill {
@@ -107,17 +109,6 @@
   gap: 4px;
 }
 
-.stateCallout {
-  padding: 16px 18px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(7, 16, 31, 0.72);
-}
-
-.linkValue {
-  word-break: break-all;
-}
-
 .primaryActions,
 .optionButtons,
 .requestActions,
@@ -142,6 +133,14 @@
   margin: 0;
   color: #9ae6cf;
   font-size: 0.95rem;
+}
+
+.inlineNotice {
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(7, 16, 31, 0.52);
 }
 
 .attendanceRow {

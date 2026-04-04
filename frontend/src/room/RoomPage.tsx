@@ -31,7 +31,6 @@ import { map } from "rxjs";
 import { useClientLegacy } from "../ClientContext";
 import { ErrorPage, FullScreenView, LoadingPage } from "../FullScreenView";
 import { GroupCallView } from "./GroupCallView";
-import { HomePage } from "../home/HomePage";
 import { platform } from "../Platform";
 import { AppSelectionModal } from "./AppSelectionModal";
 import { useLoadGroupCall } from "./useLoadGroupCall";
@@ -260,8 +259,7 @@ export const RoomPage: FC = () => {
       />
     );
   } else if (!roomIdOrAlias) {
-    // TODO: This doesn't belong here, the app routes need to be reworked
-    content = <HomePage />;
+    content = <Navigate to="/" replace />;
   } else if (meetingId && meetingEntryAccess.loading) {
     content = <LoadingPage />;
   } else if (meetingId && meetingEntryAccess.error) {

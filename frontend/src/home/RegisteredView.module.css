@@ -10,6 +10,8 @@ Please see LICENSE in the repository root for full details.
   margin: 0 auto;
   display: grid;
   gap: 28px;
+  position: relative;
+  z-index: 1;
 }
 
 .mobileLogo {

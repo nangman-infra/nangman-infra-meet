@@ -321,6 +321,7 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
       setFormState(createMeetingFormState(nextMeeting));
       setActionNotice(t("meeting_detail.notices.started"));
       await loadMeetingDetails();
+      await navigate(nextMeeting.joinUrl);
     } catch (error) {
       setActionError(
         error instanceof Error
@@ -386,7 +387,8 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
   const entryDecision = !isMeetingHost ? meetingEntryAccess.decision : null;
   const canJoinMeeting =
     !isClosedMeeting &&
-    (isMeetingHost || entryDecision?.kind === "allow");
+    ((isMeetingHost && meeting.status === "live") ||
+      (!isMeetingHost && entryDecision?.kind === "allow"));
   const canCopyMeetingLink =
     isMeetingHost || entryDecision?.kind === "allow";
   const shouldShowAccessState =
@@ -404,17 +406,7 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
   const roleLabel = isMeetingHost
     ? t("meeting_detail.role.host")
     : t("meeting_detail.role.participant");
-  const statusSummary = getMeetingStatusSummary(meeting, isMeetingHost, t);
-  const actionSummary = getMeetingActionSummary({
-    canJoinMeeting,
-    canRefreshMeetingAccess,
-    canRequestMeetingAccess,
-    entryDecision,
-    isClosedMeeting,
-    isMeetingHost,
-    meeting,
-    t,
-  });
+  const heroDescription = meeting.description?.trim() || null;
 
   return (
     <div className={commonStyles.container}>
@@ -453,28 +445,33 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                 <Heading size="xl" weight="semibold" className={pageStyles.title}>
                   {meeting.title}
                 </Heading>
-                <Text size="lg" className={pageStyles.description}>
-                  {t("meeting_detail.description")}
+                <div className={pageStyles.heroStats}>
+                  <span className={pageStyles.statPill}>
+                    {getMeetingStatusLabel(meeting.status, t)}
+                  </span>
+                  <span className={pageStyles.statPill}>
+                    {t("meeting_detail.role_summary", { role: roleLabel })}
+                  </span>
+                  {isMeetingHost && (
+                    <span className={pageStyles.statPill}>
+                      {t("meeting_detail.present_count", { count: presentCount })}
+                    </span>
+                  )}
+                  {isMeetingHost && (
+                    <span className={pageStyles.statPill}>
+                      {t("meeting_detail.participant_count", {
+                        count: participantCount,
+                      })}
+                    </span>
+                  )}
+                </div>
+                <Text size="sm" className={pageStyles.heroMeta}>
+                  {formatMeetingStart(meeting.startsAt, t)}
                 </Text>
-              </div>
-              <div className={pageStyles.heroStats}>
-                <span className={pageStyles.statPill}>
-                  {getMeetingStatusLabel(meeting.status, t)}
-                </span>
-                <span className={pageStyles.statPill}>
-                  {t("meeting_detail.role_summary", { role: roleLabel })}
-                </span>
-                {isMeetingHost && (
-                  <span className={pageStyles.statPill}>
-                    {t("meeting_detail.present_count", { count: presentCount })}
-                  </span>
-                )}
-                {isMeetingHost && (
-                  <span className={pageStyles.statPill}>
-                    {t("meeting_detail.participant_count", {
-                      count: participantCount,
-                    })}
-                  </span>
+                {heroDescription && (
+                  <Text size="lg" className={pageStyles.description}>
+                    {heroDescription}
+                  </Text>
                 )}
               </div>
             </div>
@@ -486,17 +483,11 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                     {t("meeting_detail.overview_title")}
                   </Heading>
                   <Text size="sm" className={pageStyles.muted}>
-                    {formatMeetingStart(meeting.startsAt, t)}
+                    {t("meeting_detail.edit_description")}
                   </Text>
                 </div>
 
                 <div className={pageStyles.summaryList}>
-                  <div className={pageStyles.summaryItem}>
-                    <Text size="sm" className={pageStyles.summaryLabel}>
-                      {t("meeting_detail.my_role_label")}
-                    </Text>
-                    <Text size="sm">{roleLabel}</Text>
-                  </div>
                   <div className={pageStyles.summaryItem}>
                     <Text size="sm" className={pageStyles.summaryLabel}>
                       {t("meeting_detail.host_label")}
@@ -547,31 +538,6 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                       </Text>
                     </div>
                   )}
-                  {canCopyMeetingLink && (
-                    <div className={pageStyles.summaryItem}>
-                      <Text size="sm" className={pageStyles.summaryLabel}>
-                        {t("meeting_detail.link_label")}
-                      </Text>
-                      <Text size="sm" className={pageStyles.linkValue}>
-                        {joinLink}
-                      </Text>
-                    </div>
-                  )}
-                </div>
-
-                <div className={pageStyles.stateCallout}>
-                  <Text size="sm" weight="semibold">
-                    {t("meeting_detail.state_summary_title")}
-                  </Text>
-                  <Text size="sm" className={pageStyles.muted}>
-                    {statusSummary}
-                  </Text>
-                  <Text size="sm" weight="semibold">
-                    {t("meeting_detail.next_action_title")}
-                  </Text>
-                  <Text size="sm" className={pageStyles.muted}>
-                    {actionSummary}
-                  </Text>
                 </div>
 
                 <div className={pageStyles.primaryActions}>
@@ -656,15 +622,25 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                   <ErrorMessage error={meetingEntryAccess.error} />
                 )}
                 {entryStateCopy && (
-                  <>
+                  <div className={pageStyles.inlineNotice}>
                     <Text size="sm" weight="semibold">
                       {entryStateCopy.title}
                     </Text>
                     <Text size="sm" className={pageStyles.muted}>
                       {entryStateCopy.body}
                     </Text>
-                  </>
+                  </div>
                 )}
+                {actionNotice && (
+                  <p
+                    className={pageStyles.notice}
+                    role="status"
+                    aria-live="polite"
+                  >
+                    {actionNotice}
+                  </p>
+                )}
+                {actionError && <ErrorMessage error={actionError} />}
               </section>
 
               {canEditMeeting && (
@@ -843,18 +819,6 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                           );
                         }}
                       />
-                    </FieldRow>
-                  )}
-                  {actionError && (
-                    <FieldRow>
-                      <ErrorMessage error={actionError} />
-                    </FieldRow>
-                  )}
-                  {actionNotice && (
-                    <FieldRow>
-                      <p className={pageStyles.notice} role="status" aria-live="polite">
-                        {actionNotice}
-                      </p>
                     </FieldRow>
                   )}
                     <FieldRow rightAlign className={pageStyles.actions}>
@@ -1102,78 +1066,4 @@ function getMeetingEntryStateCopy(
         body: t("meeting_entry.request_access.body", { title }),
       };
   }
-}
-
-function getMeetingStatusSummary(
-  meeting: Meeting,
-  isMeetingHost: boolean,
-  t: TFunction,
-): string {
-  if (meeting.status === "live") {
-    return isMeetingHost
-      ? t("meeting_detail.status_summary.live_host")
-      : t("meeting_detail.status_summary.live_participant");
-  }
-
-  if (meeting.status === "scheduled") {
-    return isMeetingHost
-      ? t("meeting_detail.status_summary.scheduled_host")
-      : t("meeting_detail.status_summary.scheduled_participant");
-  }
-
-  if (meeting.status === "cancelled") {
-    return t("meeting_detail.status_summary.cancelled");
-  }
-
-  return t("meeting_detail.status_summary.ended");
-}
-
-function getMeetingActionSummary({
-  canJoinMeeting,
-  canRefreshMeetingAccess,
-  canRequestMeetingAccess,
-  entryDecision,
-  isClosedMeeting,
-  isMeetingHost,
-  meeting,
-  t,
-}: {
-  canJoinMeeting: boolean;
-  canRefreshMeetingAccess: boolean;
-  canRequestMeetingAccess: boolean;
-  entryDecision: MeetingAccessDecision | null;
-  isClosedMeeting: boolean;
-  isMeetingHost: boolean;
-  meeting: Meeting;
-  t: TFunction;
-}): string {
-  if (isClosedMeeting) {
-    return t("meeting_detail.action_summary.closed");
-  }
-
-  if (meeting.status === "scheduled" && isMeetingHost) {
-    return t("meeting_detail.action_summary.scheduled_host");
-  }
-
-  if (meeting.status === "live" && isMeetingHost) {
-    return t("meeting_detail.action_summary.live_host");
-  }
-
-  if (canJoinMeeting) {
-    return t("meeting_detail.action_summary.can_join");
-  }
-
-  if (canRequestMeetingAccess) {
-    return t("meeting_detail.action_summary.request_access");
-  }
-
-  if (canRefreshMeetingAccess && entryDecision?.kind === "wait_for_host") {
-    return t("meeting_detail.action_summary.wait_for_host");
-  }
-
-  if (canRefreshMeetingAccess && entryDecision?.kind === "pending_approval") {
-    return t("meeting_detail.action_summary.pending_approval");
-  }
-
-  return t("meeting_detail.action_summary.review_details");
 }

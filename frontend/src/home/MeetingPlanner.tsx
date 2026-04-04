@@ -168,9 +168,6 @@ export const MeetingPlanner: FC = () => {
   const liveMeetingsCount = visibleMeetings.filter(
     (meeting) => meeting.status === "live",
   ).length;
-  const scheduledMeetingsCount = visibleMeetings.filter(
-    (meeting) => meeting.status === "scheduled",
-  ).length;
 
   return (
     <section className={styles.section}>
@@ -185,38 +182,19 @@ export const MeetingPlanner: FC = () => {
           <Text size="sm" className={styles.sectionDescription}>
             {t("meeting_planner.description")}
           </Text>
-          <Text size="sm" className={styles.sectionGuidance}>
-            {t("meeting_planner.guidance", {
-              liveCount: liveMeetingsCount,
-              scheduledCount: scheduledMeetingsCount,
-            })}
-          </Text>
         </div>
-        <div className={styles.sectionActions}>
-          <div className={styles.sectionStats}>
-            <span className={styles.statPill}>
-              {t("meeting_planner.upcoming_count", {
-                count: visibleMeetings.length,
+        <div className={styles.sectionStats}>
+          <span className={styles.statPill}>
+            {t("meeting_planner.upcoming_count", {
+              count: visibleMeetings.length,
+            })}
+          </span>
+          {liveMeetingsCount > 0 && (
+            <span className={[styles.statPill, styles.statLive].join(" ")}>
+              {t("meeting_planner.live_count", {
+                count: liveMeetingsCount,
               })}
             </span>
-            {liveMeetingsCount > 0 && (
-              <span className={[styles.statPill, styles.statLive].join(" ")}>
-                {t("meeting_planner.live_count", {
-                  count: liveMeetingsCount,
-                })}
-              </span>
-            )}
-          </div>
-          {visibleMeetings.length > 0 && (
-            <Button
-              size="lg"
-              kind="primary"
-              onClick={() => {
-                void navigate("/meetings/new");
-              }}
-            >
-              {t("meeting_planner.schedule")}
-            </Button>
           )}
         </div>
       </div>
@@ -238,15 +216,6 @@ export const MeetingPlanner: FC = () => {
             <Text size="sm" className={styles.emptyState}>
               {t("meeting_planner.empty_description")}
             </Text>
-            <Button
-              size="sm"
-              kind="secondary"
-              onClick={() => {
-                void navigate("/meetings/new");
-              }}
-            >
-              {t("meeting_planner.open_schedule_flow")}
-            </Button>
           </div>
         ) : (
           visibleMeetings.map((meeting) => {
@@ -312,9 +281,6 @@ export const MeetingPlanner: FC = () => {
                   )}
                 </div>
                 <div className={styles.meetingSecondary}>
-                  <Text size="sm" className={styles.actionHint}>
-                    {getMeetingNextActionHint(meeting.status, isMeetingHost, t)}
-                  </Text>
                   <div className={styles.meetingActions}>
                     {isMeetingHost && (
                       <Button
@@ -426,9 +392,6 @@ function MeetingPlannerSkeleton(): ReactElement {
             />
           </div>
           <div className={styles.meetingSecondary}>
-            <span
-              className={[styles.skeletonBlock, styles.skeletonHint].join(" ")}
-            />
             <div className={styles.meetingActions}>
               <span
                 className={[styles.skeletonBlock, styles.skeletonButton].join(" ")}
@@ -514,22 +477,6 @@ function getMeetingStatusLabel(
     default:
       return t("meeting_planner.status.draft");
   }
-}
-
-function getMeetingNextActionHint(
-  status: Meeting["status"],
-  isMeetingHost: boolean,
-  t: TFunction,
-): string {
-  if (status === "live") {
-    return isMeetingHost
-      ? t("meeting_planner.live_host_hint")
-      : t("meeting_planner.live_guest_hint");
-  }
-
-  return isMeetingHost
-    ? t("meeting_planner.scheduled_host_hint")
-    : t("meeting_planner.scheduled_guest_hint");
 }
 
 function getMeetingStatusRank(status: Meeting["status"]): number {

@@ -189,8 +189,6 @@ export const LobbyView: FC<Props> = ({
         ? t("lobby.status.participants_present", { count: participantCount })
         : t("lobby.status.participants_empty");
 
-  // TODO: Unify this component with InCallView, so we can get slick joining
-  // animations and don't have to feel bad about reusing its CSS
   return (
     <>
       <div className={classNames(styles.room, inCallStyles.inRoom)}>

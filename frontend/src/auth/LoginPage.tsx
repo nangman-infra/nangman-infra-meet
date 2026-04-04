@@ -27,7 +27,7 @@ export const LoginPage: FC = () => {
 
   const { setClient } = useClient();
   const { startSSOLogin, completeSSOLogin } = useSSOLogin();
-  const homeserver = Config.defaultHomeserverUrl(); // TODO: Make this configurable
+  const homeserver = Config.defaultHomeserverUrl();
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);

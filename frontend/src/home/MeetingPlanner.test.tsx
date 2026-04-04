@@ -51,22 +51,19 @@ describe("MeetingPlanner", () => {
     });
   });
 
-  it("opens the scheduling page from the meetings section", async () => {
+  it("does not duplicate the scheduling call-to-action inside the meetings list", async () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
         <Routes>
           <Route path="/" element={<MeetingPlanner />} />
-          <Route path="/meetings/new" element={<div>Schedule route</div>} />
         </Routes>
       </MemoryRouter>,
     );
 
     expect(await screen.findByText("No meetings yet")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Meeting title")).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Schedule meeting" }));
-
-    expect(await screen.findByText("Schedule route")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Schedule meeting" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows different actions for live and scheduled meetings", async () => {

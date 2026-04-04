@@ -63,9 +63,10 @@ layer(compound);
 
 body {
   background-color: var(--cpd-color-bg-canvas-default);
-  background-size: calc(max(1440px, 100vw)) calc(max(800px, 100vh));
+  background-size: cover;
   background-repeat: no-repeat;
-  background-position: center;
+  background-position: center top;
+  background-attachment: fixed;
   color: var(--cpd-color-text-primary);
   color-scheme: dark;
   margin: 0;
@@ -92,6 +93,11 @@ body,
   /* We use !important here to override vaul drawers, which have a side effect
   of setting height: auto; on the body element and messing up our layouts */
   height: 100% !important;
+}
+
+html,
+body {
+  min-height: 100%;
 }
 
 #root {

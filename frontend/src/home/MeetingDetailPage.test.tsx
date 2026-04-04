@@ -121,13 +121,15 @@ describe("MeetingDetailPage", () => {
 
     expect(await screen.findByText("Weekly infra sync")).toBeInTheDocument();
     expect(screen.getByText("Attendance")).toBeInTheDocument();
-    expect(screen.getByText("My role")).toBeInTheDocument();
-    expect(screen.getByText("Current meeting status")).toBeInTheDocument();
-    expect(screen.getByText("What you can do now")).toBeInTheDocument();
+    expect(screen.getByText("My role: Host")).toBeInTheDocument();
+    expect(screen.getAllByText(/Mar 18, 2026/).length).toBeGreaterThan(0);
     expect(
       screen.getAllByText("@alice:matrix.nangman.cloud").length,
     ).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Start meeting" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Join meeting" }),
+    ).not.toBeInTheDocument();
   });
 
   it("saves meeting changes from the detail form", async () => {
@@ -241,7 +243,7 @@ describe("MeetingDetailPage", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        "Wait for the host to start the meeting, then refresh if this page does not update yet.",
+        "\"Weekly infra sync\" is scheduled, and the host has not opened entry yet.",
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText("Attendance")).not.toBeInTheDocument();
