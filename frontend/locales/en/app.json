@@ -201,6 +201,8 @@
     "waiting_for_invite": "Request sent! Waiting for permission to join…"
   },
   "log_in": "Log In",
+  "login_context": "Sign in with your internal organization account to continue to the meeting workspace.",
+  "login_redirect_context": "Sign in to continue to the page you were trying to open: {{target}}",
   "logging_in": "Logging in…",
   "login_auth_links": "<0>Create an account</0> Or <2>Access as a guest</2>",
   "login_auth_links_prompt": "Not registered yet?",
@@ -459,6 +461,15 @@
       "title": "Waiting for host approval"
     },
     "policy": "Access policy: {{accessPolicy}}",
+    "next_step_title": "What happens next",
+    "next_step": {
+      "meeting_closed": "This meeting is no longer accepting joins. Go back to home if you need another room.",
+      "not_invited": "You cannot enter until the host changes the invited list or shares a different meeting.",
+      "pending_approval": "The host still needs to approve your request. Refresh this page after they respond.",
+      "rejected": "You can send another request if your participation is still needed.",
+      "request_access": "Send an access request now, then stay on this page until the host responds.",
+      "wait_for_host": "The host must start the meeting first. Refresh this page if it does not update automatically."
+    },
     "refresh": "Refresh",
     "request_access": {
       "body": "\"{{title}}\" requires host approval. Send a request and wait for the host to review it.",

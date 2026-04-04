@@ -32,6 +32,18 @@ export const LoginPage: FC = () => {
   const location = useLocation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error>();
+  const fromState = (location.state as { from?: unknown } | null)?.from;
+  const redirectSummary =
+    typeof fromState === "string"
+      ? fromState
+      : fromState &&
+          typeof fromState === "object" &&
+          "pathname" in fromState &&
+          typeof (fromState as { pathname?: unknown }).pathname === "string"
+        ? `${(fromState as { pathname: string; search?: string }).pathname}${
+            (fromState as { pathname: string; search?: string }).search ?? ""
+          }`
+        : null;
 
   // Check for loginToken in URL
   useEffect(() => {
@@ -62,7 +74,6 @@ export const LoginPage: FC = () => {
       return;
     }
 
-    const fromState = (location.state as { from?: unknown } | null)?.from;
     if (typeof fromState === "string") {
       sessionStorage.setItem(LOGIN_REDIRECT_STORAGE_KEY, fromState);
     } else if (
@@ -84,7 +95,7 @@ export const LoginPage: FC = () => {
 
     setLoading(true);
     void startSSOLogin(homeserver);
-  }, [homeserver, startSSOLogin, location.state]);
+  }, [fromState, homeserver, startSSOLogin]);
   return (
     <div className={styles.container}>
       <div className={styles.card}>
@@ -93,6 +104,18 @@ export const LoginPage: FC = () => {
         <div className={styles.header}>
           <h2>{t("log_in")}</h2>
           <p className={styles.subheading}>{t("login_subheading")}</p>
+          <p className={styles.contextText}>
+            {redirectSummary
+              ? t("login_redirect_context", {
+                  defaultValue:
+                    "Sign in to continue to the page you were trying to open: {{target}}",
+                  target: redirectSummary,
+                })
+              : t("login_context", {
+                  defaultValue:
+                    "Sign in with your internal organization account to continue to the meeting workspace.",
+                })}
+          </p>
         </div>
 
         <div className={styles.actions}>

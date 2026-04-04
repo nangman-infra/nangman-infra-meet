@@ -298,6 +298,15 @@
       "title": "호스트 승인 대기 중"
     },
     "policy": "참여 정책: {{accessPolicy}}",
+    "next_step_title": "다음에 일어나는 일",
+    "next_step": {
+      "meeting_closed": "이 회의는 더 이상 입장을 받지 않습니다. 다른 회의가 필요하면 홈으로 돌아가세요.",
+      "not_invited": "호스트가 허용 사용자 목록을 바꾸거나 다른 회의를 안내하기 전까지는 입장할 수 없습니다.",
+      "pending_approval": "호스트가 아직 요청을 승인하지 않았습니다. 응답 후 이 페이지를 새로고침해 보세요.",
+      "rejected": "여전히 참여가 필요하다면 다시 입장 요청을 보낼 수 있습니다.",
+      "request_access": "지금 입장 요청을 보내고, 호스트가 응답할 때까지 이 페이지에서 기다리세요.",
+      "wait_for_host": "호스트가 먼저 회의를 시작해야 합니다. 자동으로 바뀌지 않으면 새로고침해 보세요."
+    },
     "refresh": "새로고침",
     "request_access": {
       "body": "\"{{title}}\" 회의는 호스트 승인이 필요합니다. 요청을 보내고 응답을 기다리세요.",
@@ -502,6 +511,8 @@
     "waiting_for_invite": "Request sent! Waiting for permission to join…"
   },
   "log_in": "Log In",
+  "login_context": "낭만 인프라 내부 계정으로 로그인한 뒤 회의 워크스페이스를 계속 이용하세요.",
+  "login_redirect_context": "열려고 했던 페이지로 계속 이동하려면 로그인하세요: {{target}}",
   "logging_in": "Logging in…",
   "login_auth_links": "<0>Create an account</0> Or <2>Access as a guest</2>",
   "login_auth_links_prompt": "Not registered yet?",
