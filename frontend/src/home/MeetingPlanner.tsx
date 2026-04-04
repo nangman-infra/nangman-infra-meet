@@ -4,7 +4,13 @@ Copyright 2026 Nangman Infra
 SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 */
 
-import { useCallback, useEffect, useState, type FC } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+  type FC,
+  type ReactElement,
+} from "react";
 import { type TFunction } from "i18next";
 import { logger } from "matrix-js-sdk/lib/logger";
 import { useTranslation } from "react-i18next";
@@ -212,13 +218,9 @@ export const MeetingPlanner: FC = () => {
         </div>
       )}
 
-      <div className={styles.meetingsList}>
+      <div className={styles.meetingsList} aria-busy={loadingMeetings}>
         {loadingMeetings ? (
-          <div className={styles.emptyStateCard}>
-            <Text size="sm" className={styles.emptyState}>
-              {t("meeting_planner.loading")}
-            </Text>
-          </div>
+          <MeetingPlannerSkeleton />
         ) : visibleMeetings.length === 0 ? (
           <div className={styles.emptyStateCard}>
             <Text size="sm" className={styles.emptyStateTitle}>
@@ -338,6 +340,68 @@ export const MeetingPlanner: FC = () => {
     </section>
   );
 };
+
+const SKELETON_CARD_COUNT = 3;
+
+function MeetingPlannerSkeleton(): ReactElement {
+  return (
+    <div
+      className={styles.skeletonList}
+      data-testid="meeting-planner-skeleton"
+      aria-label="Loading meetings"
+    >
+      {Array.from({ length: SKELETON_CARD_COUNT }, (_, index) => (
+        <article
+          key={`meeting-skeleton-${index}`}
+          className={[styles.meetingCard, styles.meetingCardSkeleton].join(" ")}
+          aria-hidden="true"
+        >
+          <div className={styles.meetingPrimary}>
+            <div className={styles.meetingTopRow}>
+              <span
+                className={[
+                  styles.skeletonBlock,
+                  styles.skeletonTitle,
+                ].join(" ")}
+              />
+              <span
+                className={[
+                  styles.skeletonBlock,
+                  styles.skeletonBadge,
+                ].join(" ")}
+              />
+            </div>
+            <span
+              className={[styles.skeletonBlock, styles.skeletonTime].join(" ")}
+            />
+            <span
+              className={[styles.skeletonBlock, styles.skeletonSummary].join(" ")}
+            />
+            <span
+              className={[
+                styles.skeletonBlock,
+                styles.skeletonDescription,
+              ].join(" ")}
+            />
+          </div>
+          <div className={styles.meetingSecondary}>
+            <span
+              className={[styles.skeletonBlock, styles.skeletonHint].join(" ")}
+            />
+            <div className={styles.meetingActions}>
+              <span
+                className={[styles.skeletonBlock, styles.skeletonButton].join(" ")}
+              />
+              <span
+                className={[styles.skeletonBlock, styles.skeletonButton].join(" ")}
+              />
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
 
 function formatMeetingTime(startsAt: string | null, t: TFunction): string {
   if (!startsAt) {

@@ -103,6 +103,11 @@
   gap: 14px;
 }
 
+.skeletonList {
+  display: grid;
+  gap: 14px;
+}
+
 .emptyStateCard,
 .meetingCard {
   border-radius: 22px;
@@ -137,6 +142,12 @@
   transform: translateY(-1px);
   border-color: rgba(133, 239, 216, 0.18);
   background: rgba(6, 16, 31, 0.78);
+}
+
+.meetingCardSkeleton:hover {
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.08);
+  background: rgba(4, 12, 24, 0.72);
 }
 
 .meetingPrimary,
@@ -197,6 +208,72 @@
   justify-content: flex-end;
 }
 
+.skeletonBlock {
+  display: block;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.06) 0%,
+      rgba(166, 242, 226, 0.18) 48%,
+      rgba(255, 255, 255, 0.06) 100%
+    );
+  background-size: 220% 100%;
+  animation: skeletonPulse 1.3s ease-in-out infinite;
+}
+
+.skeletonTitle {
+  width: min(240px, 56%);
+  height: 18px;
+}
+
+.skeletonBadge {
+  width: 84px;
+  height: 24px;
+}
+
+.skeletonTime {
+  width: min(180px, 44%);
+  height: 14px;
+}
+
+.skeletonSummary {
+  width: min(260px, 62%);
+  height: 14px;
+}
+
+.skeletonDescription {
+  width: min(340px, 74%);
+  height: 14px;
+}
+
+.skeletonHint {
+  width: 180px;
+  height: 14px;
+  justify-self: end;
+}
+
+.skeletonButton {
+  width: 112px;
+  height: 36px;
+}
+
+@keyframes skeletonPulse {
+  0% {
+    background-position: 100% 50%;
+    opacity: 0.72;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    background-position: -100% 50%;
+    opacity: 0.72;
+  }
+}
+
 @media (max-width: 920px) {
   .meetingCard {
     grid-template-columns: 1fr;
@@ -208,6 +285,10 @@
   .sectionStats {
     justify-items: start;
     justify-content: flex-start;
+  }
+
+  .skeletonHint {
+    justify-self: start;
   }
 }
 

@@ -4,7 +4,7 @@ Copyright 2026 Nangman Infra
 SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 */
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -28,6 +28,29 @@ describe("MeetingPlanner", () => {
     vi.restoreAllMocks();
   });
 
+  it("renders meeting skeleton cards while the list is still loading", async () => {
+    let resolveMeetings: ((meetings: []) => void) | undefined;
+    vi.mocked(MeetingsApi.listMeetings).mockReturnValue(
+      new Promise((resolve) => {
+        resolveMeetings = resolve;
+      }),
+    );
+
+    render(
+      <MemoryRouter>
+        <MeetingPlanner />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByTestId("meeting-planner-skeleton")).toBeInTheDocument();
+
+    resolveMeetings?.([]);
+
+    await waitFor(() => {
+      expect(screen.getByText("No meetings yet")).toBeInTheDocument();
+    });
+  });
+
   it("opens the scheduling page from the meetings section", async () => {
     render(
       <MemoryRouter initialEntries={["/"]}>
@@ -41,7 +64,7 @@ describe("MeetingPlanner", () => {
     expect(await screen.findByText("No meetings yet")).toBeInTheDocument();
     expect(screen.queryByLabelText("Meeting title")).not.toBeInTheDocument();
 
-    screen.getByRole("button", { name: "Schedule meeting" }).click();
+    fireEvent.click(screen.getByRole("button", { name: "Schedule meeting" }));
 
     expect(await screen.findByText("Schedule route")).toBeInTheDocument();
   });
