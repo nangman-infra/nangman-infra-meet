@@ -12,7 +12,6 @@ import { type HeaderStyle, getUrlParams } from "../../../../UrlParams.ts";
 
 export interface RoomEntryUrlContext {
   confineToRoom: boolean;
-  appPrompt: boolean;
   preload: boolean;
   header: HeaderStyle;
   skipLobby: boolean;
@@ -25,7 +24,6 @@ function selectRoomEntryUrlContext(
   const params = getUrlParams(search, hash);
   return {
     confineToRoom: params.confineToRoom,
-    appPrompt: params.appPrompt,
     preload: params.preload,
     header: params.header,
     skipLobby: params.skipLobby,

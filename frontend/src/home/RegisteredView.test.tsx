@@ -54,7 +54,6 @@ describe("RegisteredView", () => {
         "Start a new meeting right away, join an existing one, or schedule one for later.",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("Quick start")).toBeInTheDocument();
     expect(screen.getByText("Live and upcoming meetings")).toBeInTheDocument();
     expect(screen.getByText("Existing meeting")).toBeInTheDocument();
     expect(screen.queryByLabelText("Meeting title")).not.toBeInTheDocument();

@@ -31,14 +31,11 @@ import { map } from "rxjs";
 import { useClientLegacy } from "../ClientContext";
 import { ErrorPage, FullScreenView, LoadingPage } from "../FullScreenView";
 import { GroupCallView } from "./GroupCallView";
-import { platform } from "../Platform";
-import { AppSelectionModal } from "./AppSelectionModal";
 import { useLoadGroupCall } from "./useLoadGroupCall";
 import { LobbyView } from "./LobbyView";
 import { E2eeType } from "../e2ee/e2eeType";
 import { useProfile } from "../profile/useProfile";
 import { useOptInAnalytics } from "../settings/settings";
-import { Config } from "../config/Config";
 import { Link } from "../button/Link";
 import { ErrorView } from "../ErrorView";
 import { useMediaDevices } from "../MediaDevicesContext";
@@ -52,8 +49,7 @@ import { useMeetingAttendanceTracker } from "../domains/meetings/presentation/us
 import styles from "./RoomPage.module.css";
 
 export const RoomPage: FC = () => {
-  const { confineToRoom, appPrompt, preload, header, skipLobby } =
-    useRoomEntryUrlContext();
+  const { confineToRoom, preload, header, skipLobby } = useRoomEntryUrlContext();
   const { t } = useTranslation();
   const { roomAlias, roomId, meetingId, viaServers } = useRoomIdentifier();
   const location = useLocation();
@@ -284,16 +280,7 @@ export const RoomPage: FC = () => {
     content = groupCallView();
   }
 
-  return (
-    <>
-      {content}
-      {/* On Android and iOS, show a prompt to launch the mobile app. */}
-      {appPrompt &&
-        Config.get().app_prompt &&
-        (platform === "android" || platform === "ios") &&
-        roomId && <AppSelectionModal roomId={roomId} />}
-    </>
-  );
+  return <>{content}</>;
 };
 
 interface MeetingEntryGateViewProps {

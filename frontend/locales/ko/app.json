@@ -24,24 +24,7 @@
     "schedule_card_description": "회의 제목과 시간을 정해 두고, 준비되면 시작하거나 링크를 공유할 수 있습니다.",
     "schedule_card_eyebrow": "예약",
     "schedule_card_title": "회의 예약하기",
-    "title": "회의를 시작하거나, 참여하거나, 예약하세요.",
-    "workflow": {
-      "join": {
-        "description": "받은 링크나 룸 정보가 있다면 기존 회의로 바로 이동합니다.",
-        "step": "이미 회의가 있다면",
-        "title": "링크로 참여"
-      },
-      "schedule": {
-        "description": "정해진 시간에 열 회의라면 미리 예약해 두고 나중에 시작합니다.",
-        "step": "나중에 열 회의라면",
-        "title": "미리 예약"
-      },
-      "start": {
-        "description": "지금 바로 시작해야 하는 회의라면 새 룸을 만들고 즉시 입장합니다.",
-        "step": "지금 바로 열 회의라면",
-        "title": "즉시 시작"
-      }
-    }
+    "title": "회의를 시작하거나, 참여하거나, 예약하세요."
   },
   "start_new_call": "새 통화 시작",
   "call_name": "통화 이름",
@@ -379,12 +362,6 @@
     "upload_file": "Upload file"
   },
   "analytics_notice": "By participating in this beta, you consent to the collection of anonymous data, which we use to improve the product. You can find more information about which data we track in our <2>Privacy Policy</2> and our <6>Cookie Policy</6>.",
-  "app_selection_modal": {
-    "continue_in_browser": "Continue in browser",
-    "open_in_app": "Open in the app",
-    "text": "Ready to join?",
-    "title": "Select app"
-  },
   "call_ended_view": {
     "create_account_button": "Create account",
     "create_account_prompt": "<0>Why not finish by setting up a password to keep your account?</0><1>You'll be able to keep your name and set an avatar for use on future calls</1>",

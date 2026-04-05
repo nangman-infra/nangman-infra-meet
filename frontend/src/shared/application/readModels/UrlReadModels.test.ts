@@ -138,7 +138,6 @@ describe("URL read models", () => {
       ),
     ).toEqual({
       confineToRoom: true,
-      appPrompt: false,
       preload: true,
       header: HeaderStyle.AppBar,
       skipLobby: true,
