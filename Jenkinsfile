@@ -177,6 +177,31 @@ pipeline {
             }
         }
 
+        stage('Notify Build Start') {
+            steps {
+                script {
+                    def startMessage = ":hourglass_flowing_sand: 빌드를 시작합니다.\n프로젝트: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n브랜치: ${env.BUILD_REF}\n태그: sha-${env.SHORT_SHA}"
+
+                    if (env.FORCE_DEPLOY == 'true') {
+                        startMessage += "\n실행 방식: 강제 배포"
+                    } else if (env.DEPLOY_REQUIRED == 'true') {
+                        startMessage += "\n실행 방식: 변경 감지 배포"
+                    } else {
+                        startMessage += "\n실행 방식: 품질 검증 전용"
+                    }
+
+                    try {
+                        mattermostSend(
+                            color: '#439FE0',
+                            message: startMessage
+                        )
+                    } catch (err) {
+                        echo "Mattermost start notification failed: ${err.getMessage()}"
+                    }
+                }
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 script {
