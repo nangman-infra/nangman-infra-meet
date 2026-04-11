@@ -46,7 +46,7 @@ pipeline {
         APP_HEALTH_URL = 'http://172.16.0.14:8082/api/v1/health'
         APP_HEALTH_EXPECTED_SERVICE = 'nangman-infra-meet-backend'
         DEPLOY_TIMEOUT_SECONDS = '180'
-        SONARQUBE_INSTALLATION = 'SonarQube'
+        SONARQUBE_INSTALLATION = 'sonarqube'
         SONAR_SCANNER_TOOL = 'SonarScanner'
         SONAR_PROJECT_KEY = 'nangman-infra-meet'
         SONAR_PROJECT_NAME = 'nangman-infra-meet'
