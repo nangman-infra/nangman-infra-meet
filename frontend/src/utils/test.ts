@@ -101,6 +101,11 @@ type TestLivekitFocusSelection = {
   focus_selection: "oldest_membership" | "multi_sfu";
 };
 
+const DEFAULT_TEST_LIVEKIT_FOCUS_SELECTION: TestLivekitFocusSelection = {
+  type: "livekit",
+  focus_selection: "oldest_membership",
+};
+
 /**
  * Create a new ObservableScope which ends when the current test ends.
  */
@@ -226,10 +231,7 @@ export function mockRtcMembership(
   deviceId: string,
   callId = "",
   fociPreferred: Transport[] = [exampleTransport],
-  focusActive: TestLivekitFocusSelection = {
-    type: "livekit",
-    focus_selection: "oldest_membership",
-  },
+  focusActive: TestLivekitFocusSelection = DEFAULT_TEST_LIVEKIT_FOCUS_SELECTION,
   membership: Partial<SessionMembershipData> = {},
 ): CallMembership {
   const data: SessionMembershipData = {

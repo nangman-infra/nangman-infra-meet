@@ -143,7 +143,7 @@ export const SettingsModal: FC<Props> = ({
             <Button
               onClick={(e): void => {
                 e.preventDefault();
-                openNativeAudioDevicePicker(window.controls);
+                openNativeAudioDevicePicker(globalThis.controls);
               }}
             >
               {t("settings.devices.change_device_button")}

@@ -354,7 +354,7 @@ class ControlledAudioOutput
           "[controlled-output] onAudioDeviceSelect called:",
           device,
         );
-        emitNativeAudioDeviceSelection(window.controls, device.id);
+        emitNativeAudioDeviceSelection(globalThis.controls, device.id);
       }
     });
     this.available$.subscribe((available) => {
