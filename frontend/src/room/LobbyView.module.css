@@ -19,45 +19,48 @@ Please see LICENSE in the repository root for full details.
 .summary {
   width: min(100%, 32rem);
   display: grid;
-  gap: var(--cpd-space-2x);
-  padding: var(--cpd-space-4x);
-  border: 1px solid
-    color-mix(in srgb, var(--cpd-color-gray-400) 36%, transparent);
-  border-radius: 24px;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--cpd-color-bg-action-primary-rest) 6%, white),
-      color-mix(in srgb, var(--cpd-color-bg-canvas-default) 96%, white)
-    );
-  box-shadow: 0 18px 48px rgb(15 23 42 / 0.08);
-}
-
-.summaryLabel {
-  margin: 0;
-  font-size: var(--cpd-font-size-body-sm);
-  font-weight: var(--cpd-font-weight-semibold);
-  color: var(--cpd-color-text-secondary);
+  gap: var(--cpd-space-3x);
+  justify-items: center;
+  text-align: center;
 }
 
 .summaryTitle {
   margin: 0;
-  font: var(--cpd-font-heading-md-semibold);
+  font: var(--cpd-font-heading-sm-semibold);
   color: var(--cpd-color-text-primary);
+  text-wrap: balance;
 }
 
 .summaryBody {
   margin: 0;
   color: var(--cpd-color-text-secondary);
   line-height: 1.5;
+  text-wrap: pretty;
 }
 
-.summaryList {
-  margin: 0;
-  padding-left: 1.1rem;
-  display: grid;
-  gap: var(--cpd-space-2x);
-  color: var(--cpd-color-text-primary);
+.summaryMeta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.summaryChip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid
+    color-mix(in srgb, var(--cpd-color-gray-400) 24%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--cpd-color-bg-canvas-default) 88%,
+    white
+  );
+  color: var(--cpd-color-text-secondary);
+  font-size: var(--cpd-font-size-body-sm);
+  line-height: 1.35;
 }
 
 .wait {

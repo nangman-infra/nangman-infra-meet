@@ -325,18 +325,6 @@ const MeetingEntryGateView: FC<MeetingEntryGateViewProps> = ({
         : decision.kind === "meeting_closed"
           ? EndCallIcon
           : CloseIcon;
-  const nextStepSummary =
-    decision.kind === "wait_for_host"
-      ? t("meeting_entry.next_step.wait_for_host")
-      : decision.kind === "request_access"
-        ? t("meeting_entry.next_step.request_access")
-        : decision.kind === "pending_approval"
-          ? t("meeting_entry.next_step.pending_approval")
-          : decision.kind === "rejected"
-            ? t("meeting_entry.next_step.rejected")
-            : decision.kind === "not_invited"
-              ? t("meeting_entry.next_step.not_invited")
-              : t("meeting_entry.next_step.meeting_closed");
 
   return (
     <FullScreenView>
@@ -347,12 +335,6 @@ const MeetingEntryGateView: FC<MeetingEntryGateViewProps> = ({
             accessPolicy: t(`meeting_detail.access_policy.${decision.accessPolicy}`),
           })}
         </p>
-        <div className={styles.gateSummary}>
-          <p className={styles.gateSummaryLabel}>
-            {t("meeting_entry.next_step_title")}
-          </p>
-          <p className={styles.gateMeta}>{nextStepSummary}</p>
-        </div>
         {(decision.kind === "wait_for_host" ||
           decision.kind === "pending_approval") && (
           <div className={styles.gateActions}>

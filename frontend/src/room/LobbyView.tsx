@@ -188,6 +188,11 @@ export const LobbyView: FC<Props> = ({
       : participantCount > 0
         ? t("lobby.status.participants_present", { count: participantCount })
         : t("lobby.status.participants_empty");
+  const statusItems = [
+    audioEnabled ? t("lobby.status.audio_on") : t("lobby.status.audio_off"),
+    videoEnabled ? t("lobby.status.video_on") : t("lobby.status.video_off"),
+    participantSummary,
+  ].filter((value): value is string => value !== null);
 
   return (
     <>
@@ -229,23 +234,15 @@ export const LobbyView: FC<Props> = ({
             </Button>
           </VideoPreview>
           <section className={styles.summary} aria-live="polite">
-            <p className={styles.summaryLabel}>{t("lobby.status.label")}</p>
             <h2 className={styles.summaryTitle}>{lobbySummaryTitle}</h2>
             <p className={styles.summaryBody}>{lobbySummaryBody}</p>
-            <ul className={styles.summaryList}>
-              <li>
-                {audioEnabled
-                  ? t("lobby.status.audio_on")
-                  : t("lobby.status.audio_off")}
-              </li>
-              <li>
-                {videoEnabled
-                  ? t("lobby.status.video_on")
-                  : t("lobby.status.video_off")}
-              </li>
-              <li>{t("lobby.status.settings_hint")}</li>
-              {participantSummary && <li>{participantSummary}</li>}
-            </ul>
+            <div className={styles.summaryMeta}>
+              {statusItems.map((item) => (
+                <span key={item} className={styles.summaryChip}>
+                  {item}
+                </span>
+              ))}
+            </div>
           </section>
           {!recentsButtonInFooter && recentsButton}
         </div>
