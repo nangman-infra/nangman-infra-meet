@@ -5,8 +5,14 @@ export const DEFAULT_BACKEND_PORT = 8_787;
 export const DEFAULT_LOG_LEVEL = "info";
 export const DEFAULT_RATE_LIMIT_LIMIT = 120;
 export const DEFAULT_RATE_LIMIT_TTL_MS = 60_000;
-export const DEFAULT_ALLOWED_ORIGINS =
-  "http://127.0.0.1:8082,http://localhost:8082,http://127.0.0.1:3000,http://localhost:3000,https://localhost:3000,https://m.localhost:3000";
+export const DEFAULT_ALLOWED_ORIGINS = [
+  buildOrigin("http:", "127.0.0.1", 8082),
+  buildOrigin("http:", "localhost", 8082),
+  buildOrigin("http:", "127.0.0.1", 3000),
+  buildOrigin("http:", "localhost", 3000),
+  buildOrigin("https:", "localhost", 3000),
+  buildOrigin("https:", "m.localhost", 3000),
+].join(",");
 
 export const ENV_VALIDATION_SCHEMA = Joi.object({
   NODE_ENV: Joi.string().valid("development", "test", "production").default("development"),
@@ -22,3 +28,16 @@ export const ENV_VALIDATION_SCHEMA = Joi.object({
   RATE_LIMIT_LIMIT: Joi.number().integer().min(1).default(DEFAULT_RATE_LIMIT_LIMIT),
   LOG_LEVEL: Joi.string().valid("error", "warn", "info", "debug").default(DEFAULT_LOG_LEVEL),
 });
+
+function buildOrigin(
+  protocol: "http:" | "https:",
+  hostname: string,
+  port: number,
+): string {
+  const url = new URL("https://localhost");
+  url.protocol = protocol;
+  url.hostname = hostname;
+  url.port = `${port}`;
+
+  return url.toString().replace(/\/$/, "");
+}

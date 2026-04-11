@@ -19,6 +19,8 @@ export interface BuildTracedRequestInitOptions {
   readonly userId?: string;
 }
 
+let fallbackIdentifierCounter = 0;
+
 export function createRequestTraceContext(
   namespace: string,
   userId?: string,
@@ -76,5 +78,17 @@ function createIdentifier(): string {
     return globalThis.crypto.randomUUID();
   }
 
-  return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  if (globalThis.crypto?.getRandomValues) {
+    const values = new Uint32Array(2);
+    globalThis.crypto.getRandomValues(values);
+
+    return `${values[0].toString(16).padStart(8, "0")}${values[1]
+      .toString(16)
+      .padStart(8, "0")}`;
+  }
+
+  fallbackIdentifierCounter = (fallbackIdentifierCounter + 1) >>> 0;
+  return `${Date.now().toString(16)}_${fallbackIdentifierCounter
+    .toString(16)
+    .padStart(8, "0")}`;
 }

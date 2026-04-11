@@ -1361,7 +1361,7 @@ export function createCallViewModel$(
         for (const [sender, reaction] of Object.entries(latest)) {
           const startX =
             acc.find((v) => v.sender === sender && v.emoji)?.startX ??
-            Math.ceil(Math.random() * 80) + 10;
+            deriveReactionStartX(sender, reaction.emoji);
           newSet.push({ sender, emoji: reaction.emoji, startX });
         }
         return newSet;
@@ -1392,6 +1392,16 @@ export function createCallViewModel$(
     ),
     map((v) => v.newSounds),
   );
+
+  function deriveReactionStartX(sender: string, emoji: string): number {
+    let hash = 0;
+
+    for (const char of `${sender}:${emoji}`) {
+      hash = (hash * 31 + char.codePointAt(0)!) >>> 0;
+    }
+
+    return (hash % 81) + 10;
+  }
 
   const newHandRaised$ = handsRaised$.pipe(
     map((v) => Object.keys(v).length),

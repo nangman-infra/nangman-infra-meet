@@ -37,6 +37,16 @@ function removeHiddenChars(str: string): string {
   return result;
 }
 
+function containsMxidLikeString(value: string): boolean {
+  const atIndex = value.indexOf("@");
+  if (atIndex === -1 || atIndex >= value.length - 3) {
+    return false;
+  }
+
+  const colonIndex = value.indexOf(":", atIndex + 2);
+  return colonIndex > atIndex + 1 && colonIndex < value.length - 1;
+}
+
 // Borrowed from https://github.com/matrix-org/matrix-js-sdk/blob/f10deb5ef2e8f061ff005af0476034382ea128ca/src/models/room-member.ts#L409
 export function shouldDisambiguate(
   member: Pick<RoomMemberProfile, "rawDisplayName" | "userId">,
@@ -54,7 +64,7 @@ export function shouldDisambiguate(
   // Next check if the name contains something that look like a mxid
   // If it does, it may be someone trying to impersonate someone else
   // Show full mxid in this case
-  if (/@.+:.+/.test(displayName)) return true;
+  if (containsMxidLikeString(displayName)) return true;
 
   // Also show mxid if the display name contains any LTR/RTL characters as these
   // make it very difficult for us to find similar *looking* display names

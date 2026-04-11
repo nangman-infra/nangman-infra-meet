@@ -55,8 +55,27 @@ function parseRoomId(parser: ParamParser): string | null {
     return null;
   }
 
-  const normalizedRoomId = roomId.replaceAll(/(?:^[^ -~]+)|(?:[^ -~]+$)/g, "");
+  const normalizedRoomId = trimNonPrintableAsciiEdges(roomId);
   return normalizedRoomId.startsWith("!") ? normalizedRoomId : null;
+}
+
+function trimNonPrintableAsciiEdges(value: string): string {
+  let start = 0;
+  let end = value.length;
+
+  while (start < end && !isPrintableAscii(value.charCodeAt(start))) {
+    start += 1;
+  }
+
+  while (end > start && !isPrintableAscii(value.charCodeAt(end - 1))) {
+    end -= 1;
+  }
+
+  return value.slice(start, end);
+}
+
+function isPrintableAscii(charCode: number): boolean {
+  return charCode >= 0x20 && charCode <= 0x7e;
 }
 
 export function getRoomIdentifierFromUrl(

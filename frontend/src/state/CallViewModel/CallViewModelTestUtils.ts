@@ -56,7 +56,7 @@ import { type ProcessorState } from "../../livekit/TrackProcessorContext";
 import { type MediaDevices } from "../MediaDevices";
 
 mockConfig({
-  livekit: { livekit_service_url: "http://my-default-service-url.com" },
+  livekit: { livekit_service_url: "https://my-default-service-url.com" },
 });
 
 const carol = local;
