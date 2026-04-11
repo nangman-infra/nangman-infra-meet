@@ -212,16 +212,22 @@ pipeline {
             steps {
                 sh '''
                     node --version
-                    yarn --version
-                    pnpm --version
+                    corepack --version
+                    corepack enable
                 '''
 
                 dir('frontend') {
-                    sh 'yarn install --immutable'
+                    sh '''
+                        corepack yarn --version
+                        corepack yarn install --immutable
+                    '''
                 }
 
                 dir('backend') {
-                    sh 'pnpm install --frozen-lockfile'
+                    sh '''
+                        corepack pnpm --version
+                        corepack pnpm install --frozen-lockfile
+                    '''
                 }
             }
         }
@@ -234,11 +240,11 @@ pipeline {
                 sh 'rm -rf frontend/coverage backend/coverage'
 
                 dir('frontend') {
-                    sh 'yarn test:coverage:ci'
+                    sh 'corepack yarn test:coverage:ci'
                 }
 
                 dir('backend') {
-                    sh 'pnpm test:coverage'
+                    sh 'corepack pnpm test:coverage'
                 }
 
                 sh '''
