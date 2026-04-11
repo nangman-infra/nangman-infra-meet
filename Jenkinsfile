@@ -17,7 +17,7 @@ pipeline {
                 [key: 'BEFORE_SHA', value: '$.before', defaultValue: ''],
                 [key: 'AFTER_SHA', value: '$.after', defaultValue: '']
             ],
-            tokenCredentialId: 'JENKINS_BUILD_TRIGGER_TOKEN',
+            tokenCredentialId: 'jenkins-webhook-token',
             causeString: 'nangman-infra-meet main push detected',
             regexpFilterText: '$REPO_URL $GIT_REF',
             regexpFilterExpression: '.*nangman-infra/nangman-infra-meet.* refs/heads/main',
