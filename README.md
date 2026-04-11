@@ -47,8 +47,7 @@ Backend local development uses `pnpm`.
 ```bash
 cd backend
 cp .env.example .env
-# optional local Postgres instead of Neon
-docker compose --profile localdb up -d postgres
+# set Neon DATABASE_URL / DATABASE_URL_DIRECT in .env
 corepack enable
 pnpm install
 pnpm db:migrate

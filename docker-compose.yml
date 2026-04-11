@@ -1,29 +1,10 @@
 services:
-  postgres:
-    profiles:
-      - localdb
-    image: postgres:17-alpine
-    container_name: element-call-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: nangman_infra_meet
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "55432:5432"
-    volumes:
-      - element-call-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d nangman_infra_meet"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
   frontend:
-    build:
-      context: ./frontend
-    image: nangman-infra-meet-frontend:local
+    image: ${FRONTEND_IMAGE}
     container_name: element-call-frontend
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.scope=nangman-infra-meet"
     restart: unless-stopped
     ports:
       - "8082:80"
@@ -39,10 +20,11 @@ services:
       retries: 3
       start_period: 10s
   backend:
-    build:
-      context: ./backend
-    image: nangman-infra-meet-backend:local
+    image: ${BACKEND_IMAGE}
     container_name: element-call-backend
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "com.centurylinklabs.watchtower.scope=nangman-infra-meet"
     restart: unless-stopped
     env_file:
       - ./backend/.env
@@ -54,6 +36,27 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-
-volumes:
-  element-call-postgres-data:
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: element-call-watchtower
+    command:
+      - --http-api-update
+      - --cleanup
+      - --label-enable
+      - --scope
+      - nangman-infra-meet
+      - --interval
+      - "0"
+      - --api-version
+      - "1.44"
+    environment:
+      WATCHTOWER_HTTP_API_TOKEN: ${WATCHTOWER_TOKEN}
+      WATCHTOWER_SCOPE: nangman-infra-meet
+    ports:
+      - "18081:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+      - "com.centurylinklabs.watchtower.scope=nangman-infra-meet"
