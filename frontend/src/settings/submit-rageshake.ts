@@ -181,7 +181,8 @@ async function appendStorageDetails(body: FormData): Promise<void> {
 }
 
 async function appendStorageEstimate(body: FormData): Promise<void> {
-  if (!navigator.storage || !navigator.storage.estimate) {
+  const estimateStorage = navigator.storage?.estimate;
+  if (!estimateStorage) {
     return;
   }
 
@@ -190,7 +191,7 @@ async function appendStorageEstimate(body: FormData): Promise<void> {
       quota?: number;
       usage?: number;
       usageDetails?: { [x: string]: unknown };
-    } = await navigator.storage.estimate();
+    } = await estimateStorage.call(navigator.storage);
     body.append("storageManager_quota", String(estimate.quota));
     body.append("storageManager_usage", String(estimate.usage));
 

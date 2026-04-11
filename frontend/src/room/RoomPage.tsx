@@ -118,12 +118,12 @@ function getMeetingEntryViewMetadata(
         metadataKey: "meeting_entry.meeting_closed",
         Icon: EndCallIcon,
       };
-    case "allow":
-      return {
-        metadataKey: "meeting_entry.request_access",
-        Icon: AdminIcon,
-      };
   }
+
+  return {
+    metadataKey: "meeting_entry.request_access",
+    Icon: AdminIcon,
+  };
 }
 
 export const RoomPage: FC = () => {
