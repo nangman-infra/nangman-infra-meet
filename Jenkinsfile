@@ -1,4 +1,4 @@
-def WEBHOOK_TRIGGER_TOKEN = 'nangman-trigger-secret'
+def WEBHOOK_TRIGGER_TOKEN = 'GITHUB_WEBHOOK_TRIGGER_TOKEN'
 def REPO_SLUG = 'nangman-infra/nangman-infra-meet'
 def MAIN_BRANCH_REF = 'refs/heads/main'
 def DEFAULT_REPO_HTTP_URL = 'https://github.com/nangman-infra/nangman-infra-meet.git'
