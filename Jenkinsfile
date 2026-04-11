@@ -478,8 +478,8 @@ pipeline {
         success {
             script {
                 def successMessage = env.DEPLOY_REQUIRED == 'true'
-                    ? ":tada: 빌드 성공! 배포가 완료되었습니다.\\n프로젝트: ${env.JOB_NAME} #${env.BUILD_NUMBER}\\n바로가기: ${env.BUILD_URL}"
-                    : ":white_check_mark: 빌드와 품질 검증이 성공했습니다. 배포 대상 변경이 없어 이미지 푸시와 배포는 생략되었습니다.\\n프로젝트: ${env.JOB_NAME} #${env.BUILD_NUMBER}\\n바로가기: ${env.BUILD_URL}"
+                    ? ":tada: 빌드 성공! 배포가 완료되었습니다.\n프로젝트: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n바로가기: ${env.BUILD_URL}"
+                    : ":white_check_mark: 빌드와 품질 검증이 성공했습니다. 배포 대상 변경이 없어 이미지 푸시와 배포는 생략되었습니다.\n프로젝트: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n바로가기: ${env.BUILD_URL}"
 
                 mattermostSend(
                     color: 'good',
@@ -491,7 +491,7 @@ pipeline {
         failure {
             mattermostSend(
                 color: 'danger',
-                message: ":rotating_light: 빌드 실패... 로그를 확인해주세요.\\n프로젝트: ${env.JOB_NAME} #${env.BUILD_NUMBER}\\n바로가기: ${env.BUILD_URL}"
+                message: ":rotating_light: 빌드 실패... 로그를 확인해주세요.\n프로젝트: ${env.JOB_NAME} #${env.BUILD_NUMBER}\n바로가기: ${env.BUILD_URL}"
             )
         }
 
