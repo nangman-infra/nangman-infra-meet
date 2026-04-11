@@ -1,3 +1,8 @@
+def WEBHOOK_TRIGGER_TOKEN = 'nangman-trigger-secret'
+def REPO_SLUG = 'nangman-infra/nangman-infra-meet'
+def MAIN_BRANCH_REF = 'refs/heads/main'
+def DEFAULT_REPO_HTTP_URL = 'https://github.com/nangman-infra/nangman-infra-meet.git'
+
 pipeline {
     agent any
 
@@ -10,6 +15,7 @@ pipeline {
     }
 
     triggers {
+        // Project-specific webhook settings.
         GenericTrigger(
             genericVariables: [
                 [key: 'GIT_REF', value: '$.ref', defaultValue: ''],
@@ -17,16 +23,17 @@ pipeline {
                 [key: 'BEFORE_SHA', value: '$.before', defaultValue: ''],
                 [key: 'AFTER_SHA', value: '$.after', defaultValue: '']
             ],
-            token: 'nangman-trigger-secret',
+            token: WEBHOOK_TRIGGER_TOKEN,
             causeString: 'nangman-infra-meet main push detected',
             regexpFilterText: '$REPO_URL $GIT_REF',
-            regexpFilterExpression: '.*nangman-infra/nangman-infra-meet.* refs/heads/main',
+            regexpFilterExpression: ".*${REPO_SLUG}.* ${MAIN_BRANCH_REF}",
             printContributedVariables: true,
             printPostContent: true
         )
     }
 
     environment {
+        // Project-specific settings. Change this block first when reusing this Jenkinsfile.
         HARBOR_URL = 'harbor.nangman.cloud'
         HARBOR_PROJECT = 'library'
         HARBOR_CREDS_ID = 'harbor-auth'
@@ -84,10 +91,10 @@ pipeline {
                         script: 'date -u +%Y-%m-%dT%H:%M:%SZ',
                         returnStdout: true
                     ).trim()
-                    env.BUILD_REF = env.GIT_REF ?: 'refs/heads/main'
+                    env.BUILD_REF = env.GIT_REF ?: MAIN_BRANCH_REF
                     env.REPO_HTTP_URL = env.REPO_URL?.trim()
                         ? env.REPO_URL.trim()
-                        : 'https://github.com/nangman-infra/nangman-infra-meet.git'
+                        : DEFAULT_REPO_HTTP_URL
 
                     def hasBeforeSha = env.BEFORE_SHA?.trim() && sh(
                         script: "git cat-file -e ${env.BEFORE_SHA}^{commit} >/dev/null 2>&1",
@@ -129,11 +136,15 @@ pipeline {
                         path.startsWith('backend/') || sharedPaths.contains(path)
                     }
                     def forceDeploy = params.FORCE_DEPLOY == true
+                    def frontendBuildRequired = forceDeploy || frontendChanged
+                    def backendBuildRequired = forceDeploy || backendChanged
 
                     env.FRONTEND_CHANGED = frontendChanged ? 'true' : 'false'
                     env.BACKEND_CHANGED = backendChanged ? 'true' : 'false'
-                    env.DEPLOY_REQUIRED = (forceDeploy || frontendChanged || backendChanged) ? 'true' : 'false'
                     env.FORCE_DEPLOY = forceDeploy ? 'true' : 'false'
+                    env.FRONTEND_BUILD_REQUIRED = frontendBuildRequired ? 'true' : 'false'
+                    env.BACKEND_BUILD_REQUIRED = backendBuildRequired ? 'true' : 'false'
+                    env.DEPLOY_REQUIRED = (frontendBuildRequired || backendBuildRequired) ? 'true' : 'false'
                     env.FRONTEND_SHA_TAG = "${env.FRONTEND_IMAGE_REPO}:sha-${env.SHORT_SHA}"
                     env.BACKEND_SHA_TAG = "${env.BACKEND_IMAGE_REPO}:sha-${env.SHORT_SHA}"
 
@@ -151,8 +162,10 @@ pipeline {
                     echo "Frontend image repository: ${env.FRONTEND_IMAGE_REPO}"
                     echo "Backend image repository: ${env.BACKEND_IMAGE_REPO}"
                     echo "Force deploy requested: ${env.FORCE_DEPLOY}"
-                    echo "Frontend build required: ${env.FRONTEND_CHANGED}"
-                    echo "Backend build required: ${env.BACKEND_CHANGED}"
+                    echo "Frontend changed: ${env.FRONTEND_CHANGED}"
+                    echo "Backend changed: ${env.BACKEND_CHANGED}"
+                    echo "Frontend build required: ${env.FRONTEND_BUILD_REQUIRED}"
+                    echo "Backend build required: ${env.BACKEND_BUILD_REQUIRED}"
                     echo "Image tags: latest, sha-${env.SHORT_SHA}${env.EXACT_GIT_TAG ? ", ${env.EXACT_GIT_TAG}" : ''}"
 
                     if (env.FORCE_DEPLOY == 'true') {
@@ -217,7 +230,7 @@ pipeline {
 
         stage('Docker Build & Push Backend') {
             when {
-                expression { env.BACKEND_CHANGED == 'true' }
+                expression { env.BACKEND_BUILD_REQUIRED == 'true' }
             }
             options {
                 timeout(time: 45, unit: 'MINUTES')
@@ -287,7 +300,7 @@ pipeline {
 
         stage('Docker Build & Push Frontend') {
             when {
-                expression { env.FRONTEND_CHANGED == 'true' }
+                expression { env.FRONTEND_BUILD_REQUIRED == 'true' }
             }
             options {
                 timeout(time: 45, unit: 'MINUTES')
@@ -374,7 +387,7 @@ pipeline {
                         '''
 
                         try {
-                            if (env.BACKEND_CHANGED == 'true') {
+                            if (env.BACKEND_BUILD_REQUIRED == 'true') {
                                 sh '''
                                     echo "Inspecting backend latest manifest"
                                     docker buildx imagetools inspect $BACKEND_IMAGE_LATEST
@@ -391,7 +404,7 @@ pipeline {
                                 }
                             }
 
-                            if (env.FRONTEND_CHANGED == 'true') {
+                            if (env.FRONTEND_BUILD_REQUIRED == 'true') {
                                 sh '''
                                     echo "Inspecting frontend latest manifest"
                                     docker buildx imagetools inspect $FRONTEND_IMAGE_LATEST
