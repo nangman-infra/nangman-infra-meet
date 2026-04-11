@@ -1,6 +1,14 @@
 pipeline {
     agent any
 
+    parameters {
+        booleanParam(
+            name: 'FORCE_DEPLOY',
+            defaultValue: false,
+            description: 'frontend/backend 변경이 없어도 이미지 빌드, 푸시, 배포를 강제로 실행합니다.'
+        )
+    }
+
     triggers {
         GenericTrigger(
             genericVariables: [
@@ -120,10 +128,12 @@ pipeline {
                     def backendChanged = diffLabel == 'full-tree' || changedFiles.any { path ->
                         path.startsWith('backend/') || sharedPaths.contains(path)
                     }
+                    def forceDeploy = params.FORCE_DEPLOY == true
 
                     env.FRONTEND_CHANGED = frontendChanged ? 'true' : 'false'
                     env.BACKEND_CHANGED = backendChanged ? 'true' : 'false'
-                    env.DEPLOY_REQUIRED = (frontendChanged || backendChanged) ? 'true' : 'false'
+                    env.DEPLOY_REQUIRED = (forceDeploy || frontendChanged || backendChanged) ? 'true' : 'false'
+                    env.FORCE_DEPLOY = forceDeploy ? 'true' : 'false'
                     env.FRONTEND_SHA_TAG = "${env.FRONTEND_IMAGE_REPO}:sha-${env.SHORT_SHA}"
                     env.BACKEND_SHA_TAG = "${env.BACKEND_IMAGE_REPO}:sha-${env.SHORT_SHA}"
 
@@ -140,11 +150,14 @@ pipeline {
                     echo "Changed files: ${changedFiles ? changedFiles.join(', ') : '(none)'}"
                     echo "Frontend image repository: ${env.FRONTEND_IMAGE_REPO}"
                     echo "Backend image repository: ${env.BACKEND_IMAGE_REPO}"
+                    echo "Force deploy requested: ${env.FORCE_DEPLOY}"
                     echo "Frontend build required: ${env.FRONTEND_CHANGED}"
                     echo "Backend build required: ${env.BACKEND_CHANGED}"
                     echo "Image tags: latest, sha-${env.SHORT_SHA}${env.EXACT_GIT_TAG ? ", ${env.EXACT_GIT_TAG}" : ''}"
 
-                    if (env.DEPLOY_REQUIRED != 'true') {
+                    if (env.FORCE_DEPLOY == 'true') {
+                        echo 'FORCE_DEPLOY=true 이므로 변경 파일과 관계없이 빌드, 푸시, 배포를 진행합니다.'
+                    } else if (env.DEPLOY_REQUIRED != 'true') {
                         echo 'No deployable frontend/backend changes detected; build, push, and deploy stages will be skipped.'
                     }
                 }
@@ -152,9 +165,6 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            when {
-                expression { env.DEPLOY_REQUIRED == 'true' }
-            }
             steps {
                 script {
                     def scannerHome = tool env.SONAR_SCANNER_TOOL
@@ -183,9 +193,6 @@ pipeline {
         }
 
         stage('Quality Gate') {
-            when {
-                expression { env.DEPLOY_REQUIRED == 'true' }
-            }
             steps {
                 timeout(time: 30, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
@@ -194,6 +201,9 @@ pipeline {
         }
 
         stage('Setup Buildx') {
+            when {
+                expression { env.DEPLOY_REQUIRED == 'true' }
+            }
             steps {
                 sh '''
                     docker buildx version
@@ -466,10 +476,16 @@ pipeline {
 
     post {
         success {
-            mattermostSend(
-                color: 'good',
-                message: ":tada: 빌드 성공! 배포가 완료되었습니다.\\n프로젝트: ${env.JOB_NAME} #${env.BUILD_NUMBER}\\n바로가기: ${env.BUILD_URL}"
-            )
+            script {
+                def successMessage = env.DEPLOY_REQUIRED == 'true'
+                    ? ":tada: 빌드 성공! 배포가 완료되었습니다.\\n프로젝트: ${env.JOB_NAME} #${env.BUILD_NUMBER}\\n바로가기: ${env.BUILD_URL}"
+                    : ":white_check_mark: 빌드와 품질 검증이 성공했습니다. 배포 대상 변경이 없어 이미지 푸시와 배포는 생략되었습니다.\\n프로젝트: ${env.JOB_NAME} #${env.BUILD_NUMBER}\\n바로가기: ${env.BUILD_URL}"
+
+                mattermostSend(
+                    color: 'good',
+                    message: successMessage
+                )
+            }
         }
 
         failure {
