@@ -1,12 +1,13 @@
 import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import request from "supertest";
 import { AppModule } from "../src/app.module";
 import { appConfig, AppConfig } from "../src/config/app.config";
 import { configureApp } from "../src/bootstrap/configure-app";
+import { testRequest } from "./test-request";
 
 describe("ModerationController", () => {
   let app: INestApplication;
+  const api = () => testRequest(app);
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -23,7 +24,7 @@ describe("ModerationController", () => {
   });
 
   it("gates host approval meetings until the host approves access", async () => {
-    const createMeetingResponse = await request(app.getHttpServer())
+    const createMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", "@host:matrix.nangman.cloud")
       .send({
@@ -37,27 +38,27 @@ describe("ModerationController", () => {
 
     const meetingId = createMeetingResponse.body.data.id as string;
 
-    const initialDecision = await request(app.getHttpServer())
+    const initialDecision = await api()
       .get(`/api/v1/meetings/${meetingId}/entry-access`)
       .set("x-matrix-user-id", "@guest:matrix.nangman.cloud");
 
     expect(initialDecision.status).toBe(200);
     expect(initialDecision.body.data.kind).toBe("request_access");
 
-    const requestResponse = await request(app.getHttpServer())
+    const requestResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/access-requests`)
       .set("x-matrix-user-id", "@guest:matrix.nangman.cloud");
 
     expect(requestResponse.status).toBe(201);
     const requestId = requestResponse.body.data.id as string;
 
-    const pendingDecision = await request(app.getHttpServer())
+    const pendingDecision = await api()
       .get(`/api/v1/meetings/${meetingId}/entry-access`)
       .set("x-matrix-user-id", "@guest:matrix.nangman.cloud");
 
     expect(pendingDecision.body.data.kind).toBe("pending_approval");
 
-    const listResponse = await request(app.getHttpServer())
+    const listResponse = await api()
       .get(`/api/v1/meetings/${meetingId}/access-requests`)
       .set("x-matrix-user-id", "@host:matrix.nangman.cloud");
 
@@ -72,14 +73,14 @@ describe("ModerationController", () => {
       ]),
     );
 
-    const approveResponse = await request(app.getHttpServer())
+    const approveResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/access-requests/${requestId}/approve`)
       .set("x-matrix-user-id", "@host:matrix.nangman.cloud");
 
     expect(approveResponse.status).toBe(201);
     expect(approveResponse.body.data.status).toBe("approved");
 
-    const approvedDecision = await request(app.getHttpServer())
+    const approvedDecision = await api()
       .get(`/api/v1/meetings/${meetingId}/entry-access`)
       .set("x-matrix-user-id", "@guest:matrix.nangman.cloud");
 
@@ -87,7 +88,7 @@ describe("ModerationController", () => {
   });
 
   it("blocks invite only meetings for users outside the allow list", async () => {
-    const createMeetingResponse = await request(app.getHttpServer())
+    const createMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", "@host:matrix.nangman.cloud")
       .send({
@@ -101,13 +102,13 @@ describe("ModerationController", () => {
 
     const meetingId = createMeetingResponse.body.data.id as string;
 
-    const invitedDecision = await request(app.getHttpServer())
+    const invitedDecision = await api()
       .get(`/api/v1/meetings/${meetingId}/entry-access`)
       .set("x-matrix-user-id", "@alice:matrix.nangman.cloud");
 
     expect(invitedDecision.body.data.kind).toBe("allow");
 
-    const blockedDecision = await request(app.getHttpServer())
+    const blockedDecision = await api()
       .get(`/api/v1/meetings/${meetingId}/entry-access`)
       .set("x-matrix-user-id", "@bob:matrix.nangman.cloud");
 
@@ -118,7 +119,7 @@ describe("ModerationController", () => {
     const futureMeetingStart = new Date(
       Date.now() + 24 * 60 * 60 * 1000,
     ).toISOString();
-    const createMeetingResponse = await request(app.getHttpServer())
+    const createMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", "@host:matrix.nangman.cloud")
       .send({
@@ -133,17 +134,17 @@ describe("ModerationController", () => {
 
     const meetingId = createMeetingResponse.body.data.id as string;
 
-    const beforeStartDecision = await request(app.getHttpServer())
+    const beforeStartDecision = await api()
       .get(`/api/v1/meetings/${meetingId}/entry-access`)
       .set("x-matrix-user-id", "@guest:matrix.nangman.cloud");
 
     expect(beforeStartDecision.body.data.kind).toBe("wait_for_host");
 
-    await request(app.getHttpServer())
+    await api()
       .post(`/api/v1/meetings/${meetingId}/start`)
       .set("x-matrix-user-id", "@host:matrix.nangman.cloud");
 
-    const afterStartDecision = await request(app.getHttpServer())
+    const afterStartDecision = await api()
       .get(`/api/v1/meetings/${meetingId}/entry-access`)
       .set("x-matrix-user-id", "@guest:matrix.nangman.cloud");
 
@@ -151,7 +152,7 @@ describe("ModerationController", () => {
   });
 
   it("marks cancelled meetings as closed and rejects new access requests", async () => {
-    const createMeetingResponse = await request(app.getHttpServer())
+    const createMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", "@host:matrix.nangman.cloud")
       .send({
@@ -165,18 +166,18 @@ describe("ModerationController", () => {
 
     const meetingId = createMeetingResponse.body.data.id as string;
 
-    await request(app.getHttpServer())
+    await api()
       .post(`/api/v1/meetings/${meetingId}/end`)
       .set("x-matrix-user-id", "@host:matrix.nangman.cloud");
 
-    const decisionResponse = await request(app.getHttpServer())
+    const decisionResponse = await api()
       .get(`/api/v1/meetings/${meetingId}/entry-access`)
       .set("x-matrix-user-id", "@guest:matrix.nangman.cloud");
 
     expect(decisionResponse.status).toBe(200);
     expect(decisionResponse.body.data.kind).toBe("meeting_closed");
 
-    const requestResponse = await request(app.getHttpServer())
+    const requestResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/access-requests`)
       .set("x-matrix-user-id", "@guest:matrix.nangman.cloud");
 

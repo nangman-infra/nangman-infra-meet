@@ -7,6 +7,7 @@ import helmet from "helmet";
 import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
 import { AppConfig } from "../config/app.config";
 import { requestContextMiddleware } from "../common/request-context/request-context";
+import { createTestWriteProtectionMiddleware } from "../common/test-safety/test-write-protection";
 
 const DEFAULT_API_VERSION_SEGMENT = "v1";
 
@@ -15,6 +16,7 @@ export function configureApp(app: INestApplication, config: AppConfig): void {
 
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
   app.use(requestContextMiddleware);
+  app.use(createTestWriteProtectionMiddleware(config));
   app.use(helmet());
   app.enableCors({
     origin: createCorsOriginMatcher(config.corsOrigins),

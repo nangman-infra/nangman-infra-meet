@@ -1,12 +1,13 @@
 import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import request from "supertest";
 import { AppModule } from "../src/app.module";
 import { appConfig, AppConfig } from "../src/config/app.config";
 import { configureApp } from "../src/bootstrap/configure-app";
+import { testRequest } from "./test-request";
 
 describe("AttendanceController", () => {
   let app: INestApplication;
+  const api = () => testRequest(app);
   const hostUserId = "@alice:matrix.nangman.cloud";
   const guestUserId = "@bob:matrix.nangman.cloud";
   const outsiderUserId = "@charlie:matrix.nangman.cloud";
@@ -26,7 +27,7 @@ describe("AttendanceController", () => {
   });
 
   it("joins, lists, leaves, and rejoins guest attendance sessions while the host stays live", async () => {
-    const createMeetingResponse = await request(app.getHttpServer())
+    const createMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-trace-id", "trace_attendance_flow")
       .set("x-matrix-user-id", hostUserId)
@@ -39,7 +40,7 @@ describe("AttendanceController", () => {
 
     const meetingId = createMeetingResponse.body.data.id as string;
 
-    const joinResponse = await request(app.getHttpServer())
+    const joinResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/join`)
       .set("x-matrix-user-id", guestUserId);
 
@@ -52,7 +53,7 @@ describe("AttendanceController", () => {
       }),
     );
 
-    const listResponse = await request(app.getHttpServer())
+    const listResponse = await api()
       .get(`/api/v1/meetings/${meetingId}/attendance`)
       .set("x-matrix-user-id", hostUserId);
 
@@ -67,7 +68,7 @@ describe("AttendanceController", () => {
       ]),
     );
 
-    const leaveResponse = await request(app.getHttpServer())
+    const leaveResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/leave`)
       .set("x-matrix-user-id", guestUserId);
 
@@ -80,7 +81,7 @@ describe("AttendanceController", () => {
       }),
     );
 
-    const rejoinResponse = await request(app.getHttpServer())
+    const rejoinResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/join`)
       .set("x-matrix-user-id", guestUserId);
 
@@ -90,7 +91,7 @@ describe("AttendanceController", () => {
   });
 
   it("ends a live meeting as soon as the host leaves attendance", async () => {
-    const createMeetingResponse = await request(app.getHttpServer())
+    const createMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -102,25 +103,25 @@ describe("AttendanceController", () => {
 
     const meetingId = createMeetingResponse.body.data.id as string;
 
-    await request(app.getHttpServer())
+    await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/join`)
       .set("x-matrix-user-id", hostUserId);
 
-    const leaveResponse = await request(app.getHttpServer())
+    const leaveResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/leave`)
       .set("x-matrix-user-id", hostUserId);
 
     expect(leaveResponse.status).toBe(201);
     expect(leaveResponse.body.data.status).toBe("left");
 
-    const meetingResponse = await request(app.getHttpServer())
+    const meetingResponse = await api()
       .get(`/api/v1/meetings/${meetingId}`)
       .set("x-matrix-user-id", hostUserId);
 
     expect(meetingResponse.status).toBe(200);
     expect(meetingResponse.body.data.status).toBe("ended");
 
-    const guestJoinResponse = await request(app.getHttpServer())
+    const guestJoinResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/join`)
       .set("x-matrix-user-id", guestUserId);
 
@@ -131,7 +132,7 @@ describe("AttendanceController", () => {
   });
 
   it("requires an actor user for join and leave", async () => {
-    const createMeetingResponse = await request(app.getHttpServer())
+    const createMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -143,7 +144,7 @@ describe("AttendanceController", () => {
 
     const meetingId = createMeetingResponse.body.data.id as string;
 
-    const joinResponse = await request(app.getHttpServer()).post(
+    const joinResponse = await api().post(
       `/api/v1/meetings/${meetingId}/attendance/join`,
     );
 
@@ -154,7 +155,7 @@ describe("AttendanceController", () => {
   });
 
   it("returns attendance summaries for multiple meetings", async () => {
-    const firstMeetingResponse = await request(app.getHttpServer())
+    const firstMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -164,7 +165,7 @@ describe("AttendanceController", () => {
         joinUrl: "/room/infra-planning-3",
       });
 
-    const secondMeetingResponse = await request(app.getHttpServer())
+    const secondMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -177,20 +178,20 @@ describe("AttendanceController", () => {
     const firstMeetingId = firstMeetingResponse.body.data.id as string;
     const secondMeetingId = secondMeetingResponse.body.data.id as string;
 
-    await request(app.getHttpServer())
+    await api()
       .post(`/api/v1/meetings/${firstMeetingId}/attendance/join`)
       .set("x-matrix-user-id", hostUserId);
-    await request(app.getHttpServer())
+    await api()
       .post(`/api/v1/meetings/${firstMeetingId}/attendance/join`)
       .set("x-matrix-user-id", guestUserId);
-    await request(app.getHttpServer())
+    await api()
       .post(`/api/v1/meetings/${secondMeetingId}/attendance/join`)
       .set("x-matrix-user-id", hostUserId);
-    await request(app.getHttpServer())
+    await api()
       .post(`/api/v1/meetings/${secondMeetingId}/attendance/leave`)
       .set("x-matrix-user-id", hostUserId);
 
-    const summaryResponse = await request(app.getHttpServer())
+    const summaryResponse = await api()
       .get(
         `/api/v1/attendance/summaries?meetingId=${firstMeetingId}&meetingId=${secondMeetingId}`,
       )
@@ -214,7 +215,7 @@ describe("AttendanceController", () => {
   });
 
   it("restricts detailed attendance to the meeting host", async () => {
-    const createMeetingResponse = await request(app.getHttpServer())
+    const createMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -226,14 +227,14 @@ describe("AttendanceController", () => {
 
     const meetingId = createMeetingResponse.body.data.id as string;
 
-    await request(app.getHttpServer())
+    await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/join`)
       .set("x-matrix-user-id", hostUserId);
-    await request(app.getHttpServer())
+    await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/join`)
       .set("x-matrix-user-id", guestUserId);
 
-    const listResponse = await request(app.getHttpServer())
+    const listResponse = await api()
       .get(`/api/v1/meetings/${meetingId}/attendance`)
       .set("x-matrix-user-id", guestUserId);
 
@@ -244,7 +245,7 @@ describe("AttendanceController", () => {
   });
 
   it("hides invite-only attendance summaries from unauthorized users", async () => {
-    const createMeetingResponse = await request(app.getHttpServer())
+    const createMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -258,17 +259,17 @@ describe("AttendanceController", () => {
 
     const meetingId = createMeetingResponse.body.data.id as string;
 
-    await request(app.getHttpServer())
+    await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/join`)
       .set("x-matrix-user-id", hostUserId);
 
-    const outsiderSummaryResponse = await request(app.getHttpServer())
+    const outsiderSummaryResponse = await api()
       .get(`/api/v1/attendance/summaries?meetingId=${meetingId}`)
       .set("x-matrix-user-id", outsiderUserId);
     expect(outsiderSummaryResponse.status).toBe(200);
     expect(outsiderSummaryResponse.body.data).toEqual([]);
 
-    const guestSummaryResponse = await request(app.getHttpServer())
+    const guestSummaryResponse = await api()
       .get(`/api/v1/attendance/summaries?meetingId=${meetingId}`)
       .set("x-matrix-user-id", guestUserId);
     expect(guestSummaryResponse.status).toBe(200);
@@ -282,7 +283,7 @@ describe("AttendanceController", () => {
   });
 
   it("requires approval before a guest can join attendance for host approval meetings", async () => {
-    const createMeetingResponse = await request(app.getHttpServer())
+    const createMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -296,7 +297,7 @@ describe("AttendanceController", () => {
 
     const meetingId = createMeetingResponse.body.data.id as string;
 
-    const blockedJoinResponse = await request(app.getHttpServer())
+    const blockedJoinResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/join`)
       .set("x-matrix-user-id", guestUserId);
 
@@ -305,22 +306,22 @@ describe("AttendanceController", () => {
       "You do not have access to this meeting.",
     );
 
-    const requestResponse = await request(app.getHttpServer())
+    const requestResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/access-requests`)
       .set("x-matrix-user-id", guestUserId);
     const requestId = requestResponse.body.data.id as string;
 
-    const pendingJoinResponse = await request(app.getHttpServer())
+    const pendingJoinResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/join`)
       .set("x-matrix-user-id", guestUserId);
 
     expect(pendingJoinResponse.status).toBe(403);
 
-    await request(app.getHttpServer())
+    await api()
       .post(`/api/v1/meetings/${meetingId}/access-requests/${requestId}/approve`)
       .set("x-matrix-user-id", hostUserId);
 
-    const approvedJoinResponse = await request(app.getHttpServer())
+    const approvedJoinResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/join`)
       .set("x-matrix-user-id", guestUserId);
 
@@ -329,7 +330,7 @@ describe("AttendanceController", () => {
   });
 
   it("waits for the host before allowing attendance joins when early entry is disabled", async () => {
-    const createMeetingResponse = await request(app.getHttpServer())
+    const createMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -344,7 +345,7 @@ describe("AttendanceController", () => {
 
     const meetingId = createMeetingResponse.body.data.id as string;
 
-    const blockedJoinResponse = await request(app.getHttpServer())
+    const blockedJoinResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/join`)
       .set("x-matrix-user-id", guestUserId);
 
@@ -353,11 +354,11 @@ describe("AttendanceController", () => {
       "This meeting is not open yet.",
     );
 
-    await request(app.getHttpServer())
+    await api()
       .post(`/api/v1/meetings/${meetingId}/start`)
       .set("x-matrix-user-id", hostUserId);
 
-    const joinAfterStartResponse = await request(app.getHttpServer())
+    const joinAfterStartResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/join`)
       .set("x-matrix-user-id", guestUserId);
 
@@ -366,7 +367,7 @@ describe("AttendanceController", () => {
   });
 
   it("rejects attendance joins once a meeting has been cancelled", async () => {
-    const createMeetingResponse = await request(app.getHttpServer())
+    const createMeetingResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -379,11 +380,11 @@ describe("AttendanceController", () => {
 
     const meetingId = createMeetingResponse.body.data.id as string;
 
-    await request(app.getHttpServer())
+    await api()
       .post(`/api/v1/meetings/${meetingId}/end`)
       .set("x-matrix-user-id", hostUserId);
 
-    const joinResponse = await request(app.getHttpServer())
+    const joinResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/attendance/join`)
       .set("x-matrix-user-id", guestUserId);
 

@@ -1,12 +1,13 @@
 import { INestApplication } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
-import request from "supertest";
 import { AppModule } from "../src/app.module";
 import { appConfig, AppConfig } from "../src/config/app.config";
 import { configureApp } from "../src/bootstrap/configure-app";
+import { testRequest } from "./test-request";
 
 describe("MeetingsController", () => {
   let app: INestApplication;
+  const api = () => testRequest(app);
   const hostUserId = "@alice:matrix.nangman.cloud";
   const guestUserId = "@bob:matrix.nangman.cloud";
   const outsiderUserId = "@charlie:matrix.nangman.cloud";
@@ -30,7 +31,7 @@ describe("MeetingsController", () => {
   });
 
   it("creates, lists, starts, updates, and ends meetings", async () => {
-    const createResponse = await request(app.getHttpServer())
+    const createResponse = await api()
       .post("/api/v1/meetings")
       .set("x-trace-id", "trace_meeting_flow")
       .set("x-matrix-user-id", hostUserId)
@@ -54,7 +55,7 @@ describe("MeetingsController", () => {
     const meetingId = createResponse.body.data.id as string;
     expect(createResponse.body.data.joinUrl).toContain(`meetingId=${meetingId}`);
 
-    const listResponse = await request(app.getHttpServer())
+    const listResponse = await api()
       .get("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId);
     expect(listResponse.status).toBe(200);
@@ -67,13 +68,13 @@ describe("MeetingsController", () => {
       ]),
     );
 
-    const startResponse = await request(app.getHttpServer())
+    const startResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/start`)
       .set("x-matrix-user-id", hostUserId);
     expect(startResponse.status).toBe(201);
     expect(startResponse.body.data.status).toBe("live");
 
-    const updateResponse = await request(app.getHttpServer())
+    const updateResponse = await api()
       .patch(`/api/v1/meetings/${meetingId}`)
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -84,13 +85,13 @@ describe("MeetingsController", () => {
     expect(updateResponse.body.data.title).toBe("Infra planning weekly");
     expect(updateResponse.body.data.allowJoinBeforeHost).toBe(true);
 
-    const endResponse = await request(app.getHttpServer())
+    const endResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/end`)
       .set("x-matrix-user-id", hostUserId);
     expect(endResponse.status).toBe(201);
     expect(endResponse.body.data.status).toBe("ended");
 
-    const getResponse = await request(app.getHttpServer())
+    const getResponse = await api()
       .get(`/api/v1/meetings/${meetingId}`)
       .set("x-matrix-user-id", hostUserId);
     expect(getResponse.status).toBe(200);
@@ -98,7 +99,7 @@ describe("MeetingsController", () => {
   });
 
   it("rejects scheduled meetings that start in the past", async () => {
-    const createResponse = await request(app.getHttpServer())
+    const createResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -121,7 +122,7 @@ describe("MeetingsController", () => {
   });
 
   it("rejects moving an existing meeting into the past", async () => {
-    const createResponse = await request(app.getHttpServer())
+    const createResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -134,7 +135,7 @@ describe("MeetingsController", () => {
 
     const meetingId = createResponse.body.data.id as string;
 
-    const updateResponse = await request(app.getHttpServer())
+    const updateResponse = await api()
       .patch(`/api/v1/meetings/${meetingId}`)
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -153,7 +154,7 @@ describe("MeetingsController", () => {
   });
 
   it("marks a scheduled meeting as cancelled when the host ends it before start", async () => {
-    const createResponse = await request(app.getHttpServer())
+    const createResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -166,7 +167,7 @@ describe("MeetingsController", () => {
 
     const meetingId = createResponse.body.data.id as string;
 
-    const endResponse = await request(app.getHttpServer())
+    const endResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/end`)
       .set("x-matrix-user-id", hostUserId);
 
@@ -174,7 +175,7 @@ describe("MeetingsController", () => {
     expect(endResponse.body.data.status).toBe("cancelled");
     expect(endResponse.body.data.endsAt).toEqual(expect.any(String));
 
-    const getResponse = await request(app.getHttpServer())
+    const getResponse = await api()
       .get(`/api/v1/meetings/${meetingId}`)
       .set("x-matrix-user-id", hostUserId);
 
@@ -183,7 +184,7 @@ describe("MeetingsController", () => {
   });
 
   it("rejects meeting creation when the actor and host do not match", async () => {
-    const createResponse = await request(app.getHttpServer())
+    const createResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", guestUserId)
       .send({
@@ -200,7 +201,7 @@ describe("MeetingsController", () => {
   });
 
   it("limits meeting management to the host", async () => {
-    const createResponse = await request(app.getHttpServer())
+    const createResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -212,25 +213,25 @@ describe("MeetingsController", () => {
 
     const meetingId = createResponse.body.data.id as string;
 
-    const startResponse = await request(app.getHttpServer())
+    const startResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/start`)
       .set("x-matrix-user-id", guestUserId);
     expect(startResponse.status).toBe(403);
 
-    const updateResponse = await request(app.getHttpServer())
+    const updateResponse = await api()
       .patch(`/api/v1/meetings/${meetingId}`)
       .set("x-matrix-user-id", guestUserId)
       .send({ title: "Unauthorized edit" });
     expect(updateResponse.status).toBe(403);
 
-    const endResponse = await request(app.getHttpServer())
+    const endResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/end`)
       .set("x-matrix-user-id", guestUserId);
     expect(endResponse.status).toBe(403);
   });
 
   it("hides invite-only meetings from unauthorized users", async () => {
-    const createResponse = await request(app.getHttpServer())
+    const createResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -244,7 +245,7 @@ describe("MeetingsController", () => {
 
     const meetingId = createResponse.body.data.id as string;
 
-    const outsiderListResponse = await request(app.getHttpServer())
+    const outsiderListResponse = await api()
       .get("/api/v1/meetings")
       .set("x-matrix-user-id", outsiderUserId);
     expect(outsiderListResponse.status).toBe(200);
@@ -256,7 +257,7 @@ describe("MeetingsController", () => {
       ]),
     );
 
-    const guestListResponse = await request(app.getHttpServer())
+    const guestListResponse = await api()
       .get("/api/v1/meetings")
       .set("x-matrix-user-id", guestUserId);
     expect(guestListResponse.status).toBe(200);
@@ -268,7 +269,7 @@ describe("MeetingsController", () => {
       ]),
     );
 
-    const outsiderGetResponse = await request(app.getHttpServer())
+    const outsiderGetResponse = await api()
       .get(`/api/v1/meetings/${meetingId}`)
       .set("x-matrix-user-id", outsiderUserId);
     expect(outsiderGetResponse.status).toBe(403);
@@ -278,7 +279,7 @@ describe("MeetingsController", () => {
   });
 
   it("rejects updates and restarts after a meeting has ended", async () => {
-    const createResponse = await request(app.getHttpServer())
+    const createResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -290,12 +291,12 @@ describe("MeetingsController", () => {
 
     const meetingId = createResponse.body.data.id as string;
 
-    const endResponse = await request(app.getHttpServer())
+    const endResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/end`)
       .set("x-matrix-user-id", hostUserId);
     expect(endResponse.status).toBe(201);
 
-    const updateResponse = await request(app.getHttpServer())
+    const updateResponse = await api()
       .patch(`/api/v1/meetings/${meetingId}`)
       .set("x-matrix-user-id", hostUserId)
       .send({ title: "Should not save" });
@@ -304,7 +305,7 @@ describe("MeetingsController", () => {
       "This meeting is already closed.",
     );
 
-    const restartResponse = await request(app.getHttpServer())
+    const restartResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/start`)
       .set("x-matrix-user-id", hostUserId);
     expect(restartResponse.status).toBe(409);
@@ -314,7 +315,7 @@ describe("MeetingsController", () => {
   });
 
   it("rejects updates and starts after a meeting has been cancelled", async () => {
-    const createResponse = await request(app.getHttpServer())
+    const createResponse = await api()
       .post("/api/v1/meetings")
       .set("x-matrix-user-id", hostUserId)
       .send({
@@ -327,13 +328,13 @@ describe("MeetingsController", () => {
 
     const meetingId = createResponse.body.data.id as string;
 
-    const cancelResponse = await request(app.getHttpServer())
+    const cancelResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/end`)
       .set("x-matrix-user-id", hostUserId);
     expect(cancelResponse.status).toBe(201);
     expect(cancelResponse.body.data.status).toBe("cancelled");
 
-    const updateResponse = await request(app.getHttpServer())
+    const updateResponse = await api()
       .patch(`/api/v1/meetings/${meetingId}`)
       .set("x-matrix-user-id", hostUserId)
       .send({ title: "Should not save" });
@@ -342,7 +343,7 @@ describe("MeetingsController", () => {
       "This meeting is already closed.",
     );
 
-    const startResponse = await request(app.getHttpServer())
+    const startResponse = await api()
       .post(`/api/v1/meetings/${meetingId}/start`)
       .set("x-matrix-user-id", hostUserId);
     expect(startResponse.status).toBe(409);

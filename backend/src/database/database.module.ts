@@ -3,6 +3,10 @@ import { ConfigType } from "@nestjs/config";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { appConfig } from "../config/app.config";
+import {
+  assertTestRuntimeUsesInMemoryPersistence,
+  shouldUseInMemoryPersistence,
+} from "../common/test-safety/test-write-protection";
 import * as schema from "./schema";
 
 export const DATABASE_POOL = Symbol("DATABASE_POOL");
@@ -25,16 +29,18 @@ class DatabasePoolCleanup implements OnApplicationShutdown {
       provide: DATABASE_POOL,
       inject: [appConfig.KEY],
       useFactory: (config: ConfigType<typeof appConfig>): Pool | null => {
+        assertTestRuntimeUsesInMemoryPersistence(config);
+
+        if (shouldUseInMemoryPersistence(config)) {
+          return null;
+        }
+
         if (config.database.url) {
           return new Pool({
             connectionString: config.database.url,
             idleTimeoutMillis: config.database.idleTimeoutMs,
             max: config.database.poolMax,
           });
-        }
-
-        if (config.database.allowInMemoryPersistence) {
-          return null;
         }
 
         throw new Error(

@@ -5,6 +5,7 @@ import type { NextFunction, Request, Response } from "express";
 export const REQUEST_ID_HEADER = "x-request-id";
 export const TRACE_ID_HEADER = "x-trace-id";
 export const MATRIX_USER_ID_HEADER = "x-matrix-user-id";
+export const TEST_RUN_ID_HEADER = "x-test-run-id";
 
 const USER_ID_HEADERS = [
   MATRIX_USER_ID_HEADER,
@@ -20,6 +21,7 @@ export interface RequestContextValue {
   readonly requestId: string;
   readonly traceId: string;
   readonly userId?: string;
+  readonly testRunId?: string;
 }
 
 interface RequestHeaderReader {
@@ -37,6 +39,7 @@ export function requestContextMiddleware(
     requestId: resolveHeaderValue(request.header(REQUEST_ID_HEADER), "req"),
     traceId: resolveHeaderValue(request.header(TRACE_ID_HEADER), "trace"),
     userId: extractUserIdFromRequest(request),
+    testRunId: extractTestRunIdFromRequest(request),
   };
 
   response.setHeader(REQUEST_ID_HEADER, requestContext.requestId);
@@ -69,6 +72,20 @@ export function extractUserIdFromRequest(
   }
 
   return undefined;
+}
+
+export function extractTestRunIdFromRequest(
+  request: RequestHeaderReader,
+): string | undefined {
+  const rawValue = request.header(TEST_RUN_ID_HEADER);
+  const value = Array.isArray(rawValue) ? rawValue[0] : rawValue;
+  const normalizedValue = value?.trim();
+
+  if (!normalizedValue) {
+    return undefined;
+  }
+
+  return normalizedValue.slice(0, 128);
 }
 
 function resolveHeaderValue(
