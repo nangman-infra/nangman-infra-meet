@@ -243,6 +243,107 @@ interface IntentAndPlatformDerivedConfiguration {
   defaultVideoEnabled?: boolean;
 }
 
+function createWidgetIntentPreset(): UrlConfiguration {
+  return {
+    confineToRoom: true,
+    appPrompt: false,
+    preload: false,
+    header: platform === "desktop" ? HeaderStyle.None : HeaderStyle.AppBar,
+    showControls: true,
+    hideScreensharing: false,
+    allowIceFallback: true,
+    perParticipantE2EE: true,
+    controlledAudioDevices: platform !== "desktop",
+    skipLobby: true,
+    returnToLobby: false,
+    sendNotificationType: "notification",
+    autoLeaveWhenOthersLeft: false,
+    waitForCallPickup: false,
+  };
+}
+
+function createSpaIntentPreset(): UrlConfiguration {
+  return {
+    confineToRoom: false,
+    appPrompt: true,
+    preload: false,
+    header: HeaderStyle.Standard,
+    showControls: true,
+    hideScreensharing: false,
+    allowIceFallback: false,
+    perParticipantE2EE: false,
+    controlledAudioDevices: false,
+    skipLobby: false,
+    returnToLobby: false,
+    sendNotificationType: undefined,
+    autoLeaveWhenOthersLeft: false,
+    waitForCallPickup: false,
+  };
+}
+
+function getIntentPreset(intent: UserIntent): UrlConfiguration {
+  if (intent === UserIntent.Unknown) {
+    return createSpaIntentPreset();
+  }
+
+  const intentPreset = createWidgetIntentPreset();
+
+  switch (intent) {
+    case UserIntent.StartNewCall:
+    case UserIntent.JoinExistingCall:
+      intentPreset.skipLobby = false;
+      intentPreset.callIntent = "video";
+      return intentPreset;
+    case UserIntent.StartNewCallDMVoice:
+      intentPreset.callIntent = "audio";
+      intentPreset.skipLobby = true;
+      intentPreset.sendNotificationType = "ring";
+      intentPreset.autoLeaveWhenOthersLeft = true;
+      intentPreset.waitForCallPickup = true;
+      return intentPreset;
+    case UserIntent.StartNewCallDM:
+      intentPreset.skipLobby = true;
+      intentPreset.sendNotificationType = "ring";
+      intentPreset.autoLeaveWhenOthersLeft = true;
+      intentPreset.waitForCallPickup = true;
+      intentPreset.callIntent = "video";
+      return intentPreset;
+    case UserIntent.JoinExistingCallDMVoice:
+      intentPreset.callIntent = "audio";
+      intentPreset.skipLobby = true;
+      intentPreset.autoLeaveWhenOthersLeft = true;
+      return intentPreset;
+    case UserIntent.JoinExistingCallDM:
+      intentPreset.skipLobby = true;
+      intentPreset.autoLeaveWhenOthersLeft = true;
+      intentPreset.callIntent = "video";
+      return intentPreset;
+  }
+}
+
+function getIntentAndPlatformDerivedConfiguration(
+  intent: UserIntent,
+): IntentAndPlatformDerivedConfiguration {
+  switch (intent) {
+    case UserIntent.StartNewCall:
+    case UserIntent.JoinExistingCall:
+    case UserIntent.StartNewCallDM:
+    case UserIntent.JoinExistingCallDM:
+      return {
+        defaultAudioEnabled: true,
+        defaultVideoEnabled: true,
+      };
+    case UserIntent.StartNewCallDMVoice:
+    case UserIntent.JoinExistingCallDMVoice:
+      return {
+        defaultAudioEnabled: true,
+        defaultVideoEnabled: false,
+      };
+    case UserIntent.Unknown:
+      return {};
+  }
+}
+
 // If you need to add a new flag to this interface, prefer a name that describes
 // a specific behavior (such as 'confineToRoom'), rather than one that describes
 // the situations that call for this behavior ('isEmbedded'). This makes it
@@ -331,94 +432,9 @@ export const computeUrlParams = (search = "", hash = ""): UrlParams => {
   const intent = !isWidget
     ? UserIntent.Unknown
     : (parser.getEnumParam("intent", UserIntent) ?? UserIntent.Unknown);
-  // Here we only use constants and `platform` to determine the intent preset.
-  let intentPreset: UrlConfiguration = {
-    confineToRoom: true,
-    appPrompt: false,
-    preload: false,
-    header: platform === "desktop" ? HeaderStyle.None : HeaderStyle.AppBar,
-    showControls: true,
-    hideScreensharing: false,
-    allowIceFallback: true,
-    perParticipantE2EE: true,
-    controlledAudioDevices: platform === "desktop" ? false : true,
-    skipLobby: true,
-    returnToLobby: false,
-    sendNotificationType: "notification",
-    autoLeaveWhenOthersLeft: false,
-    waitForCallPickup: false,
-  };
-  switch (intent) {
-    case UserIntent.StartNewCall:
-      intentPreset.skipLobby = false;
-      intentPreset.callIntent = "video";
-      break;
-    case UserIntent.JoinExistingCall:
-      // On desktop this will be overridden based on which button was used to join the call
-      intentPreset.skipLobby = false;
-      intentPreset.callIntent = "video";
-      break;
-    case UserIntent.StartNewCallDMVoice:
-      intentPreset.callIntent = "audio";
-    // Fall through
-    case UserIntent.StartNewCallDM:
-      intentPreset.skipLobby = true;
-      intentPreset.sendNotificationType = "ring";
-      intentPreset.autoLeaveWhenOthersLeft = true;
-      intentPreset.waitForCallPickup = true;
-      intentPreset.callIntent = intentPreset.callIntent ?? "video";
-      break;
-    case UserIntent.JoinExistingCallDMVoice:
-      intentPreset.callIntent = "audio";
-    // Fall through
-    case UserIntent.JoinExistingCallDM:
-      // On desktop this will be overridden based on which button was used to join the call
-      intentPreset.skipLobby = true;
-      intentPreset.autoLeaveWhenOthersLeft = true;
-      intentPreset.callIntent = intentPreset.callIntent ?? "video";
-      break;
-    // Non widget usecase defaults
-    default:
-      intentPreset = {
-        confineToRoom: false,
-        appPrompt: true,
-        preload: false,
-        header: HeaderStyle.Standard,
-        showControls: true,
-        hideScreensharing: false,
-        allowIceFallback: false,
-        perParticipantE2EE: false,
-        controlledAudioDevices: false,
-        skipLobby: false,
-        returnToLobby: false,
-        sendNotificationType: undefined,
-        autoLeaveWhenOthersLeft: false,
-        waitForCallPickup: false,
-      };
-  }
-
-  const intentAndPlatformDerivedConfiguration: IntentAndPlatformDerivedConfiguration =
-    {};
-  // Desktop also includes web. Its anything that is not mobile.
-  const desktopMobile = platform === "desktop" ? "desktop" : "mobile";
-  switch (desktopMobile) {
-    case "desktop":
-    case "mobile":
-      switch (intent) {
-        case UserIntent.StartNewCall:
-        case UserIntent.JoinExistingCall:
-        case UserIntent.StartNewCallDM:
-        case UserIntent.JoinExistingCallDM:
-          intentAndPlatformDerivedConfiguration.defaultAudioEnabled = true;
-          intentAndPlatformDerivedConfiguration.defaultVideoEnabled = true;
-          break;
-        case UserIntent.StartNewCallDMVoice:
-        case UserIntent.JoinExistingCallDMVoice:
-          intentAndPlatformDerivedConfiguration.defaultAudioEnabled = true;
-          intentAndPlatformDerivedConfiguration.defaultVideoEnabled = false;
-          break;
-      }
-  }
+  const intentPreset = getIntentPreset(intent);
+  const intentAndPlatformDerivedConfiguration =
+    getIntentAndPlatformDerivedConfiguration(intent);
 
   const properties: UrlProperties = {
     widgetId,

@@ -13,6 +13,7 @@ import { useAudioContext } from "../useAudioContext";
 import { prefetchSounds } from "../soundUtils";
 import { useLatest } from "../useLatest";
 import { type CallViewModel } from "../state/CallViewModel/CallViewModel";
+import { fireAndForget } from "../utils/fireAndForget";
 
 const soundMap = Object.fromEntries([
   ...ReactionSet.filter((v) => v.sound !== undefined).map((v) => [
@@ -54,10 +55,16 @@ export function ReactionsAudioRenderer({
     const sub = vm.audibleReactions$.subscribe((newReactions) => {
       for (const reactionName of newReactions) {
         if (soundMap[reactionName]) {
-          void audioEngineRef.current?.playSound(reactionName);
+          fireAndForget(
+            audioEngineRef.current?.playSound(reactionName),
+            "Failed to play reaction sound",
+          );
         } else {
           // Fallback sounds.
-          void audioEngineRef.current?.playSound("generic");
+          fireAndForget(
+            audioEngineRef.current?.playSound("generic"),
+            "Failed to play fallback reaction sound",
+          );
         }
       }
     });

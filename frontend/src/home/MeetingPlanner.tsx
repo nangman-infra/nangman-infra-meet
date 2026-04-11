@@ -26,6 +26,7 @@ import {
 import { type Meeting } from "../domains/meetings/domain/Meeting";
 import { type MeetingAttendanceSummary } from "../domains/meetings/domain/MeetingAttendanceSummary";
 import { ErrorMessage } from "../input/Input";
+import { fireAndForget } from "../utils/fireAndForget";
 import styles from "./MeetingPlanner.module.css";
 
 const COPY_TOAST_TIMEOUT_MS = 1_800;
@@ -97,7 +98,7 @@ export const MeetingPlanner: FC = () => {
   }, [currentUserId, t]);
 
   useEffect(() => {
-    void loadMeetings();
+    fireAndForget(loadMeetings(), "Failed to load meetings");
   }, [loadMeetings]);
 
   useEffect(() => {
@@ -287,7 +288,10 @@ export const MeetingPlanner: FC = () => {
                         size="sm"
                         kind="secondary"
                         onClick={() => {
-                          void navigate(`/meetings/${meeting.id}`);
+                          fireAndForget(
+                            navigate(`/meetings/${meeting.id}`),
+                            "Failed to open meeting management page",
+                          );
                         }}
                       >
                         {t("meeting_planner.manage")}
@@ -298,16 +302,25 @@ export const MeetingPlanner: FC = () => {
                       kind="primary"
                       onClick={() => {
                         if (meeting.status === "scheduled" && isMeetingHost) {
-                          void onStartMeeting(meeting);
+                          fireAndForget(
+                            onStartMeeting(meeting),
+                            "Failed to start meeting",
+                          );
                           return;
                         }
 
                         if (meeting.status === "scheduled" && !isMeetingHost) {
-                          void navigate(`/meetings/${meeting.id}`);
+                          fireAndForget(
+                            navigate(`/meetings/${meeting.id}`),
+                            "Failed to open meeting details",
+                          );
                           return;
                         }
 
-                        void navigate(meeting.joinUrl);
+                        fireAndForget(
+                          navigate(meeting.joinUrl),
+                          "Failed to join meeting",
+                        );
                       }}
                     >
                       {primaryActionLabel}
@@ -316,7 +329,10 @@ export const MeetingPlanner: FC = () => {
                       size="sm"
                       kind="secondary"
                       onClick={() => {
-                        void onCopyMeetingLink(meeting);
+                        fireAndForget(
+                          onCopyMeetingLink(meeting),
+                          "Failed to copy meeting link",
+                        );
                       }}
                     >
                       {copiedMeetingId === meeting.id

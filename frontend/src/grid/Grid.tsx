@@ -277,7 +277,9 @@ export function Grid<
 
         useEffect(() => {
           tiles.set(id, { id, model, onDrag });
-          return (): void => void tiles.delete(id);
+          return (): void => {
+            tiles.delete(id);
+          };
         }, [id, model, onDrag]);
 
         return (
@@ -403,7 +405,9 @@ export function Grid<
   // Because we're using react-spring in imperative mode, we're responsible for
   // firing animations manually whenever the tiles array updates
   useEffect(() => {
-    springRef.start().forEach((p) => void p.catch(logger.error));
+    springRef.start().forEach((p) => {
+      p.catch(logger.error);
+    });
   }, [placedTiles, springRef]);
 
   const animateDraggedTile = (

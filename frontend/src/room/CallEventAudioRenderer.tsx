@@ -23,6 +23,7 @@ import timeoutOgg from "../sound/call_timeout.ogg?url";
 import { useAudioContext } from "../useAudioContext";
 import { prefetchSounds } from "../soundUtils";
 import { useLatest } from "../useLatest";
+import { fireAndForget } from "../utils/fireAndForget";
 
 export const callEventAudioSounds = prefetchSounds({
   join: {
@@ -69,16 +70,32 @@ export function CallEventAudioRenderer({
 
   useEffect(() => {
     const joinSub = vm.joinSoundEffect$.subscribe(
-      () => void audioEngineRef.current?.playSound("join"),
+      () =>
+        fireAndForget(
+          audioEngineRef.current?.playSound("join"),
+          "Failed to play join sound",
+        ),
     );
     const leftSub = vm.leaveSoundEffect$.subscribe(
-      () => void audioEngineRef.current?.playSound("left"),
+      () =>
+        fireAndForget(
+          audioEngineRef.current?.playSound("left"),
+          "Failed to play leave sound",
+        ),
     );
     const handRaisedSub = vm.newHandRaised$.subscribe(
-      () => void audioEngineRef.current?.playSound("raiseHand"),
+      () =>
+        fireAndForget(
+          audioEngineRef.current?.playSound("raiseHand"),
+          "Failed to play hand raise sound",
+        ),
     );
     const screenshareSub = vm.newScreenShare$.subscribe(
-      () => void audioEngineRef.current?.playSound("screenshareStarted"),
+      () =>
+        fireAndForget(
+          audioEngineRef.current?.playSound("screenshareStarted"),
+          "Failed to play screenshare sound",
+        ),
     );
 
     return (): void => {

@@ -38,6 +38,7 @@ import { AnalyticsNotice } from "../analytics/AnalyticsNotice";
 import { E2eeType } from "../e2ee/e2eeType";
 import { useOptInAnalytics } from "../settings/settings";
 import { useUiUrlContext } from "../shared/application/readModels/UiUrlContext.ts";
+import { fireAndForget } from "../utils/fireAndForget";
 import { MeetingPlanner } from "./MeetingPlanner";
 import { resolveJoinTarget } from "./resolveJoinTarget";
 
@@ -128,7 +129,7 @@ export const RegisteredView: FC<Props> = ({ client }) => {
         return;
       }
 
-      void navigate(resolvedTarget);
+      fireAndForget(navigate(resolvedTarget), "Failed to navigate to join target");
     },
     [joinTarget, navigate, t],
   );
@@ -277,7 +278,10 @@ export const RegisteredView: FC<Props> = ({ client }) => {
                     kind="secondary"
                     className={styles.fullWidthButton}
                     onClick={() => {
-                      void navigate("/meetings/new");
+                      fireAndForget(
+                        navigate("/meetings/new"),
+                        "Failed to navigate to meeting scheduler",
+                      );
                     }}
                   >
                     {t("home_dashboard.schedule_card_action")}

@@ -62,6 +62,7 @@ import {
 } from "./CallEventAudioRenderer";
 import { useLatest } from "../useLatest";
 import { usePageTitle } from "../usePageTitle";
+import { fireAndForget } from "../utils/fireAndForget";
 import {
   ConnectionLostError,
   E2EENotSupportedError,
@@ -341,42 +342,48 @@ export const GroupCallView: FC<Props> = ({
         window.setTimeout(resolve, 10);
       });
 
-      void Promise.all([audioPromise, posthogRequest])
-        .catch((e) =>
-          logger.error(
-            "Failed to play leave audio and/or send PostHog leave event",
-            e,
-          ),
-        )
-        .then(async () => {
-          if (
-            !isPasswordlessUser &&
-            !confineToRoom &&
-            !PosthogAnalytics.instance.isEnabled()
+      fireAndForget(
+        Promise.all([audioPromise, posthogRequest])
+          .catch((e) =>
+            logger.error(
+              "Failed to play leave audio and/or send PostHog leave event",
+              e,
+            ),
           )
-            void navigate("/");
-
-          if (widgetMode) {
-            // After this point the iframe could die at any moment!
-            try {
-              await setWidgetAlwaysOnScreen(false);
-            } catch (e) {
-              logger.error(
-                "Failed to set call widget `alwaysOnScreen` to false",
-                e,
+          .then(async () => {
+            if (
+              !isPasswordlessUser &&
+              !confineToRoom &&
+              !PosthogAnalytics.instance.isEnabled()
+            )
+              fireAndForget(
+                navigate("/"),
+                "Failed to navigate home after leaving call",
               );
-            }
-            // On a normal user hangup we can shut down and close the widget. But if an
-            // error occurs we should keep the widget open until the user reads it.
-            if (reason != "error" && !returnToLobby) {
+
+            if (widgetMode) {
+              // After this point the iframe could die at any moment!
               try {
-                await closeWidget();
+                await setWidgetAlwaysOnScreen(false);
               } catch (e) {
-                logger.error("Failed to close widget", e);
+                logger.error(
+                  "Failed to set call widget `alwaysOnScreen` to false",
+                  e,
+                );
+              }
+              // On a normal user hangup we can shut down and close the widget. But if an
+              // error occurs we should keep the widget open until the user reads it.
+              if (reason != "error" && !returnToLobby) {
+                try {
+                  await closeWidget();
+                } catch (e) {
+                  logger.error("Failed to close widget", e);
+                }
               }
             }
-          }
-        });
+          }),
+        "Failed to complete call leave flow",
+      );
     },
     [
       setJoined,

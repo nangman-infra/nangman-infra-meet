@@ -26,6 +26,7 @@ import {
   backgroundBlur as backgroundBlurSettings,
   useSetting,
 } from "../settings/settings";
+import { fireAndForget } from "../utils/fireAndForget";
 import { BlurBackgroundTransformer } from "./BlurBackgroundTransformer";
 import { type Behavior } from "../state/Behavior";
 import { type ObservableScope } from "../state/ObservableScope";
@@ -79,10 +80,16 @@ export const trackProcessorSync = (
       if (!videoTrack) return;
       const { processor } = processorState;
       if (processor && !videoTrack.getProcessor()) {
-        void videoTrack.setProcessor(processor);
+        fireAndForget(
+          videoTrack.setProcessor(processor),
+          "Failed to enable background processor",
+        );
       }
       if (!processor && videoTrack.getProcessor()) {
-        void videoTrack.stopProcessor();
+        fireAndForget(
+          videoTrack.stopProcessor(),
+          "Failed to disable background processor",
+        );
       }
     });
 };
@@ -94,10 +101,16 @@ export const useTrackProcessorSync = (
   useEffect(() => {
     if (!videoTrack) return;
     if (processor && !videoTrack.getProcessor()) {
-      void videoTrack.setProcessor(processor);
+      fireAndForget(
+        videoTrack.setProcessor(processor),
+        "Failed to enable background processor",
+      );
     }
     if (!processor && videoTrack.getProcessor()) {
-      void videoTrack.stopProcessor();
+      fireAndForget(
+        videoTrack.stopProcessor(),
+        "Failed to disable background processor",
+      );
     }
   }, [processor, videoTrack]);
 };

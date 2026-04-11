@@ -22,6 +22,7 @@ import pageStyles from "./MeetingSchedulePage.module.css";
 import { MeetingScheduler } from "./MeetingScheduler";
 import { type Meeting } from "../domains/meetings/domain/Meeting";
 import { ErrorMessage } from "../input/Input";
+import { fireAndForget } from "../utils/fireAndForget";
 
 export const MeetingSchedulePage: FC = () => {
   const { t } = useTranslation();
@@ -104,7 +105,10 @@ const MeetingScheduleView: FC<{ client: MatrixClient }> = ({ client }) => {
                 kind="secondary"
                 size="sm"
                 onClick={() => {
-                  void navigate("/");
+                  fireAndForget(
+                    navigate("/"),
+                    "Failed to navigate to home",
+                  );
                 }}
               >
                 {t("meeting_scheduler.back_to_home")}
@@ -175,7 +179,7 @@ const MeetingScheduleView: FC<{ client: MatrixClient }> = ({ client }) => {
                     <Button
                       kind="primary"
                       onClick={() => {
-                        void copyMeetingLink();
+                        fireAndForget(copyMeetingLink(), "Failed to copy scheduled meeting link");
                       }}
                     >
                       {copied ? t("action.copied") : t("action.copy_link")}
@@ -183,7 +187,10 @@ const MeetingScheduleView: FC<{ client: MatrixClient }> = ({ client }) => {
                     <Button
                       kind="secondary"
                       onClick={() => {
-                        void navigate(`/meetings/${scheduledMeeting.id}`);
+                        fireAndForget(
+                          navigate(`/meetings/${scheduledMeeting.id}`),
+                          "Failed to navigate to meeting details",
+                        );
                       }}
                     >
                       {t("meeting_scheduler.success.manage_meeting")}
@@ -222,7 +229,10 @@ const MeetingScheduleView: FC<{ client: MatrixClient }> = ({ client }) => {
                 <MeetingScheduler
                   client={client}
                   onCancel={() => {
-                    void navigate("/");
+                    fireAndForget(
+                      navigate("/"),
+                      "Failed to navigate to home",
+                    );
                   }}
                   onScheduled={(meeting) => {
                     setCopied(false);

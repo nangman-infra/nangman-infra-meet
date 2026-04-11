@@ -27,7 +27,6 @@ import {
   RoomEvent as LivekitRoomEvent,
   RemoteTrack,
 } from "livekit-client";
-import { logger } from "matrix-js-sdk/lib/logger";
 import {
   BehaviorSubject,
   type Observable,
@@ -48,6 +47,7 @@ import {
 
 import { alwaysShowSelf } from "../settings/settings";
 import { showConnectionStats } from "../settings/settings";
+import { fireAndForget } from "../utils/fireAndForget";
 import { accumulate } from "../utils/observable";
 import { type EncryptionSystem } from "../e2ee/sharedKeyManagement";
 import { E2eeType } from "../e2ee/e2eeType";
@@ -523,21 +523,23 @@ export class LocalUserMediaViewModel extends BaseUserMediaViewModel {
               if (facingMode !== "user" && facingMode !== "environment")
                 return null;
               // Restart the track with a camera facing the opposite direction
-              return (): void =>
-                void track
-                  .restartTrack({
-                    facingMode: facingMode === "user" ? "environment" : "user",
-                  })
-                  .then(() => {
-                    // Inform the MediaDevices which camera was chosen
-                    const deviceId =
-                      track.mediaStreamTrack.getSettings().deviceId;
-                    if (deviceId !== undefined)
-                      this.mediaDevices.videoInput.select(deviceId);
-                  })
-                  .catch((e) =>
-                    logger.error("Failed to switch camera", facingMode, e),
-                  );
+              return (): void => {
+                fireAndForget(
+                  track
+                    .restartTrack({
+                      facingMode:
+                        facingMode === "user" ? "environment" : "user",
+                    })
+                    .then(() => {
+                      // Inform the MediaDevices which camera was chosen
+                      const deviceId =
+                        track.mediaStreamTrack.getSettings().deviceId;
+                      if (deviceId !== undefined)
+                        this.mediaDevices.videoInput.select(deviceId);
+                    }),
+                  `Failed to switch camera (${facingMode})`,
+                );
+              };
             }),
           ),
     );

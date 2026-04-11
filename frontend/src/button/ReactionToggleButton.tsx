@@ -35,6 +35,7 @@ import {
 import { Modal } from "../Modal";
 import { type CallViewModel } from "../state/CallViewModel/CallViewModel";
 import { useBehavior } from "../useBehavior";
+import { fireAndForget } from "../utils/fireAndForget";
 
 interface InnerButtonProps extends ComponentPropsWithoutRef<"button"> {
   raised: boolean;
@@ -218,7 +219,7 @@ export function ReactionToggleButton({
       }
     };
 
-    void toggleHand();
+    fireAndForget(toggleHand(), "Failed to toggle raised hand");
   }, [toggleRaisedHand]);
 
   return (
@@ -242,7 +243,12 @@ export function ReactionToggleButton({
           errorText={errorText}
           isHandRaised={!!isHandRaised}
           canReact={!busy && !!canReact}
-          sendReaction={(reaction) => void sendRelation(reaction)}
+          sendReaction={(reaction) => {
+            fireAndForget(
+              sendRelation(reaction),
+              "Failed to send reaction",
+            );
+          }}
           toggleRaisedHand={wrappedToggleRaisedHand}
         />
       </Modal>

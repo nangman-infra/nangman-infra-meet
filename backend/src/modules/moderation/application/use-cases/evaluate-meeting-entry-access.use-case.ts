@@ -5,12 +5,17 @@ import {
   MeetingRepositoryPort,
 } from "../../../meetings/application/ports/meeting-repository.port";
 import { MeetingNotFoundError } from "../../../meetings/application/errors/meeting-not-found.error";
+import { type MeetingPrimitives } from "../../../meetings/domain/meeting.entity";
 import {
   MEETING_ACCESS_REQUEST_REPOSITORY,
   MeetingAccessRequestRepositoryPort,
 } from "../ports/meeting-access-request-repository.port";
+import { type AccessRequestStatus } from "../../domain/access-request-status";
 import { resolveModerationActorUserId } from "../support/resolve-moderation-actor-user-id";
-import { MeetingEntryAccessDecision } from "../read-models/meeting-entry-access-decision";
+import {
+  type MeetingEntryAccessDecision,
+  type MeetingEntryAccessDecisionKind,
+} from "../read-models/meeting-entry-access-decision";
 
 @Injectable()
 export class EvaluateMeetingEntryAccessUseCase {
@@ -39,45 +44,11 @@ export class EvaluateMeetingEntryAccessUseCase {
       allowJoinBeforeHost: primitives.allowJoinBeforeHost,
     } as const;
 
-    const isHost = primitives.hostUserId === actorUserId;
-    let kind: MeetingEntryAccessDecision["kind"] = "allow";
-
-    if (
-      primitives.status === "ended" ||
-      primitives.status === "cancelled"
-    ) {
-      kind = "meeting_closed";
-    } else if (!isHost) {
-      if (primitives.accessPolicy === "invite_only") {
-        kind = primitives.allowedUserIds.includes(actorUserId)
-          ? "allow"
-          : "not_invited";
-      } else if (primitives.accessPolicy === "host_approval") {
-        const latestRequest =
-          await this.accessRequestRepository.findLatestByMeetingAndUser(
-            meetingId,
-            actorUserId,
-          );
-
-        if (!latestRequest) {
-          kind = "request_access";
-        } else if (latestRequest.status === "approved") {
-          kind = "allow";
-        } else if (latestRequest.status === "pending") {
-          kind = "pending_approval";
-        } else {
-          kind = "rejected";
-        }
-      }
-
-      if (
-        kind === "allow" &&
-        primitives.status === "scheduled" &&
-        !primitives.allowJoinBeforeHost
-      ) {
-        kind = "wait_for_host";
-      }
-    }
+    const kind = await this.resolveDecisionKind(
+      meetingId,
+      actorUserId,
+      primitives,
+    );
 
     this.logger.info("meeting.entry_access_evaluated", {
       module: "moderation",
@@ -94,5 +65,83 @@ export class EvaluateMeetingEntryAccessUseCase {
       kind,
       ...baseDecision,
     };
+  }
+
+  private async resolveDecisionKind(
+    meetingId: string,
+    actorUserId: string,
+    meeting: MeetingPrimitives,
+  ): Promise<MeetingEntryAccessDecisionKind> {
+    if (this.isClosedMeeting(meeting)) {
+      return "meeting_closed";
+    }
+
+    if (meeting.hostUserId === actorUserId) {
+      return "allow";
+    }
+
+    const participantDecision = await this.resolveParticipantDecision(
+      meetingId,
+      actorUserId,
+      meeting,
+    );
+
+    return this.requiresHostPresence(meeting, participantDecision)
+      ? "wait_for_host"
+      : participantDecision;
+  }
+
+  private isClosedMeeting(meeting: MeetingPrimitives): boolean {
+    return meeting.status === "ended" || meeting.status === "cancelled";
+  }
+
+  private requiresHostPresence(
+    meeting: MeetingPrimitives,
+    decision: MeetingEntryAccessDecisionKind,
+  ): boolean {
+    return (
+      decision === "allow" &&
+      meeting.status === "scheduled" &&
+      !meeting.allowJoinBeforeHost
+    );
+  }
+
+  private async resolveParticipantDecision(
+    meetingId: string,
+    actorUserId: string,
+    meeting: MeetingPrimitives,
+  ): Promise<MeetingEntryAccessDecisionKind> {
+    if (meeting.accessPolicy === "invite_only") {
+      return meeting.allowedUserIds.includes(actorUserId)
+        ? "allow"
+        : "not_invited";
+    }
+
+    if (meeting.accessPolicy !== "host_approval") {
+      return "allow";
+    }
+
+    const latestRequest =
+      await this.accessRequestRepository.findLatestByMeetingAndUser(
+        meetingId,
+        actorUserId,
+      );
+
+    return this.mapAccessRequestStatusToDecision(latestRequest?.status);
+  }
+
+  private mapAccessRequestStatusToDecision(
+    status: AccessRequestStatus | undefined,
+  ): MeetingEntryAccessDecisionKind {
+    switch (status) {
+      case undefined:
+        return "request_access";
+      case "approved":
+        return "allow";
+      case "pending":
+        return "pending_approval";
+      case "rejected":
+        return "rejected";
+    }
   }
 }

@@ -127,6 +127,88 @@ interface ItemHandle<Data, Item> {
   item: Item;
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+function getItemHandleFromMap<Data, Item, Keys extends [unknown, ...unknown[]]>(
+  map: Map<any, any>,
+  keys: readonly [...Keys],
+): ItemHandle<Data, Item> | undefined {
+  let itemHandle: any = map;
+
+  for (const key of keys) {
+    itemHandle = itemHandle?.get(key);
+  }
+
+  return itemHandle as ItemHandle<Data, Item> | undefined;
+}
+
+function getOrCreateItemHandle<
+  Data,
+  Item,
+  Keys extends [unknown, ...unknown[]],
+>(
+  map: Map<any, any>,
+  keys: readonly [...Keys],
+  data: Data,
+  factory: (
+    scope: ObservableScope,
+    data$: Behavior<Data>,
+    ...keys: Keys
+  ) => Item,
+): ItemHandle<Data, Item> {
+  const existingItemHandle = getItemHandleFromMap<Data, Item, Keys>(map, keys);
+
+  if (existingItemHandle !== undefined) {
+    existingItemHandle.data$.next(data);
+    return existingItemHandle;
+  }
+
+  const scope = new ObservableScope();
+  const data$ = new BehaviorSubject(data);
+
+  return { scope, data$, item: factory(scope, data$, ...keys) };
+}
+
+function setItemHandleInMap<Data, Item, Keys extends [unknown, ...unknown[]]>(
+  map: Map<any, any>,
+  keys: readonly [...Keys],
+  itemHandle: ItemHandle<Data, Item>,
+): void {
+  let currentMap: Map<any, any> = map;
+
+  for (let index = 0; index < keys.length - 1; index++) {
+    const key = keys[index];
+    let nestedMap = currentMap.get(key);
+
+    if (nestedMap === undefined) {
+      nestedMap = new Map();
+      currentMap.set(key, nestedMap);
+    }
+
+    currentMap = nestedMap;
+  }
+
+  const finalKey = keys[keys.length - 1];
+  if (currentMap.has(finalKey)) {
+    throw new Error(
+      `Keys must be unique (tried to generate multiple items for key ${keys})`,
+    );
+  }
+
+  currentMap.set(finalKey, itemHandle);
+}
+
+function destroyRemovedItems<Data, Item>(
+  previousItems: Set<ItemHandle<Data, Item>>,
+  nextItems: Set<ItemHandle<Data, Item>>,
+): void {
+  for (const itemHandle of previousItems) {
+    if (!nextItems.has(itemHandle)) {
+      itemHandle.scope.end();
+    }
+  }
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 /**
  * Maps a changing input value to a collection of items that each capture some
  * dynamic data and are tied to a key. Items will be automatically created when
@@ -202,60 +284,35 @@ function generateItemsInternal<
   ) => Item,
   project: (items: Item[], input: Input) => Output,
 ): OperatorFunction<Input, Output> {
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   return (input$) =>
     input$.pipe(
       // Keep track of the existing items over time, so they can persist
       scan<
         Input,
         {
-          map: Map<any, any>;
+          map: Map<unknown, unknown>;
           items: Set<ItemHandle<Data, Item>>;
           input: Input;
         },
-        { map: Map<any, any>; items: Set<ItemHandle<Data, Item>> }
+        { map: Map<unknown, unknown>; items: Set<ItemHandle<Data, Item>> }
       >(
         ({ map: prevMap, items: prevItems }, input) => {
           const nextMap = new Map();
           const nextItems = new Set<ItemHandle<Data, Item>>();
 
           for (const { keys, data } of generator(input)) {
-            // Disable type checks for a second to grab the item out of a nested map
-            let i: any = prevMap;
-            for (const key of keys) i = i?.get(key);
-            let item = i as ItemHandle<Data, Item> | undefined;
-
-            if (item === undefined) {
-              // First time requesting the key; create the item
-              const scope = new ObservableScope();
-              const data$ = new BehaviorSubject(data);
-              item = { scope, data$, item: factory(scope, data$, ...keys) };
-            } else {
-              item.data$.next(data);
-            }
-
-            // Likewise, disable type checks to insert the item in the nested map
-            let m: Map<any, any> = nextMap;
-            for (let i = 0; i < keys.length - 1; i++) {
-              let inner = m.get(keys[i]);
-              if (inner === undefined) {
-                inner = new Map();
-                m.set(keys[i], inner);
-              }
-              m = inner;
-            }
-            const finalKey = keys[keys.length - 1];
-            if (m.has(finalKey))
-              throw new Error(
-                `Keys must be unique (tried to generate multiple items for key ${keys})`,
-              );
-            m.set(keys[keys.length - 1], item);
-            nextItems.add(item);
+            const itemHandle = getOrCreateItemHandle(
+              prevMap,
+              keys,
+              data,
+              factory,
+            );
+            setItemHandleInMap(nextMap, keys, itemHandle);
+            nextItems.add(itemHandle);
           }
 
           // Destroy all items that are no longer being requested
-          for (const item of prevItems)
-            if (!nextItems.has(item)) item.scope.end();
+          destroyRemovedItems(prevItems, nextItems);
 
           return { map: nextMap, items: nextItems, input };
         },
@@ -272,5 +329,4 @@ function generateItemsInternal<
         ),
       ),
     );
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 }

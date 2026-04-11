@@ -47,6 +47,7 @@ import {
   startMeeting,
   updateMeeting,
 } from "../domains/meetings/infrastructure/MeetingsApi";
+import { fireAndForget } from "../utils/fireAndForget";
 
 interface MeetingFormState {
   readonly title: string;
@@ -164,7 +165,7 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
   }, [matrixUserId, meetingId, t]);
 
   useEffect(() => {
-    void loadMeetingDetails();
+    fireAndForget(loadMeetingDetails(), "Failed to load meeting details");
   }, [loadMeetingDetails]);
 
   const joinLink = useMemo(() => {
@@ -425,13 +426,16 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
           <HeaderLogo className={registeredViewStyles.mobileLogo} />
 
           <div className={pageStyles.backRow}>
-            <Button
-              kind="secondary"
-              size="sm"
-              onClick={() => {
-                void navigate("/");
-              }}
-            >
+              <Button
+                kind="secondary"
+                size="sm"
+                onClick={() => {
+                  fireAndForget(
+                    navigate("/"),
+                    "Failed to navigate to home",
+                  );
+                }}
+              >
               {t("meeting_detail.back_to_home")}
             </Button>
           </div>
@@ -545,7 +549,7 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                     <Button
                       kind="primary"
                       onClick={() => {
-                        void onStart();
+                        fireAndForget(onStart(), "Failed to start meeting");
                       }}
                       disabled={starting}
                     >
@@ -558,7 +562,10 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                     <Button
                       kind="primary"
                       onClick={() => {
-                        void navigate(meeting.joinUrl);
+                        fireAndForget(
+                          navigate(meeting.joinUrl),
+                          "Failed to join meeting",
+                        );
                       }}
                     >
                       {t("meeting_detail.join")}
@@ -568,7 +575,7 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                     <Button
                       kind="secondary"
                       onClick={() => {
-                        void onEnd();
+                        fireAndForget(onEnd(), "Failed to end meeting");
                       }}
                       disabled={ending}
                     >
@@ -586,7 +593,10 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                       kind="primary"
                       disabled={meetingEntryAccess.requesting}
                       onClick={() => {
-                        void meetingEntryAccess.requestAccess();
+                        fireAndForget(
+                          meetingEntryAccess.requestAccess(),
+                          "Failed to request meeting access",
+                        );
                       }}
                     >
                       {meetingEntryAccess.requesting
@@ -611,7 +621,10 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                     <Button
                       kind="secondary"
                       onClick={() => {
-                        void onCopyLink();
+                        fireAndForget(
+                          onCopyLink(),
+                          "Failed to copy meeting link",
+                        );
                       }}
                     >
                       {t("action.copy_link")}
@@ -658,7 +671,7 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                     className={pageStyles.form}
                     onSubmit={(event) => {
                       event.preventDefault();
-                      void onSave();
+                      fireAndForget(onSave(), "Failed to save meeting");
                     }}
                     noValidate
                   >
@@ -877,7 +890,10 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                               size="sm"
                               disabled={moderatingRequestId === request.id}
                               onClick={() => {
-                                void onModerateRequest(request, "approve");
+                                fireAndForget(
+                                  onModerateRequest(request, "approve"),
+                                  "Failed to approve meeting access request",
+                                );
                               }}
                             >
                               {moderatingRequestId === request.id
@@ -889,7 +905,10 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                               size="sm"
                               disabled={moderatingRequestId === request.id}
                               onClick={() => {
-                                void onModerateRequest(request, "reject");
+                                fireAndForget(
+                                  onModerateRequest(request, "reject"),
+                                  "Failed to reject meeting access request",
+                                );
                               }}
                             >
                               {t("meeting_detail.reject_request")}

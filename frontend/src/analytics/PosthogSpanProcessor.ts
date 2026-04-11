@@ -30,7 +30,9 @@ const maxRejoinMs = 2 * 60 * 1000; // 2 minutes
  * Span processor that extracts certain metrics from spans to send to PostHog
  */
 export class PosthogSpanProcessor implements SpanProcessor {
-  public async forceFlush(): Promise<void> {}
+  public async forceFlush(): Promise<void> {
+    await Promise.resolve();
+  }
 
   public onStart(span: Span): void {
     // Hack: Yield to allow attributes to be set before processing
@@ -152,6 +154,6 @@ export class PosthogSpanProcessor implements SpanProcessor {
    * Shutdown the processor.
    */
   public async shutdown(): Promise<void> {
-    return Promise.resolve();
+    await Promise.resolve();
   }
 }

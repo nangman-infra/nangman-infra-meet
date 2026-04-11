@@ -18,57 +18,58 @@ export interface RoomIdentifier {
   viaServers: string[];
 }
 
+function getRawRoomAlias(pathname: string, hash: string): string | null {
+  if (hash !== "" && !hash.startsWith("#?")) {
+    return hash;
+  }
+
+  const pathComponents = pathname.substring(1).split("/");
+  const [firstPathComponent, secondPathComponent] = pathComponents;
+
+  if (firstPathComponent === "room") {
+    return secondPathComponent ?? null;
+  }
+
+  return firstPathComponent ?? null;
+}
+
+function normalizeRoomAlias(roomAlias: string | null): string | null {
+  const trimmedRoomAlias = roomAlias?.split("?")[0] ?? null;
+
+  if (!trimmedRoomAlias || trimmedRoomAlias.length <= 1) {
+    return null;
+  }
+
+  const canonicalRoomAlias = trimmedRoomAlias.startsWith("#")
+    ? trimmedRoomAlias
+    : `#${trimmedRoomAlias}`;
+
+  return canonicalRoomAlias.includes(":")
+    ? canonicalRoomAlias
+    : `${canonicalRoomAlias}:${Config.defaultServerName()}`;
+}
+
+function parseRoomId(parser: ParamParser): string | null {
+  const roomId = parser.getParam("roomId");
+  if (roomId === null) {
+    return null;
+  }
+
+  const normalizedRoomId = roomId.replaceAll(/(?:^[^ -~]+)|(?:[^ -~]+$)/g, "");
+  return normalizedRoomId.startsWith("!") ? normalizedRoomId : null;
+}
+
 export function getRoomIdentifierFromUrl(
   pathname: string,
   search: string,
   hash: string,
 ): RoomIdentifier {
-  let roomAlias: string | null = null;
-  pathname = pathname.substring(1);
-  const pathComponents = pathname.split("/");
-  const pathHasRoom = pathComponents[0] === "room";
-  const hasRoomAlias = pathComponents.length > 1;
-
-  if (hash === "" || hash.startsWith("#?")) {
-    if (hasRoomAlias && pathHasRoom) {
-      roomAlias = pathComponents[1];
-    }
-    if (!pathHasRoom) {
-      roomAlias = pathComponents[0];
-    }
-  } else {
-    roomAlias = hash;
-  }
-
-  roomAlias = roomAlias?.split("?")[0] ?? null;
-
-  if (roomAlias) {
-    if (roomAlias.length <= 1) {
-      roomAlias = null;
-    } else {
-      if (!roomAlias.startsWith("#")) {
-        roomAlias = `#${roomAlias}`;
-      }
-      if (!roomAlias.includes(":")) {
-        roomAlias = `${roomAlias}:${Config.defaultServerName()}`;
-      }
-    }
-  }
-
   const parser = new ParamParser(search, hash);
-  let roomId: string | null = parser.getParam("roomId");
-  if (roomId !== null) {
-    roomId = roomId.replaceAll(/(?:^[^ -~]+)|(?:[^ -~]+$)/g, "");
-    if (!roomId.startsWith("!")) {
-      roomId = null;
-    }
-  }
-
   const meetingId = parser.getParam("meetingId")?.trim() || null;
 
   return {
-    roomAlias,
-    roomId,
+    roomAlias: normalizeRoomAlias(getRawRoomAlias(pathname, hash)),
+    roomId: parseRoomId(parser),
     meetingId,
     viaServers: parser.getAllParams("viaServers"),
   };

@@ -18,6 +18,7 @@ import { useSSOLogin } from "./useSSOLogin";
 import { usePageTitle } from "../usePageTitle";
 import { PosthogAnalytics } from "../analytics/PosthogAnalytics";
 import { Config } from "../config/Config";
+import { fireAndForget } from "../utils/fireAndForget";
 
 const LOGIN_REDIRECT_STORAGE_KEY = "element-call-login-redirect";
 
@@ -56,9 +57,12 @@ export const LoginPage: FC = () => {
         .then(([client, session]) => {
           setClient(client, session);
           const redirectPath =
-            sessionStorage.getItem(LOGIN_REDIRECT_STORAGE_KEY) ?? "/";
+          sessionStorage.getItem(LOGIN_REDIRECT_STORAGE_KEY) ?? "/";
           sessionStorage.removeItem(LOGIN_REDIRECT_STORAGE_KEY);
-          void navigate(redirectPath);
+          fireAndForget(
+            navigate(redirectPath),
+            "Failed to navigate after SSO login",
+          );
           PosthogAnalytics.instance.eventLogin.track();
         })
         .catch((error) => {
@@ -94,7 +98,10 @@ export const LoginPage: FC = () => {
     }
 
     setLoading(true);
-    void startSSOLogin(homeserver);
+    fireAndForget(
+      startSSOLogin(homeserver),
+      "Failed to start SSO login",
+    );
   }, [fromState, homeserver, startSSOLogin]);
   return (
     <div className={styles.container}>

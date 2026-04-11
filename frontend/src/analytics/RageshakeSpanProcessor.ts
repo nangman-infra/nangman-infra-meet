@@ -41,7 +41,9 @@ const dumpAttributes = (
 export class RageshakeSpanProcessor implements SpanProcessor {
   private readonly spans: ReadableSpan[] = [];
 
-  public async forceFlush(): Promise<void> {}
+  public async forceFlush(): Promise<void> {
+    await Promise.resolve();
+  }
 
   public onStart(span: Span): void {
     this.spans.push(span);
@@ -131,5 +133,7 @@ export class RageshakeSpanProcessor implements SpanProcessor {
     });
   }
 
-  public async shutdown(): Promise<void> {}
+  public async shutdown(): Promise<void> {
+    await Promise.resolve();
+  }
 }
