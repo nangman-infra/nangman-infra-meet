@@ -46,7 +46,85 @@ import { useMeetingEntryAccess } from "../domains/meetings/presentation/useMeeti
 import { useRoomIdentifier } from "../domains/room/application/readModels/RoomIdentifier.ts";
 import { useRoomEntryUrlContext } from "../domains/room/application/readModels/RoomEntryUrlContext.ts";
 import { useMeetingAttendanceTracker } from "../domains/meetings/presentation/useMeetingAttendanceTracker";
+import { fireAndForget } from "../utils/fireAndForget";
 import styles from "./RoomPage.module.css";
+
+interface RoomTerminationMessage {
+  Icon: typeof AdminIcon | typeof CloseIcon | typeof EndCallIcon;
+  title: string;
+  body: string;
+}
+
+function getRoomTerminationMessage(
+  error: RoomTerminationError,
+  t: ReturnType<typeof useTranslation>["t"],
+): RoomTerminationMessage {
+  switch (error.kind) {
+    case "banned":
+      return {
+        Icon: AdminIcon,
+        title: t("group_call_loader.banned_heading"),
+        body: t("group_call_loader.banned_body"),
+      };
+    case "knockRejected":
+      return {
+        Icon: CloseIcon,
+        title: t("group_call_loader.knock_reject_heading"),
+        body: t("group_call_loader.knock_reject_body"),
+      };
+    case "ended":
+      return {
+        Icon: EndCallIcon,
+        title: t("group_call_loader.call_ended_heading"),
+        body: t("group_call_loader.call_ended_body"),
+      };
+  }
+}
+
+function getMeetingEntryViewMetadata(
+  decisionKind: MeetingEntryGateViewProps["decision"]["kind"],
+): {
+  metadataKey: string;
+  Icon: typeof CheckIcon | typeof AdminIcon | typeof EndCallIcon | typeof CloseIcon;
+} {
+  switch (decisionKind) {
+    case "wait_for_host":
+      return {
+        metadataKey: "meeting_entry.wait_for_host",
+        Icon: CheckIcon,
+      };
+    case "request_access":
+      return {
+        metadataKey: "meeting_entry.request_access",
+        Icon: AdminIcon,
+      };
+    case "pending_approval":
+      return {
+        metadataKey: "meeting_entry.pending_approval",
+        Icon: CheckIcon,
+      };
+    case "rejected":
+      return {
+        metadataKey: "meeting_entry.rejected",
+        Icon: CloseIcon,
+      };
+    case "not_invited":
+      return {
+        metadataKey: "meeting_entry.not_invited",
+        Icon: CloseIcon,
+      };
+    case "meeting_closed":
+      return {
+        metadataKey: "meeting_entry.meeting_closed",
+        Icon: EndCallIcon,
+      };
+    case "allow":
+      return {
+        metadataKey: "meeting_entry.request_access",
+        Icon: AdminIcon,
+      };
+  }
+}
 
 export const RoomPage: FC = () => {
   const { confineToRoom, preload, header, skipLobby } = useRoomEntryUrlContext();
@@ -107,71 +185,120 @@ export const RoomPage: FC = () => {
     }
   }, [groupCallState.kind]);
 
+  const renderLoadedGroupCallView = (): ReactNode =>
+    muteStates ? (
+      <GroupCallView
+        client={client!}
+        rtcSession={groupCallState.rtcSession}
+        joined={joined}
+        setJoined={setJoined}
+        isPasswordlessUser={passwordlessUser}
+        confineToRoom={confineToRoom}
+        preload={preload}
+        skipLobby={skipLobby || wasInWaitForInviteState.current}
+        header={header}
+        muteStates={muteStates}
+      />
+    ) : null;
+
+  const renderGateLobbyView = (): ReactNode => {
+    if (!muteStates) {
+      return null;
+    }
+
+    wasInWaitForInviteState.current =
+      wasInWaitForInviteState.current || groupCallState.kind === "waitForInvite";
+    const knock =
+      groupCallState.kind === "canKnock" ? groupCallState.knock : null;
+    const label: string | JSX.Element =
+      groupCallState.kind === "canKnock" ? (
+        t("lobby.ask_to_join")
+      ) : (
+        <>
+          {t("lobby.waiting_for_invite")}
+          <CheckIcon />
+        </>
+      );
+
+    return (
+      <LobbyView
+        client={client!}
+        matrixInfo={{
+          userId: client!.getUserId() ?? "",
+          displayName: userDisplayName ?? "",
+          avatarUrl: avatarUrl ?? "",
+          roomAlias: null,
+          roomId: groupCallState.roomSummary.roomId,
+          roomName: groupCallState.roomSummary.name ?? "",
+          roomAvatar: groupCallState.roomSummary.avatarUrl ?? null,
+          e2eeSystem: {
+            kind: groupCallState.roomSummary.isEncrypted
+              ? E2eeType.PER_PARTICIPANT
+              : E2eeType.NONE,
+          },
+        }}
+        onEnter={(): void => knock?.()}
+        enterLabel={label}
+        waitingForInvite={groupCallState.kind === "waitForInvite"}
+        confineToRoom={confineToRoom}
+        hideHeader={header !== "standard"}
+        participantCount={null}
+        muteStates={muteStates}
+        onShareClick={null}
+      />
+    );
+  };
+
+  const renderFailedGroupCallView = (): ReactNode => {
+    wasInWaitForInviteState.current = false;
+
+    if ((groupCallState.error as MatrixError).errcode === "M_NOT_FOUND") {
+      return (
+        <FullScreenView>
+          <ErrorView Icon={UnknownSolidIcon} title={t("error.call_not_found")}>
+            <Trans i18nKey="error.call_not_found_description">
+              <p>
+                That link doesn't appear to belong to any existing call.
+                Check that you have the right link, or{" "}
+                <Link to="/">create a new one</Link>.
+              </p>
+            </Trans>
+          </ErrorView>
+        </FullScreenView>
+      );
+    }
+
+    if (groupCallState.error instanceof RoomTerminationError) {
+      const terminationMessage = getRoomTerminationMessage(groupCallState.error, t);
+      return (
+        <FullScreenView>
+          <ErrorView
+            Icon={terminationMessage.Icon}
+            title={terminationMessage.title}
+          >
+            <p>{terminationMessage.body}</p>
+            {groupCallState.error.reason && (
+              <p>
+                {t("group_call_loader.reason", {
+                  reason: groupCallState.error.reason,
+                })}
+              </p>
+            )}
+          </ErrorView>
+        </FullScreenView>
+      );
+    }
+
+    return <ErrorPage error={groupCallState.error} />;
+  };
+
   const groupCallView = (): ReactNode => {
     switch (groupCallState.kind) {
       case "loaded":
-        return (
-          muteStates && (
-            <GroupCallView
-              client={client!}
-              rtcSession={groupCallState.rtcSession}
-              joined={joined}
-              setJoined={setJoined}
-              isPasswordlessUser={passwordlessUser}
-              confineToRoom={confineToRoom}
-              preload={preload}
-              skipLobby={skipLobby || wasInWaitForInviteState.current}
-              header={header}
-              muteStates={muteStates}
-            />
-          )
-        );
+        return renderLoadedGroupCallView();
       case "waitForInvite":
-      case "canKnock": {
-        wasInWaitForInviteState.current =
-          wasInWaitForInviteState.current ||
-          groupCallState.kind === "waitForInvite";
-        const knock =
-          groupCallState.kind === "canKnock" ? groupCallState.knock : null;
-        const label: string | JSX.Element =
-          groupCallState.kind === "canKnock" ? (
-            t("lobby.ask_to_join")
-          ) : (
-            <>
-              {t("lobby.waiting_for_invite")}
-              <CheckIcon />
-            </>
-          );
-        return (
-          muteStates && (
-            <LobbyView
-              client={client!}
-              matrixInfo={{
-                userId: client!.getUserId() ?? "",
-                displayName: userDisplayName ?? "",
-                avatarUrl: avatarUrl ?? "",
-                roomAlias: null,
-                roomId: groupCallState.roomSummary.roomId,
-                roomName: groupCallState.roomSummary.name ?? "",
-                roomAvatar: groupCallState.roomSummary.avatarUrl ?? null,
-                e2eeSystem: {
-                  kind: groupCallState.roomSummary.isEncrypted
-                    ? E2eeType.PER_PARTICIPANT
-                    : E2eeType.NONE,
-                },
-              }}
-              onEnter={(): void => knock?.()}
-              enterLabel={label}
-              waitingForInvite={groupCallState.kind === "waitForInvite"}
-              confineToRoom={confineToRoom}
-              hideHeader={header !== "standard"}
-              participantCount={null}
-              muteStates={muteStates}
-              onShareClick={null}
-            />
-          )
-        );
-      }
+      case "canKnock":
+        return renderGateLobbyView();
       case "loading":
         return (
           <FullScreenView>
@@ -179,65 +306,9 @@ export const RoomPage: FC = () => {
           </FullScreenView>
         );
       case "failed":
-        wasInWaitForInviteState.current = false;
-        if ((groupCallState.error as MatrixError).errcode === "M_NOT_FOUND") {
-          return (
-            <FullScreenView>
-              <ErrorView
-                Icon={UnknownSolidIcon}
-                title={t("error.call_not_found")}
-              >
-                <Trans i18nKey="error.call_not_found_description">
-                  <p>
-                    That link doesn't appear to belong to any existing call.
-                    Check that you have the right link, or{" "}
-                    <Link to="/">create a new one</Link>.
-                  </p>
-                </Trans>
-              </ErrorView>
-            </FullScreenView>
-          );
-        } else if (groupCallState.error instanceof RoomTerminationError) {
-          const terminationMessage =
-            groupCallState.error.kind === "banned"
-              ? {
-                  Icon: AdminIcon,
-                  title: t("group_call_loader.banned_heading"),
-                  body: t("group_call_loader.banned_body"),
-                }
-              : groupCallState.error.kind === "knockRejected"
-                ? {
-                    Icon: CloseIcon,
-                    title: t("group_call_loader.knock_reject_heading"),
-                    body: t("group_call_loader.knock_reject_body"),
-                  }
-                : {
-                    Icon: EndCallIcon,
-                    title: t("group_call_loader.call_ended_heading"),
-                    body: t("group_call_loader.call_ended_body"),
-                  };
-          return (
-            <FullScreenView>
-              <ErrorView
-                Icon={terminationMessage.Icon}
-                title={terminationMessage.title}
-              >
-                <p>{terminationMessage.body}</p>
-                {groupCallState.error.reason && (
-                  <p>
-                    {t("group_call_loader.reason", {
-                      reason: groupCallState.error.reason,
-                    })}
-                  </p>
-                )}
-              </ErrorView>
-            </FullScreenView>
-          );
-        } else {
-          return <ErrorPage error={groupCallState.error} />;
-        }
+        return renderFailedGroupCallView();
       default:
-        return <> </>;
+        return <></>;
     }
   };
 
@@ -272,7 +343,10 @@ export const RoomPage: FC = () => {
         requesting={meetingEntryAccess.requesting}
         onRefresh={meetingEntryAccess.refresh}
         onRequestAccess={() => {
-          void meetingEntryAccess.requestAccess();
+          fireAndForget(
+            meetingEntryAccess.requestAccess(),
+            "Failed to request meeting access",
+          );
         }}
       />
     );
@@ -303,28 +377,7 @@ const MeetingEntryGateView: FC<MeetingEntryGateViewProps> = ({
   const { t } = useTranslation();
   const isRequestAction =
     decision.kind === "request_access" || decision.kind === "rejected";
-
-  const metadataKey =
-    decision.kind === "wait_for_host"
-      ? "meeting_entry.wait_for_host"
-      : decision.kind === "request_access"
-            ? "meeting_entry.request_access"
-            : decision.kind === "pending_approval"
-              ? "meeting_entry.pending_approval"
-              : decision.kind === "rejected"
-                ? "meeting_entry.rejected"
-                : decision.kind === "not_invited"
-                  ? "meeting_entry.not_invited"
-                  : "meeting_entry.meeting_closed";
-
-  const Icon =
-    decision.kind === "wait_for_host" || decision.kind === "pending_approval"
-      ? CheckIcon
-      : decision.kind === "request_access"
-        ? AdminIcon
-        : decision.kind === "meeting_closed"
-          ? EndCallIcon
-          : CloseIcon;
+  const { metadataKey, Icon } = getMeetingEntryViewMetadata(decision.kind);
 
   return (
     <FullScreenView>

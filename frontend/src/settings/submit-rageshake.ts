@@ -117,6 +117,162 @@ interface RageShakeSubmitOptions {
   label?: string;
 }
 
+function getRageshakeDescription(opts: RageShakeSubmitOptions): string {
+  let description = opts.rageshakeRequestId
+    ? `Rageshake ${opts.rageshakeRequestId}`
+    : "";
+
+  if (opts.description) {
+    description += `: ${opts.description}`;
+  }
+
+  return description;
+}
+
+async function appendClientContext(
+  client: MatrixClient | null,
+  opts: RageShakeSubmitOptions,
+  body: FormData,
+): Promise<void> {
+  if (!client) {
+    return;
+  }
+
+  const userId = client.getUserId()!;
+  const user = client.getUser(userId);
+  body.append("display_name", user?.displayName ?? "");
+  body.append("user_id", client.credentials.userId ?? "");
+  body.append("device_id", client.deviceId ?? "");
+
+  if (opts.roomId) {
+    body.append("room_id", opts.roomId);
+  }
+
+  const crypto = client.getCrypto();
+  if (crypto) {
+    await collectCryptoInfo(crypto, body);
+    await collectRecoveryInfo(client, crypto, body);
+  }
+}
+
+async function appendStorageDetails(body: FormData): Promise<void> {
+  if (navigator.storage && navigator.storage.persisted) {
+    try {
+      body.append(
+        "storageManager_persisted",
+        String(await navigator.storage.persisted()),
+      );
+    } catch (e) {
+      logger.warn("coulr not get navigator peristed storage", e);
+    }
+    return;
+  }
+
+  if (document.hasStorageAccess) {
+    try {
+      body.append(
+        "storageManager_persisted",
+        String(await document.hasStorageAccess()),
+      );
+    } catch (e) {
+      logger.warn("could not get storage access", e);
+    }
+  }
+}
+
+async function appendStorageEstimate(body: FormData): Promise<void> {
+  if (!navigator.storage || !navigator.storage.estimate) {
+    return;
+  }
+
+  try {
+    const estimate: {
+      quota?: number;
+      usage?: number;
+      usageDetails?: { [x: string]: unknown };
+    } = await navigator.storage.estimate();
+    body.append("storageManager_quota", String(estimate.quota));
+    body.append("storageManager_usage", String(estimate.usage));
+
+    if (estimate.usageDetails) {
+      Object.entries(estimate.usageDetails).forEach(([key, value]) => {
+        body.append(`storageManager_usage_${key}`, String(value));
+      });
+    }
+  } catch (e) {
+    logger.warn("could not obatain storage estimate", e);
+  }
+}
+
+async function appendRageshakeLogs(
+  body: FormData,
+  sendLogs: boolean,
+): Promise<void> {
+  if (!sendLogs) {
+    return;
+  }
+
+  const logs = await getLogsForReport();
+
+  for (const entry of logs) {
+    body.append("compressed-log", await gzip(entry.lines), entry.id);
+  }
+
+  body.append(
+    "file",
+    await gzip(
+      ElementCallOpenTelemetry.instance.rageshakeProcessor!.dump(),
+    ),
+    "traces.json.gz",
+  );
+}
+
+async function createRageshakeBody(
+  client: MatrixClient | null,
+  opts: RageShakeSubmitOptions,
+): Promise<FormData> {
+  let userAgent = "UNKNOWN";
+  if (window.navigator && window.navigator.userAgent) {
+    userAgent = window.navigator.userAgent;
+  }
+
+  let touchInput = "UNKNOWN";
+  try {
+    touchInput = String(window.matchMedia("(pointer: coarse)").matches);
+  } catch (e) {
+    logger.warn("Could not get coarse pointer for rageshake submit.", e);
+  }
+
+  const body = new FormData();
+  body.append(
+    "text",
+    getRageshakeDescription(opts) ?? "User did not supply any additional text.",
+  );
+  body.append("app", "matrix-video-chat");
+  body.append("version", (import.meta.env.VITE_APP_VERSION as string) || "dev");
+  body.append("user_agent", userAgent);
+  body.append("installed_pwa", "false");
+  body.append("touch_input", touchInput);
+  body.append("call_backend", "livekit");
+  body.append("hostname", window.location.hostname);
+
+  await appendClientContext(client, opts, body);
+
+  if (opts.label) {
+    body.append("label", opts.label);
+  }
+
+  await appendStorageDetails(body);
+  await appendStorageEstimate(body);
+  await appendRageshakeLogs(body, opts.sendLogs);
+
+  if (opts.rageshakeRequestId) {
+    body.append("group_call_rageshake_request_id", opts.rageshakeRequestId);
+  }
+
+  return body;
+}
+
 export function getRageshakeSubmitUrl(): string | undefined {
   if (import.meta.env.VITE_PACKAGE === "full") {
     // in full package we always use the one configured on the server
@@ -167,129 +323,7 @@ export function useSubmitRageshake(
 
       try {
         setState({ sending: true, sent: false, error: undefined });
-
-        let userAgent = "UNKNOWN";
-        if (window.navigator && window.navigator.userAgent) {
-          userAgent = window.navigator.userAgent;
-        }
-
-        let touchInput = "UNKNOWN";
-        try {
-          // MDN claims broad support across browsers
-          touchInput = String(window.matchMedia("(pointer: coarse)").matches);
-        } catch (e) {
-          logger.warn("Could not get coarse pointer for rageshake submit.", e);
-        }
-
-        let description = opts.rageshakeRequestId
-          ? `Rageshake ${opts.rageshakeRequestId}`
-          : "";
-        if (opts.description) description += `: ${opts.description}`;
-
-        const body = new FormData();
-        body.append(
-          "text",
-          description ?? "User did not supply any additional text.",
-        );
-        body.append("app", "matrix-video-chat");
-        body.append(
-          "version",
-          (import.meta.env.VITE_APP_VERSION as string) || "dev",
-        );
-        body.append("user_agent", userAgent);
-        body.append("installed_pwa", "false");
-        body.append("touch_input", touchInput);
-        body.append("call_backend", "livekit");
-        body.append("hostname", window.location.hostname);
-
-        if (client) {
-          const userId = client.getUserId()!;
-          const user = client.getUser(userId);
-          body.append("display_name", user?.displayName ?? "");
-          body.append("user_id", client.credentials.userId ?? "");
-          body.append("device_id", client.deviceId ?? "");
-
-          if (opts.roomId) {
-            body.append("room_id", opts.roomId);
-          }
-
-          const crypto = client.getCrypto();
-          if (crypto) {
-            await collectCryptoInfo(crypto, body);
-            await collectRecoveryInfo(client, crypto, body);
-          }
-        }
-
-        if (opts.label) {
-          body.append("label", opts.label);
-        }
-
-        // add storage persistence/quota information
-        if (navigator.storage && navigator.storage.persisted) {
-          try {
-            body.append(
-              "storageManager_persisted",
-              String(await navigator.storage.persisted()),
-            );
-          } catch (e) {
-            logger.warn("coulr not get navigator peristed storage", e);
-          }
-        } else if (document.hasStorageAccess) {
-          // Safari
-          try {
-            body.append(
-              "storageManager_persisted",
-              String(await document.hasStorageAccess()),
-            );
-          } catch (e) {
-            logger.warn("could not get storage access", e);
-          }
-        }
-
-        if (navigator.storage && navigator.storage.estimate) {
-          try {
-            const estimate: {
-              quota?: number;
-              usage?: number;
-              usageDetails?: { [x: string]: unknown };
-            } = await navigator.storage.estimate();
-            body.append("storageManager_quota", String(estimate.quota));
-            body.append("storageManager_usage", String(estimate.usage));
-            if (estimate.usageDetails) {
-              Object.keys(estimate.usageDetails).forEach((k) => {
-                body.append(
-                  `storageManager_usage_${k}`,
-                  String(estimate.usageDetails![k]),
-                );
-              });
-            }
-          } catch (e) {
-            logger.warn("could not obatain storage estimate", e);
-          }
-        }
-
-        if (opts.sendLogs) {
-          const logs = await getLogsForReport();
-
-          for (const entry of logs) {
-            body.append("compressed-log", await gzip(entry.lines), entry.id);
-          }
-
-          body.append(
-            "file",
-            await gzip(
-              ElementCallOpenTelemetry.instance.rageshakeProcessor!.dump(),
-            ),
-            "traces.json.gz",
-          );
-        }
-
-        if (opts.rageshakeRequestId) {
-          body.append(
-            "group_call_rageshake_request_id",
-            opts.rageshakeRequestId,
-          );
-        }
+        const body = await createRageshakeBody(client, opts);
 
         const res = await fetch(submitUrl, {
           method: "POST",
