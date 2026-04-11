@@ -7,7 +7,6 @@ Please see LICENSE in the repository root for full details.
 
 .layer {
   block-size: 100%;
-  display: grid;
   --gap: 20px;
   gap: var(--gap);
   margin-inline: 0;

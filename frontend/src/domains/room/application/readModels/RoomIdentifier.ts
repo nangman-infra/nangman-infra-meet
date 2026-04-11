@@ -58,7 +58,7 @@ export function getRoomIdentifierFromUrl(
   const parser = new ParamParser(search, hash);
   let roomId: string | null = parser.getParam("roomId");
   if (roomId !== null) {
-    roomId = roomId.replaceAll(/^[^ -~]+|[^ -~]+$/g, "");
+    roomId = roomId.replaceAll(/(?:^[^ -~]+)|(?:[^ -~]+$)/g, "");
     if (!roomId.startsWith("!")) {
       roomId = null;
     }

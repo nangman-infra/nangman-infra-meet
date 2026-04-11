@@ -64,7 +64,6 @@ div.reactionPopupMenuRoot.reactionPopupMenuModal > div > div {
   overflow-x: hidden;
   overflow-y: auto;
   list-style: none;
-  flex-wrap: wrap;
   display: flex;
   flex-wrap: wrap;
   flex-direction: row;
