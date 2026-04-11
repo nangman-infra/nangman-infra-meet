@@ -1,4 +1,4 @@
-def WEBHOOK_TRIGGER_TOKEN = 'e63686027a01ad28c78000579c2c39135af7e5b5e524d96012612147d3365be1'
+def WEBHOOK_TRIGGER_TOKEN_CREDENTIAL_ID = 'GITHUB_WEBHOOK_TRIGGER_TOKEN'
 def REPO_SLUG = 'nangman-infra/nangman-infra-meet'
 def MAIN_BRANCH_REF = 'refs/heads/main'
 def DEFAULT_REPO_HTTP_URL = 'https://github.com/nangman-infra/nangman-infra-meet.git'
@@ -23,7 +23,7 @@ pipeline {
                 [key: 'BEFORE_SHA', value: '$.before', defaultValue: ''],
                 [key: 'AFTER_SHA', value: '$.after', defaultValue: '']
             ],
-            token: WEBHOOK_TRIGGER_TOKEN,
+            tokenCredentialId: WEBHOOK_TRIGGER_TOKEN_CREDENTIAL_ID,
             causeString: 'nangman-infra-meet main push detected',
             regexpFilterText: '$REPO_URL $GIT_REF',
             regexpFilterExpression: ".*${REPO_SLUG}.* ${MAIN_BRANCH_REF}",
