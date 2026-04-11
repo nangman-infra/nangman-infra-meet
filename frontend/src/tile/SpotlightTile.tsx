@@ -258,6 +258,7 @@ export const SpotlightTile: FC<Props> = ({
   const visibleIndex = media.findIndex((vm) => vm.id === activeId);
   const canGoBack = visibleIndex > 0;
   const canGoToNext = visibleIndex !== -1 && visibleIndex < media.length - 1;
+  const showNavigationRail = showIndicators && media.length > 1;
 
   useEffect(() => {
     if (media.length === 0) {
@@ -440,7 +441,7 @@ export const SpotlightTile: FC<Props> = ({
       </div>
       <div
         className={classNames(styles.bottomRightButtons, {
-          [styles.withNavigationRail]: media.length > 1,
+          [styles.withNavigationRail]: showNavigationRail,
         })}
       >
         <button
@@ -479,7 +480,7 @@ export const SpotlightTile: FC<Props> = ({
           <ChevronRightIcon aria-hidden width={24} height={24} />
         </button>
       )}
-      {media.length > 1 && (
+      {showNavigationRail && (
         <div
           className={classNames(styles.navigationRail, {
             [styles.showNavigationRail]: showIndicators,
