@@ -40,7 +40,7 @@ Please see LICENSE in the repository root for full details.
 .advance {
   appearance: none;
   cursor: pointer;
-  opacity: 0;
+  opacity: 0.92;
   padding: calc(var(--cpd-space-3x) - var(--cpd-border-width-1));
   border: var(--cpd-border-width-1) solid
     var(--cpd-color-border-interactive-secondary);
@@ -124,46 +124,123 @@ Please see LICENSE in the repository root for full details.
 }
 
 @media (hover) {
-  .tile:hover > div > button {
+  .tile:hover .advance,
+  .tile:hover .expand {
     opacity: 1;
   }
 }
 
-.tile:has(:focus-visible) > div > button {
+.tile:has(:focus-visible) .advance,
+.tile:has(:focus-visible) .expand {
   opacity: 1;
 }
 
-.indicators {
-  display: flex;
-  gap: var(--cpd-space-2x);
+.navigationRail {
   position: absolute;
-  inset-inline-start: 0;
-  inset-block-end: calc(-1 * var(--cpd-space-6x));
-  width: 100%;
-  justify-content: start;
-  transition: opacity ease 0.15s;
-  opacity: 0;
+  inset-inline: var(--cpd-space-3x);
+  inset-block-end: var(--cpd-space-3x);
+  display: flex;
+  align-items: center;
+  gap: var(--cpd-space-2x);
+  z-index: 1;
+  opacity: 0.96;
 }
 
-.indicators.show {
-  opacity: 1;
+.showNavigationRail {
+  opacity: 0.96;
 }
 
-.maximised .indicators {
-  inset-block-end: calc(-1 * var(--cpd-space-4x) - 2px);
-  justify-content: center;
+.positionBadge {
+  flex-shrink: 0;
+  min-width: 56px;
+  padding: var(--cpd-space-2x) var(--cpd-space-3x);
+  border: var(--cpd-border-width-1) solid
+    var(--cpd-color-border-interactive-secondary);
+  border-radius: var(--cpd-radius-pill-effect);
+  background: rgba(from var(--cpd-color-bg-canvas-default) r g b / 0.86);
+  color: var(--cpd-color-text-secondary);
+  font-size: var(--cpd-font-size-body-sm);
+  font-weight: var(--cpd-font-weight-medium);
+  text-align: center;
+  backdrop-filter: blur(12px);
 }
 
-.indicators > .item {
-  flex-basis: 32px;
-  block-size: 2px;
-  transition: background-color ease 0.15s;
+.selectorStrip {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  gap: var(--cpd-space-2x);
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
-.indicators > .item[data-visible="false"] {
-  background: var(--cpd-color-alpha-gray-600);
+.selectorStrip::-webkit-scrollbar {
+  display: none;
 }
 
-.indicators > .item[data-visible="true"] {
-  background: var(--cpd-color-gray-1400);
+.selectorButton {
+  appearance: none;
+  cursor: pointer;
+  flex: 0 0 auto;
+  min-width: 0;
+  max-width: min(220px, 48vw);
+  padding: var(--cpd-space-2x) var(--cpd-space-3x);
+  border: var(--cpd-border-width-1) solid
+    var(--cpd-color-border-interactive-secondary);
+  border-radius: var(--cpd-radius-pill-effect);
+  background: rgba(from var(--cpd-color-bg-canvas-default) r g b / 0.82);
+  color: var(--cpd-color-text-secondary);
+  transition:
+    background-color 0.1s ease,
+    border-color 0.1s ease,
+    color 0.1s ease,
+    transform 0.1s ease;
+  backdrop-filter: blur(12px);
+}
+
+.selectorButton[data-active="true"] {
+  border-color: var(--cpd-color-border-interactive-primary);
+  background: rgba(from var(--cpd-color-bg-action-primary-rest) r g b / 0.18);
+  color: var(--cpd-color-text-primary);
+}
+
+.selectorButton:hover {
+  border-color: var(--cpd-color-border-interactive-primary);
+  color: var(--cpd-color-text-primary);
+}
+
+.selectorButton:focus-visible {
+  outline: var(--cpd-border-width-2) solid var(--cpd-color-border-focused);
+  outline-offset: 2px;
+}
+
+.selectorButtonLabel {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.withNavigationRail {
+  inset-block-end: calc(var(--cpd-space-10x) + 4px);
+}
+
+@media (max-width: 640px) {
+  .navigationRail {
+    inset-inline: var(--cpd-space-2x);
+    inset-block-end: var(--cpd-space-2x);
+  }
+
+  .positionBadge {
+    min-width: 48px;
+    padding-inline: var(--cpd-space-2x);
+  }
+
+  .selectorButton {
+    max-width: 56vw;
+  }
+
+  .withNavigationRail {
+    inset-block-end: calc(var(--cpd-space-9x) + 4px);
+  }
 }
