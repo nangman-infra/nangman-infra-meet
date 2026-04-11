@@ -17,8 +17,12 @@ import { sentryVitePlugin } from "@sentry/vite-plugin";
 import react from "@vitejs/plugin-react";
 import { realpathSync } from "fs";
 import * as fs from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const CHUNK_SIZE_WARNING_LIMIT_KB = 3_000;
+const matrixLoggerAliasPath = fileURLToPath(
+  new URL("./src/matrix-compat/logger.ts", import.meta.url),
+);
 
 // https://vitejs.dev/config/
 // Modified type helper from defineConfig to allow for packageType (see defineConfig from vite)
@@ -145,6 +149,7 @@ export default ({
         // which Vite for some reason refuses to work with, so we point it to
         // src/index.ts instead
         "matrix-widget-api": "matrix-widget-api/src/index.ts",
+        "matrix-js-sdk/lib/logger": matrixLoggerAliasPath,
       },
       dedupe: [
         "react",

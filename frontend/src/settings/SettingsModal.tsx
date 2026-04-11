@@ -34,6 +34,7 @@ import { useSubmitRageshake } from "./submit-rageshake";
 import { useBehavior } from "../useBehavior";
 import { useMediaUrlContext } from "../domains/media/application/readModels/MediaUrlContext.ts";
 import { hasWidgetHost } from "../domains/widget/application/services/WidgetHostService.ts";
+import { openNativeAudioDevicePicker } from "../controls";
 
 const sourceCodeUrl = "https://github.com/nangman-infra/nangman-infra-meet";
 const upstreamUrl = "https://github.com/element-hq/element-call";
@@ -142,9 +143,7 @@ export const SettingsModal: FC<Props> = ({
             <Button
               onClick={(e): void => {
                 e.preventDefault();
-                window.controls.showNativeAudioDevicePicker?.();
-                // call deprecated method for backwards compatibility.
-                window.controls.showNativeOutputDevicePicker?.();
+                openNativeAudioDevicePicker(window.controls);
               }}
             >
               {t("settings.devices.change_device_button")}

@@ -31,7 +31,8 @@ export function useSSOLogin(): {
       loginToken: string,
     ): Promise<[MatrixClient, Session]> => {
       const authClient = createClient({ baseUrl: homeserver });
-      const response = await authClient.login("m.login.token", {
+      const response = await authClient.loginRequest({
+        type: "m.login.token",
         token: loginToken,
       });
 

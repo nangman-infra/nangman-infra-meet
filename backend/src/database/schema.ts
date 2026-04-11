@@ -71,11 +71,11 @@ export const meetings = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => ({
-    hostUserIdIdx: index("meetings_host_user_id_idx").on(table.hostUserId),
-    startsAtIdx: index("meetings_starts_at_idx").on(table.startsAt),
-    statusIdx: index("meetings_status_idx").on(table.status),
-  }),
+  (table) => [
+    index("meetings_host_user_id_idx").on(table.hostUserId),
+    index("meetings_starts_at_idx").on(table.startsAt),
+    index("meetings_status_idx").on(table.status),
+  ],
 );
 
 export const attendances = pgTable(
@@ -112,14 +112,14 @@ export const attendances = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => ({
-    meetingIdIdx: index("attendances_meeting_id_idx").on(table.meetingId),
-    meetingUserStatusIdx: index("attendances_meeting_user_status_idx").on(
+  (table) => [
+    index("attendances_meeting_id_idx").on(table.meetingId),
+    index("attendances_meeting_user_status_idx").on(
       table.meetingId,
       table.userId,
       table.status,
     ),
-  }),
+  ],
 );
 
 export const meetingAccessRequests = pgTable(
@@ -152,12 +152,12 @@ export const meetingAccessRequests = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => ({
-    meetingIdIdx: index("meeting_access_requests_meeting_id_idx").on(
+  (table) => [
+    index("meeting_access_requests_meeting_id_idx").on(table.meetingId),
+    index("meeting_access_requests_meeting_user_updated_at_idx").on(
       table.meetingId,
+      table.userId,
+      table.updatedAt,
     ),
-    meetingUserUpdatedAtIdx: index(
-      "meeting_access_requests_meeting_user_updated_at_idx",
-    ).on(table.meetingId, table.userId, table.updatedAt),
-  }),
+  ],
 );

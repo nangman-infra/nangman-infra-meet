@@ -6,18 +6,20 @@ SPDX-License-Identifier: AGPL-3.0-only OR LicenseRef-Element-Commercial
 
 import { EventType, type Room as MatrixRoom } from "matrix-js-sdk";
 
+import {
+  getCurrentRoomState,
+  getCurrentStateEvent,
+} from "../../../utils/matrixRoomState";
+
 export function readMatrixRoomNote(matrixRoom: MatrixRoom): string {
-  const noteEvent = matrixRoom.currentState?.getStateEvents?.(
-    EventType.RoomTopic,
-    "",
-  );
+  const noteEvent = getCurrentStateEvent(matrixRoom, EventType.RoomTopic);
   const topic = noteEvent?.getContent()?.topic;
 
   return typeof topic === "string" ? topic : "";
 }
 
 export function canEditMatrixRoomNote(matrixRoom: MatrixRoom): boolean {
-  const roomState = matrixRoom.currentState;
+  const roomState = getCurrentRoomState(matrixRoom);
   if (
     !roomState ||
     typeof roomState.mayClientSendStateEvent !== "function" ||

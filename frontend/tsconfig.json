@@ -36,6 +36,9 @@
       ],
       "livekit-client/dist/src/proto/livekit_models_pb": [
         "./node_modules/@livekit/protocol/src/gen/livekit_models_pb.d.ts"
+      ],
+      "matrix-js-sdk/lib/logger": [
+        "./src/matrix-compat/logger.ts"
       ]
     },
 

@@ -29,6 +29,7 @@ import { type ObservableScope } from "./ObservableScope";
 import {
   outputDevice$ as controlledOutputSelection$,
   availableOutputDevices$ as controlledAvailableOutputDevices$,
+  emitNativeAudioDeviceSelection,
 } from "../controls";
 import { getMediaUrlContext } from "../domains/media/application/readModels/MediaUrlContext.ts";
 import { platform } from "../Platform";
@@ -353,9 +354,7 @@ class ControlledAudioOutput
           "[controlled-output] onAudioDeviceSelect called:",
           device,
         );
-        window.controls.onAudioDeviceSelect?.(device.id);
-        // Also invoke the deprecated callback for backward compatibility
-        window.controls.onOutputDeviceSelect?.(device.id);
+        emitNativeAudioDeviceSelection(window.controls, device.id);
       }
     });
     this.available$.subscribe((available) => {

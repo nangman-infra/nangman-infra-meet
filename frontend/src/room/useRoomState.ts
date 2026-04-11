@@ -7,13 +7,14 @@ Please see LICENSE in the repository root for full details.
 
 import { useCallback } from "react";
 import {
-  type RoomState,
-  RoomStateEvent,
   type Room,
   RoomEvent,
+  RoomStateEvent,
+  type RoomState,
 } from "matrix-js-sdk";
 
 import { useTypedEventEmitterState } from "../useEvents";
+import { getCurrentRoomState } from "../utils/matrixRoomState";
 
 /**
  * A React hook for values computed from room state.
@@ -22,12 +23,10 @@ import { useTypedEventEmitterState } from "../useEvents";
  * @returns The computed value.
  */
 export function useRoomState<T>(room: Room, f: (state: RoomState) => T): T {
-  // TODO: matrix-js-sdk says that Room.currentState is deprecated, but it's not
-  // clear how to reactively track the current state of the room without it
   const currentState = useTypedEventEmitterState(
     room,
     RoomEvent.CurrentStateUpdated,
-    useCallback(() => room.currentState, [room]),
+    useCallback(() => getCurrentRoomState(room), [room]),
   );
   return useTypedEventEmitterState(
     currentState,

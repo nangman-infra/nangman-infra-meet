@@ -59,6 +59,29 @@ export const outputDevice$ = new Subject<string>();
  */
 export const setAudioEnabled$ = new Subject<boolean>();
 
+export function emitNativeAudioDeviceSelection(
+  controls: Controls,
+  id: string,
+): void {
+  controls.onAudioDeviceSelect?.(id);
+
+  const legacyControls = controls as unknown as Record<string, unknown>;
+  const legacyHandler = legacyControls["onOutputDeviceSelect"];
+  if (typeof legacyHandler === "function") {
+    legacyHandler(id);
+  }
+}
+
+export function openNativeAudioDevicePicker(controls: Controls): void {
+  controls.showNativeAudioDevicePicker?.();
+
+  const legacyControls = controls as unknown as Record<string, unknown>;
+  const legacyPicker = legacyControls["showNativeOutputDevicePicker"];
+  if (typeof legacyPicker === "function") {
+    legacyPicker();
+  }
+}
+
 let playbackStartedEmitted = false;
 export const setPlaybackStarted = (): void => {
   if (!playbackStartedEmitted) {

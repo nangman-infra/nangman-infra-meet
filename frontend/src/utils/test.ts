@@ -23,7 +23,6 @@ import {
 } from "matrix-js-sdk";
 import {
   CallMembership,
-  type LivekitFocusSelection,
   type LivekitTransport,
   type MatrixRTCSession,
   MatrixRTCSessionEvent,
@@ -96,6 +95,11 @@ export interface OurRunHelpers extends RunHelpers {
 interface TestRunnerGlobal {
   rxjsTestScheduler?: SchedulerLike;
 }
+
+type TestLivekitFocusSelection = {
+  type: "livekit";
+  focus_selection: "oldest_membership" | "multi_sfu";
+};
 
 /**
  * Create a new ObservableScope which ends when the current test ends.
@@ -222,7 +226,7 @@ export function mockRtcMembership(
   deviceId: string,
   callId = "",
   fociPreferred: Transport[] = [exampleTransport],
-  focusActive: LivekitFocusSelection = {
+  focusActive: TestLivekitFocusSelection = {
     type: "livekit",
     focus_selection: "oldest_membership",
   },

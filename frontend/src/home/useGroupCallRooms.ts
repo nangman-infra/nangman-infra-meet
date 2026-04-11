@@ -7,13 +7,13 @@ Please see LICENSE in the repository root for full details.
 
 import {
   type MatrixClient,
-  type RoomMember,
-  type Room,
-  RoomEvent,
   EventTimeline,
   EventType,
   JoinRule,
   KnownMembership,
+  RoomEvent,
+  type Room,
+  type RoomMember,
 } from "matrix-js-sdk";
 import { useState, useEffect } from "react";
 import {
@@ -22,6 +22,7 @@ import {
 } from "matrix-js-sdk/lib/matrixrtc";
 
 import { getKeyForRoom } from "../e2ee/sharedKeyManagement";
+import { getCurrentStateEvent } from "../utils/matrixRoomState";
 
 export interface GroupCallRoom {
   roomAlias?: string;
@@ -39,12 +40,9 @@ interface RestrictedAllowCondition {
 }
 
 function getRestrictedAllowConditions(room: Room): RestrictedAllowCondition[] {
-  const joinRuleEvent = room.currentState.getStateEvents(
-    EventType.RoomJoinRules,
-    "",
-  );
+  const joinRuleEvent = getCurrentStateEvent(room, EventType.RoomJoinRules);
 
-  if (!joinRuleEvent || Array.isArray(joinRuleEvent)) {
+  if (!joinRuleEvent) {
     return [];
   }
 
@@ -75,7 +73,10 @@ function getLastTs(client: MatrixClient, r: Room): number {
     return tsCache[r.roomId];
   }
 
-  if (!r || !r.timeline) {
+  const timeline = r.getLiveTimeline();
+  const events = timeline.getEvents();
+
+  if (!r || events.length === 0) {
     const ts = Number.MAX_SAFE_INTEGER;
     tsCache[r.roomId] = ts;
     return ts;
@@ -84,20 +85,17 @@ function getLastTs(client: MatrixClient, r: Room): number {
   const myUserId = client.getUserId()!;
 
   if (r.getMyMembership() !== KnownMembership.Join) {
-    const membershipEvent = r.currentState.getStateEvents(
-      "m.room.member",
-      myUserId,
-    );
+    const membershipEvent = getCurrentStateEvent(r, "m.room.member", myUserId);
 
-    if (membershipEvent && !Array.isArray(membershipEvent)) {
+    if (membershipEvent) {
       const ts = membershipEvent.getTs();
       tsCache[r.roomId] = ts;
       return ts;
     }
   }
 
-  for (let i = r.timeline.length - 1; i >= 0; --i) {
-    const ev = r.timeline[i];
+  for (let i = events.length - 1; i >= 0; --i) {
+    const ev = events[i];
     const ts = ev.getTs();
 
     if (ts) {

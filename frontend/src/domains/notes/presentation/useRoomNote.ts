@@ -16,6 +16,7 @@ import {
   readMatrixRoomNote,
   saveMatrixRoomNote,
 } from "../infrastructure/MatrixRoomNote";
+import { getCurrentRoomState } from "../../../utils/matrixRoomState";
 
 interface UseRoomNoteResult {
   canEdit: boolean;
@@ -36,7 +37,7 @@ export function useRoomNote(matrixRoom: MatrixRoom): UseRoomNoteResult {
   useEffect(() => {
     refreshNote();
 
-    const roomState = matrixRoom.currentState;
+    const roomState = getCurrentRoomState(matrixRoom);
     if (
       !roomState ||
       typeof roomState.on !== "function" ||

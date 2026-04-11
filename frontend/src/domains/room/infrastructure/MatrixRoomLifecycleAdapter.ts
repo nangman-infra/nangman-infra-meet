@@ -23,6 +23,7 @@ import type {
 } from "../application/ports/RoomLifecyclePort.ts";
 import type { RoomCallSessionPort } from "../application/ports/RoomCallSessionPort.ts";
 import type { JoinedRoom, RoomSummaryView } from "../domain/RoomTypes.ts";
+import { getCurrentStateEvent } from "../../../utils/matrixRoomState";
 
 type RoomClient = Pick<
   MatrixClient,
@@ -47,9 +48,9 @@ export class MatrixRoomLifecycleAdapter implements RoomLifecyclePort {
   public constructor(private readonly client: RoomClient) {}
 
   private getLeaveReason(room: Room): string | undefined {
-    return room.currentState
-      .getStateEvents("m.room.member", room.myUserId)
-      ?.getContent().reason;
+    return getCurrentStateEvent(room, "m.room.member", room.myUserId)
+      ?.getContent()
+      .reason;
   }
 
   private mapRoom(room: Room): JoinedRoom {
