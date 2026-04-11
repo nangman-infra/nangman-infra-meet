@@ -35,7 +35,7 @@ pipeline {
 
         WATCHTOWER_URL = 'http://172.16.0.14:18081'
         WATCHTOWER_TOKEN = credentials('nangman-infra-meet-watchtower-token')
-        APP_HEALTH_URL = credentials('nangman-infra-meet-health-url')
+        APP_HEALTH_URL = 'http://172.16.0.14:8082/api/v1/health'
         APP_HEALTH_EXPECTED_SERVICE = 'nangman-infra-meet-backend'
         DEPLOY_TIMEOUT_SECONDS = '180'
         SONARQUBE_INSTALLATION = 'SonarQube'
