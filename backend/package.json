@@ -18,6 +18,7 @@
     "start:prod": "node dist/main.js",
     "lint:types": "tsc --noEmit -p tsconfig.json",
     "test": "jest --config ./test/jest.config.ts",
+    "test:coverage": "jest --config ./test/jest.config.ts --coverage --coverageReporters=lcov --coverageReporters=text-summary --runInBand",
     "test:e2e": "jest --config ./test/jest.config.ts",
     "audit:security": "pnpm audit"
   },

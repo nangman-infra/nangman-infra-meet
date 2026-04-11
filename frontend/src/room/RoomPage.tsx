@@ -49,13 +49,13 @@ import { useMeetingAttendanceTracker } from "../domains/meetings/presentation/us
 import { fireAndForget } from "../utils/fireAndForget";
 import styles from "./RoomPage.module.css";
 
-interface RoomTerminationMessage {
+export interface RoomTerminationMessage {
   Icon: typeof AdminIcon | typeof CloseIcon | typeof EndCallIcon;
   title: string;
   body: string;
 }
 
-function getRoomTerminationMessage(
+export function getRoomTerminationMessage(
   error: RoomTerminationError,
   t: ReturnType<typeof useTranslation>["t"],
 ): RoomTerminationMessage {
@@ -81,7 +81,7 @@ function getRoomTerminationMessage(
   }
 }
 
-function getMeetingEntryViewMetadata(
+export function getMeetingEntryViewMetadata(
   decisionKind: MeetingEntryGateViewProps["decision"]["kind"],
 ): {
   metadataKey: string;

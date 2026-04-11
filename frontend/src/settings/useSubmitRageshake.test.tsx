@@ -202,6 +202,46 @@ describe("useSubmitRageshake", () => {
       expect(screen.getByTestId("clickError").textContent).toBe("");
       expect(screen.getByTestId("error").textContent).toBe("");
     });
+
+    it("includes storage estimate details when the browser exposes them", async () => {
+      const fetchFn = vi.fn().mockResolvedValue({
+        status: 200,
+      });
+      const estimate = vi.fn().mockResolvedValue({
+        quota: 512,
+        usage: 128,
+        usageDetails: {
+          caches: 64,
+        },
+      });
+      const stubbedNavigator = {
+        ...window.navigator,
+        storage: {
+          estimate,
+        },
+      };
+
+      vi.stubGlobal("fetch", fetchFn);
+      vi.stubGlobal("navigator", stubbedNavigator);
+      Object.defineProperty(window, "navigator", {
+        configurable: true,
+        value: stubbedNavigator,
+      });
+
+      renderWithMockClient(() => "https://rageshake.localhost/foo", false);
+      screen.getByTestId("submit").click();
+
+      await waitFor(() => {
+        expect(screen.getByTestId("sent").textContent).toBe("true");
+      });
+
+      expect(estimate).toHaveBeenCalledExactlyOnceWith();
+      const [, requestInit] = fetchFn.mock.calls[0];
+      const body = requestInit.body as FormData;
+      expect(body.get("storageManager_quota")).toBe("512");
+      expect(body.get("storageManager_usage")).toBe("128");
+      expect(body.get("storageManager_usage_caches")).toBe("64");
+    });
   });
 
   describe("when rageshake is not available", () => {

@@ -21,6 +21,8 @@ node_modules
 dist
 dist-ssr
 /coverage
+/frontend/coverage/
+/backend/coverage/
 .cache/
 .vite/
 .eslintcache

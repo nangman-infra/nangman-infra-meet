@@ -25,6 +25,7 @@
     "i18n:check": "i18next --fail-on-warnings --fail-on-update",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
+    "test:coverage:ci": "vitest --coverage --run",
     "test:playwright": "playwright test",
     "test:playwright:open": "yarn test:playwright --ui",
     "links:enable": "mv .links.disabled.yaml .links.yaml & touch .links.yaml",

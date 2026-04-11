@@ -57,6 +57,9 @@ pipeline {
         SONAR_SCANNER_TOOL = 'SonarScanner'
         SONAR_PROJECT_KEY = 'nangman-infra-meet'
         SONAR_PROJECT_NAME = 'nangman-infra-meet'
+        FRONTEND_COVERAGE_REPORT = 'frontend/coverage/lcov.info'
+        BACKEND_COVERAGE_REPORT = 'backend/coverage/lcov.info'
+        CI = 'true'
 
         DOCKER_BUILDKIT = '1'
         DOCKER_CLI_EXPERIMENTAL = 'enabled'
@@ -202,6 +205,51 @@ pipeline {
             }
         }
 
+        stage('Install Test Dependencies') {
+            options {
+                timeout(time: 20, unit: 'MINUTES')
+            }
+            steps {
+                sh '''
+                    node --version
+                    yarn --version
+                    pnpm --version
+                '''
+
+                dir('frontend') {
+                    sh 'yarn install --immutable'
+                }
+
+                dir('backend') {
+                    sh 'pnpm install --frozen-lockfile'
+                }
+            }
+        }
+
+        stage('Test Coverage') {
+            options {
+                timeout(time: 20, unit: 'MINUTES')
+            }
+            steps {
+                sh 'rm -rf frontend/coverage backend/coverage'
+
+                dir('frontend') {
+                    sh 'yarn test:coverage:ci'
+                }
+
+                dir('backend') {
+                    sh 'pnpm test:coverage'
+                }
+
+                sh '''
+                    perl -0pi -e 's#^SF:src/#SF:frontend/src/#mg' "$FRONTEND_COVERAGE_REPORT"
+                    perl -0pi -e 's#^SF:src/#SF:backend/src/#mg' "$BACKEND_COVERAGE_REPORT"
+                    test -f "$FRONTEND_COVERAGE_REPORT"
+                    test -f "$BACKEND_COVERAGE_REPORT"
+                '''
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 script {
@@ -217,9 +265,10 @@ pipeline {
                             sonar.sourceEncoding=UTF-8
                             sonar.scm.revision=${env.FULL_SHA}
                             sonar.sources=frontend/src,backend/src
-                            sonar.tests=backend/test
-                            sonar.test.inclusions=backend/test/**/*.spec.ts,backend/test/**/*.test.ts
+                            sonar.tests=frontend/src,backend/test
+                            sonar.test.inclusions=frontend/src/**/*.test.ts,frontend/src/**/*.test.tsx,frontend/src/**/*.spec.ts,frontend/src/**/*.spec.tsx,backend/test/**/*.spec.ts,backend/test/**/*.test.ts
                             sonar.exclusions=**/node_modules/**,**/dist/**,**/coverage/**,**/.yarn/**,**/.pnp.*,frontend/embedded/**,frontend/public/**,frontend/src/**/*.test.ts,frontend/src/**/*.test.tsx,frontend/src/**/*.spec.ts,frontend/src/**/*.spec.tsx
+                            sonar.javascript.lcov.reportPaths=${env.FRONTEND_COVERAGE_REPORT},${env.BACKEND_COVERAGE_REPORT}
                         """.stripIndent().trim() + '\n'
                     )
 

@@ -18,7 +18,7 @@ export default defineConfig((configEnv) =>
         setupFiles: ["src/vitest.setup.ts"],
         include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
         coverage: {
-          reporter: ["html", "json"],
+          reporter: ["html", "json", "lcov"],
           include: ["src/"],
           exclude: [
             "src/**/*.{d,test}.{ts,tsx}",
