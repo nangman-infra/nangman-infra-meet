@@ -90,7 +90,15 @@
 .grid {
   display: grid;
   gap: 20px;
+}
+
+.hostGrid {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.guestGrid {
+  align-items: start;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
 }
 
 .panel {
@@ -103,6 +111,11 @@
 .panelHeader {
   display: grid;
   gap: 6px;
+}
+
+.overviewPanel,
+.statePanel {
+  height: 100%;
 }
 
 .summaryItem {
@@ -159,6 +172,25 @@
   background: rgba(7, 16, 31, 0.52);
 }
 
+.stateStack {
+  display: grid;
+  gap: 14px;
+}
+
+.stateBlock {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.stateCopy {
+  line-height: 1.6;
+  color: var(--cpd-color-text-primary);
+}
+
 .attendanceRow {
   grid-template-columns: minmax(0, 1fr) auto;
   padding: 16px 18px;
@@ -186,7 +218,8 @@
 }
 
 @media (max-width: 920px) {
-  .grid {
+  .hostGrid,
+  .guestGrid {
     grid-template-columns: 1fr;
   }
 

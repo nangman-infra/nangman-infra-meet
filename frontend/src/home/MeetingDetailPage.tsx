@@ -408,6 +408,17 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
     ? t("meeting_detail.role.host")
     : t("meeting_detail.role.participant");
   const heroDescription = meeting.description?.trim() || null;
+  const overviewDescription = canEditMeeting
+    ? t("meeting_detail.edit_description")
+    : t("meeting_detail.action_summary.review_details");
+  const statusSummary = getMeetingStatusSummary(meeting.status, isMeetingHost, t);
+  const actionSummary = getMeetingActionSummary({
+    isMeetingHost,
+    isClosedMeeting,
+    canJoinMeeting,
+    entryDecisionKind: entryDecision?.kind,
+    t,
+  });
 
   return (
     <div className={commonStyles.container}>
@@ -480,14 +491,19 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
               </div>
             </div>
 
-            <div className={pageStyles.grid}>
-              <section className={pageStyles.panel}>
+            <div
+              className={[
+                pageStyles.grid,
+                isMeetingHost ? pageStyles.hostGrid : pageStyles.guestGrid,
+              ].join(" ")}
+            >
+              <section className={[pageStyles.panel, pageStyles.overviewPanel].join(" ")}>
                 <div className={pageStyles.panelHeader}>
                   <Heading size="md" weight="semibold">
                     {t("meeting_detail.overview_title")}
                   </Heading>
                   <Text size="sm" className={pageStyles.muted}>
-                    {t("meeting_detail.edit_description")}
+                    {overviewDescription}
                   </Text>
                 </div>
 
@@ -544,117 +560,192 @@ const MeetingDetailView: FC<{ client: MatrixClient }> = ({ client }) => {
                   )}
                 </div>
 
-                <div className={pageStyles.primaryActions}>
-                  {meeting.status === "scheduled" && isMeetingHost && (
-                    <Button
-                      kind="primary"
-                      onClick={() => {
-                        fireAndForget(onStart(), "Failed to start meeting");
-                      }}
-                      disabled={starting}
-                    >
-                      {starting
-                        ? t("meeting_detail.starting")
-                        : t("meeting_detail.start")}
-                    </Button>
-                  )}
-                  {canJoinMeeting && (
-                    <Button
-                      kind="primary"
-                      onClick={() => {
-                        fireAndForget(
-                          navigate(meeting.joinUrl),
-                          "Failed to join meeting",
-                        );
-                      }}
-                    >
-                      {t("meeting_detail.join")}
-                    </Button>
-                  )}
-                  {!isClosedMeeting && isMeetingHost && (
-                    <Button
-                      kind="secondary"
-                      onClick={() => {
-                        fireAndForget(onEnd(), "Failed to end meeting");
-                      }}
-                      disabled={ending}
-                    >
-                      {ending
-                        ? t("meeting_detail.ending")
-                        : t(
-                            meeting.status === "scheduled"
-                              ? "meeting_detail.cancel"
-                              : "meeting_detail.end",
-                          )}
-                    </Button>
-                  )}
-                  {!isMeetingHost && canRequestMeetingAccess && (
-                    <Button
-                      kind="primary"
-                      disabled={meetingEntryAccess.requesting}
-                      onClick={() => {
-                        fireAndForget(
-                          meetingEntryAccess.requestAccess(),
-                          "Failed to request meeting access",
-                        );
-                      }}
-                    >
-                      {meetingEntryAccess.requesting
-                        ? t("meeting_entry.requesting")
-                        : t(
-                            entryDecision.kind === "rejected"
-                              ? "meeting_entry.request_again"
-                              : "meeting_entry.request_access_button",
-                          )}
-                    </Button>
-                  )}
-                  {!isMeetingHost && canRefreshMeetingAccess && (
-                    <Button
-                      kind="secondary"
-                      disabled={meetingEntryAccess.loading}
-                      onClick={meetingEntryAccess.refresh}
-                    >
-                      {t("meeting_entry.refresh")}
-                    </Button>
-                  )}
-                  {canCopyMeetingLink && (
-                    <Button
-                      kind="secondary"
-                      onClick={() => {
-                        fireAndForget(
-                          onCopyLink(),
-                          "Failed to copy meeting link",
-                        );
-                      }}
-                    >
-                      {t("action.copy_link")}
-                    </Button>
-                  )}
-                </div>
-                {!isMeetingHost && meetingEntryAccess.error && (
-                  <ErrorMessage error={meetingEntryAccess.error} />
+                {isMeetingHost && (
+                  <>
+                    <div className={pageStyles.primaryActions}>
+                      {meeting.status === "scheduled" && (
+                        <Button
+                          kind="primary"
+                          onClick={() => {
+                            fireAndForget(onStart(), "Failed to start meeting");
+                          }}
+                          disabled={starting}
+                        >
+                          {starting
+                            ? t("meeting_detail.starting")
+                            : t("meeting_detail.start")}
+                        </Button>
+                      )}
+                      {canJoinMeeting && (
+                        <Button
+                          kind="primary"
+                          onClick={() => {
+                            fireAndForget(
+                              navigate(meeting.joinUrl),
+                              "Failed to join meeting",
+                            );
+                          }}
+                        >
+                          {t("meeting_detail.join")}
+                        </Button>
+                      )}
+                      {!isClosedMeeting && (
+                        <Button
+                          kind="secondary"
+                          onClick={() => {
+                            fireAndForget(onEnd(), "Failed to end meeting");
+                          }}
+                          disabled={ending}
+                        >
+                          {ending
+                            ? t("meeting_detail.ending")
+                            : t(
+                                meeting.status === "scheduled"
+                                  ? "meeting_detail.cancel"
+                                  : "meeting_detail.end",
+                              )}
+                        </Button>
+                      )}
+                      {canCopyMeetingLink && (
+                        <Button
+                          kind="secondary"
+                          onClick={() => {
+                            fireAndForget(
+                              onCopyLink(),
+                              "Failed to copy meeting link",
+                            );
+                          }}
+                        >
+                          {t("action.copy_link")}
+                        </Button>
+                      )}
+                    </div>
+                    {actionNotice && (
+                      <p
+                        className={pageStyles.notice}
+                        role="status"
+                        aria-live="polite"
+                      >
+                        {actionNotice}
+                      </p>
+                    )}
+                    {actionError && <ErrorMessage error={actionError} />}
+                  </>
                 )}
-                {entryStateCopy && (
-                  <div className={pageStyles.inlineNotice}>
-                    <Text size="sm" weight="semibold">
-                      {entryStateCopy.title}
-                    </Text>
+              </section>
+
+              {!isMeetingHost && (
+                <section className={[pageStyles.panel, pageStyles.statePanel].join(" ")}>
+                  <div className={pageStyles.panelHeader}>
+                    <Heading size="md" weight="semibold">
+                      {t("meeting_detail.state_summary_title")}
+                    </Heading>
                     <Text size="sm" className={pageStyles.muted}>
-                      {entryStateCopy.body}
+                      {t("meeting_detail.next_action_title")}
                     </Text>
                   </div>
-                )}
-                {actionNotice && (
-                  <p
-                    className={pageStyles.notice}
-                    role="status"
-                    aria-live="polite"
-                  >
-                    {actionNotice}
-                  </p>
-                )}
-                {actionError && <ErrorMessage error={actionError} />}
-              </section>
+
+                  <div className={pageStyles.stateStack}>
+                    <div className={pageStyles.stateBlock}>
+                      <Text size="sm" className={pageStyles.summaryLabel}>
+                        {t("meeting_detail.state_summary_title")}
+                      </Text>
+                      <Text size="sm" className={pageStyles.stateCopy}>
+                        {statusSummary}
+                      </Text>
+                    </div>
+                    <div className={pageStyles.stateBlock}>
+                      <Text size="sm" className={pageStyles.summaryLabel}>
+                        {t("meeting_detail.next_action_title")}
+                      </Text>
+                      <Text size="sm" className={pageStyles.stateCopy}>
+                        {actionSummary}
+                      </Text>
+                    </div>
+                  </div>
+
+                  <div className={pageStyles.primaryActions}>
+                    {canJoinMeeting && (
+                      <Button
+                        kind="primary"
+                        onClick={() => {
+                          fireAndForget(
+                            navigate(meeting.joinUrl),
+                            "Failed to join meeting",
+                          );
+                        }}
+                      >
+                        {t("meeting_detail.join")}
+                      </Button>
+                    )}
+                    {canRequestMeetingAccess && (
+                      <Button
+                        kind="primary"
+                        disabled={meetingEntryAccess.requesting}
+                        onClick={() => {
+                          fireAndForget(
+                            meetingEntryAccess.requestAccess(),
+                            "Failed to request meeting access",
+                          );
+                        }}
+                      >
+                        {meetingEntryAccess.requesting
+                          ? t("meeting_entry.requesting")
+                          : t(
+                              entryDecision?.kind === "rejected"
+                                ? "meeting_entry.request_again"
+                                : "meeting_entry.request_access_button",
+                            )}
+                      </Button>
+                    )}
+                    {canRefreshMeetingAccess && (
+                      <Button
+                        kind="secondary"
+                        disabled={meetingEntryAccess.loading}
+                        onClick={meetingEntryAccess.refresh}
+                      >
+                        {t("meeting_entry.refresh")}
+                      </Button>
+                    )}
+                    {canCopyMeetingLink && (
+                      <Button
+                        kind="secondary"
+                        onClick={() => {
+                          fireAndForget(
+                            onCopyLink(),
+                            "Failed to copy meeting link",
+                          );
+                        }}
+                      >
+                        {t("action.copy_link")}
+                      </Button>
+                    )}
+                  </div>
+                  {entryStateCopy && (
+                    <div className={pageStyles.inlineNotice}>
+                      <Text size="sm" weight="semibold">
+                        {entryStateCopy.title}
+                      </Text>
+                      <Text size="sm" className={pageStyles.muted}>
+                        {entryStateCopy.body}
+                      </Text>
+                    </div>
+                  )}
+                  {meetingEntryAccess.error && (
+                    <ErrorMessage error={meetingEntryAccess.error} />
+                  )}
+                  {actionNotice && (
+                    <p
+                      className={pageStyles.notice}
+                      role="status"
+                      aria-live="polite"
+                    >
+                      {actionNotice}
+                    </p>
+                  )}
+                  {actionError && <ErrorMessage error={actionError} />}
+                </section>
+              )}
 
               {canEditMeeting && (
                 <section className={pageStyles.panel}>
@@ -1084,5 +1175,57 @@ function getMeetingEntryStateCopy(
         title: t("meeting_entry.request_access.title"),
         body: t("meeting_entry.request_access.body", { title }),
       };
+  }
+}
+
+function getMeetingStatusSummary(
+  status: Meeting["status"],
+  isMeetingHost: boolean,
+  t: TFunction,
+): string {
+  if (status === "cancelled" || status === "ended") {
+    return t(`meeting_detail.status_summary.${status}`);
+  }
+
+  return t(
+    `meeting_detail.status_summary.${status}_${isMeetingHost ? "host" : "participant"}`,
+  );
+}
+
+function getMeetingActionSummary({
+  isMeetingHost,
+  isClosedMeeting,
+  canJoinMeeting,
+  entryDecisionKind,
+  t,
+}: {
+  readonly isMeetingHost: boolean;
+  readonly isClosedMeeting: boolean;
+  readonly canJoinMeeting: boolean;
+  readonly entryDecisionKind: MeetingAccessDecision["kind"] | undefined;
+  readonly t: TFunction;
+}): string {
+  if (isClosedMeeting) {
+    return t("meeting_detail.action_summary.closed");
+  }
+
+  if (canJoinMeeting) {
+    return t("meeting_detail.action_summary.can_join");
+  }
+
+  if (isMeetingHost) {
+    return t("meeting_detail.action_summary.live_host");
+  }
+
+  switch (entryDecisionKind) {
+    case "pending_approval":
+      return t("meeting_detail.action_summary.pending_approval");
+    case "request_access":
+    case "rejected":
+      return t("meeting_detail.action_summary.request_access");
+    case "wait_for_host":
+      return t("meeting_detail.action_summary.wait_for_host");
+    default:
+      return t("meeting_detail.action_summary.review_details");
   }
 }

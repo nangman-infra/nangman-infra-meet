@@ -64,10 +64,9 @@ describe("MeetingScheduler", () => {
     );
 
     expect(screen.getByLabelText("Meeting title")).toBeInTheDocument();
-    expect(
-      screen.getByText("This meeting will be created with the following rules"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("What happens next")).toBeInTheDocument();
+    expect(screen.getByLabelText("Date")).toBeInTheDocument();
+    expect(screen.getByLabelText("Time")).toBeInTheDocument();
+    expect(screen.getByText("Access policy")).toBeInTheDocument();
     expect(screen.queryByText("No meetings yet")).not.toBeInTheDocument();
   });
 
@@ -194,7 +193,7 @@ describe("MeetingScheduler", () => {
         expect.anything(),
       );
     });
-    expect(screen.getByText("Access")).toBeInTheDocument();
+    expect(screen.getByText("Access policy")).toBeInTheDocument();
   });
 
   it("cleans up the created room when meeting persistence fails", async () => {
