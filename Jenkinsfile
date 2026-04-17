@@ -299,6 +299,7 @@ pipeline {
                                     sonar.test.inclusions=frontend/src/**/*.test.ts,frontend/src/**/*.test.tsx,frontend/src/**/*.spec.ts,frontend/src/**/*.spec.tsx,backend/test/**/*.spec.ts,backend/test/**/*.test.ts
                                     sonar.exclusions=**/node_modules/**,**/dist/**,**/coverage/**,**/.yarn/**,**/.pnp.*,frontend/embedded/**,frontend/public/**,frontend/src/**/*.test.ts,frontend/src/**/*.test.tsx,frontend/src/**/*.spec.ts,frontend/src/**/*.spec.tsx
                                     sonar.javascript.lcov.reportPaths=${env.FRONTEND_COVERAGE_REPORT},${env.BACKEND_COVERAGE_REPORT}
+                                    sonar.javascript.node.maxspace=4096
                                 """.stripIndent().trim() + '\n'
                             )
 
