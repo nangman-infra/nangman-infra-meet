@@ -40,7 +40,7 @@ pipeline {
         // Project-specific settings. Change this block first when reusing this Jenkinsfile.
         HARBOR_URL = 'harbor.nangman.cloud'
         HARBOR_PROJECT = 'library'
-        HARBOR_CREDS_ID = 'harbor-auth'
+        HARBOR_CREDS_ID = 'NANGMAN_HARBOR_ROBOT_ACCOUNT'
 
         FRONTEND_IMAGE_NAME = 'nangman-infra-meet-frontend'
         FRONTEND_IMAGE_REPO = "${HARBOR_URL}/${HARBOR_PROJECT}/${FRONTEND_IMAGE_NAME}"
