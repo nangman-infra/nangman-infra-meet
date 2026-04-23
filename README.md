@@ -24,11 +24,17 @@ Frontend runtime config remains env-driven and the backend stays internal-only.
 ```bash
 cp frontend/.env.deploy.example frontend/.env.deploy
 cp backend/.env.example backend/.env
-# set Neon DATABASE_URL / DATABASE_URL_DIRECT in backend/.env
+cat >> .env <<'EOF'
+POSTGRES_DB=element_call
+POSTGRES_USER=element_call
+POSTGRES_PASSWORD=<secure-random-password>
+POSTGRES_PORT=5432
+POSTGRES_DATA_DIR=/home/wisoft/nangman-infra-meet/postgres-data
+EOF
+docker compose up -d postgres
 cd backend
 corepack enable
 pnpm install
-pnpm db:migrate
 cd ..
 docker compose up --build -d
 ```
@@ -47,10 +53,16 @@ Backend local development uses `pnpm`.
 ```bash
 cd backend
 cp .env.example .env
-# set Neon DATABASE_URL / DATABASE_URL_DIRECT in .env
 corepack enable
 pnpm install
-pnpm db:migrate
+cd ..
+docker compose up -d postgres
+cd backend
+set -a
+. ../.env
+set +a
+export DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@127.0.0.1:${POSTGRES_PORT:-5432}/${POSTGRES_DB}"
+export DATABASE_URL_DIRECT="${DATABASE_URL}"
 pnpm audit
 pnpm start:dev
 ```
@@ -59,6 +71,7 @@ Services:
 
 - Frontend: `http://127.0.0.1:8082`
 - Backend: internal-only, reached through the frontend proxy at `/api/v1`
+- PostgreSQL: `127.0.0.1:5432`, with data stored in `/home/wisoft/nangman-infra-meet/postgres-data`
 
 Frontend-specific documentation now lives in [frontend/README.md](./frontend/README.md).
 

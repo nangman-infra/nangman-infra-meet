@@ -29,6 +29,7 @@ dist-ssr
 *.tsbuildinfo
 
 # Local backend state
+/postgres-data/
 infra/synapse_tmp/*
 infra/synapse_tmp_othersite/*
 

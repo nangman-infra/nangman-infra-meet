@@ -1,4 +1,25 @@
 services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: element-call-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - type: bind
+        source: ${POSTGRES_DATA_DIR:?POSTGRES_DATA_DIR must be set in .env}
+        target: /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   frontend:
     image: ${FRONTEND_IMAGE}
     container_name: element-call-frontend
@@ -28,8 +49,14 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER must be set in .env}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB must be set in .env}
+      DATABASE_URL_DIRECT: postgresql://${POSTGRES_USER:?POSTGRES_USER must be set in .env}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB must be set in .env}
     expose:
       - "8787"
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8787/internal/health || exit 1"]
       interval: 30s
